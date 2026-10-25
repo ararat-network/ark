@@ -1,0 +1,313 @@
+{
+  "name": "reserve_committee_fund_insurance",
+  "description": "The reserve committee moves NOAH from the Reserve to Insurance.",
+  "chain_id": "ark-fixtures-1",
+  "height": 31,
+  "block_time": "1700000031",
+  "signer": {
+    "key": "committee",
+    "address": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+    "public_key": "Ar2MRP2t3VX197erR5Yqk++UXfUWJdZhBPZ7K8ccpQXU",
+    "account_number": "0",
+    "sequence": "16"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "300000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "30000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "31500000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CnwKegopL2Fyay5yZXNlcnZlLnYxLk1zZ0NvbW1pdHRlZUZ1bmRJbnN1cmFuY2USTQoqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5EAEaHQoFYW5vYWgSFDEwMDAwMDAwMDAwMDAwMDAwMDAwEnQKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQK9jET9rd1V9fe3q0eWKpPvlF31FiXWYQT2eyvHHKUF1BIECgIIARgQEiAKGgoFYW5vYWgSETMxNTAwMDAwMDAwMDAwMDAwEOCnEhoOYXJrLWZpeHR1cmVzLTE=",
+    "body_bytes": "CnoKKS9hcmsucmVzZXJ2ZS52MS5Nc2dDb21taXR0ZWVGdW5kSW5zdXJhbmNlEk0KKmFyazEycnZzcW5yZ25lZ3pwZjg4OTM0bGtqZzd6OTN3cTk4bXdjemRsORABGh0KBWFub2FoEhQxMDAwMDAwMDAwMDAwMDAwMDAwMA==",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiECvYxE/a3dVfX3t6tHliqT75Rd9RYl1mEE9nsrxxylBdQSBAoCCAEYEBIgChoKBWFub2FoEhEzMTUwMDAwMDAwMDAwMDAwMBDgpxI="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"0\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"31500000000000000\",\"denom\":\"anoah\"}],\"gas\":\"300000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"ark/reserve/MsgCommitteeFundInsurance\",\"value\":{\"amount\":{\"amount\":\"10000000000000000000\",\"denom\":\"anoah\"},\"committee\":\"ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9\",\"expected_term\":\"1\"}}],\"sequence\":\"16\"}"
+  },
+  "signature": "6lyTX1KkVySJvhAP87ANt99IJ93xVUHR6Mk+5GqQmuUroW+OGPUN3IL0I4KWhwryTu1zWtrsGWc0yr6yjFVF7A==",
+  "tx_bytes": "CnwKegopL2Fyay5yZXNlcnZlLnYxLk1zZ0NvbW1pdHRlZUZ1bmRJbnN1cmFuY2USTQoqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5EAEaHQoFYW5vYWgSFDEwMDAwMDAwMDAwMDAwMDAwMDAwEnQKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQK9jET9rd1V9fe3q0eWKpPvlF31FiXWYQT2eyvHHKUF1BIECgIIARgQEiAKGgoFYW5vYWgSETMxNTAwMDAwMDAwMDAwMDAwEOCnEhpA6lyTX1KkVySJvhAP87ANt99IJ93xVUHR6Mk+5GqQmuUroW+OGPUN3IL0I4KWhwryTu1zWtrsGWc0yr6yjFVF7A==",
+  "tx_hash": "C0A6CA6F21FBFF152EF1713C4452F6CE082D769A38C49630A3CF71AEC97DD7CC",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/ark.reserve.v1.MsgCommitteeFundInsurance",
+          "committee": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "expected_term": "1",
+          "amount": {
+            "denom": "anoah",
+            "amount": "10000000000000000000"
+          }
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "Ar2MRP2t3VX197erR5Yqk++UXfUWJdZhBPZ7K8ccpQXU"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "16"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "31500000000000000"
+          }
+        ],
+        "gas_limit": "300000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "6lyTX1KkVySJvhAP87ANt99IJ93xVUHR6Mk+5GqQmuUroW+OGPUN3IL0I4KWhwryTu1zWtrsGWc0yr6yjFVF7A=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "300000",
+    "gas_used": "113187"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "31500000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "1500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9/16",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "6lyTX1KkVySJvhAP87ANt99IJ93xVUHR6Mk+5GqQmuUroW+OGPUN3IL0I4KWhwryTu1zWtrsGWc0yr6yjFVF7A==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/ark.reserve.v1.MsgCommitteeFundInsurance",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "reserve",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark14sc6kwk6n83cr9hndw3ftd2c5qyxkhnx9y5ak8",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "10000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1m6v6phrm6e83w55uhxkluq3y6eyxx7udqu9kvk",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "10000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1m6v6phrm6e83w55uhxkluq3y6eyxx7udqu9kvk",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark14sc6kwk6n83cr9hndw3ftd2c5qyxkhnx9y5ak8",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "10000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark14sc6kwk6n83cr9hndw3ftd2c5qyxkhnx9y5ak8",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

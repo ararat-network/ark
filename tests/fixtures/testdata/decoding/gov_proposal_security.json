@@ -1,0 +1,392 @@
+{
+  "name": "gov_proposal_security",
+  "description": "A proposal carrying the security module's one authority message, the security mandate.",
+  "chain_id": "ark-fixtures-1",
+  "height": 46,
+  "block_time": "1700000046",
+  "signer": {
+    "key": "trader",
+    "address": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+    "public_key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H",
+    "account_number": "3",
+    "sequence": "11"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "400000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "40000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "42000000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CpIDCo8DCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBLqAgqKAQomL2Fyay5zZWN1cml0eS52MS5Nc2dTZXRTZWN1cml0eU1hbmRhdGUSYAoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEiphcmsxMnJ2c3FucmduZWd6cGY4ODkzNGxramc3ejkzd3E5OG13Y3pkbDkYASCArpmkDxIfCgVhbm9haBIWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMBoqYXJrMWZlYzdkbnhsM2ZyZTl6bWMza3l2dHQzNTdkZTNlazlmbmx1OTZqIhppcGZzOi8vYmFmeWZpeHR1cmVzZWN1cml0eSogRXZlcnkgc2VjdXJpdHkgYXV0aG9yaXR5IG1lc3NhZ2UyUEEgZml4dHVyZSBwcm9wb3NhbCBjYXJyeWluZyBlYWNoIGdvdmVybmFuY2Utb25seSBtZXNzYWdlIG9mIHRoZSBzZWN1cml0eSBtb2R1bGUuEnQKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQOAfcy2Q8ASKuVnWbc5DVkhahinvPX4WgUK4D2ls0F9BxIECgIIARgLEiAKGgoFYW5vYWgSETQyMDAwMDAwMDAwMDAwMDAwEIC1GBoOYXJrLWZpeHR1cmVzLTEgAw==",
+    "body_bytes": "Co8DCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBLqAgqKAQomL2Fyay5zZWN1cml0eS52MS5Nc2dTZXRTZWN1cml0eU1hbmRhdGUSYAoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEiphcmsxMnJ2c3FucmduZWd6cGY4ODkzNGxramc3ejkzd3E5OG13Y3pkbDkYASCArpmkDxIfCgVhbm9haBIWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMBoqYXJrMWZlYzdkbnhsM2ZyZTl6bWMza3l2dHQzNTdkZTNlazlmbmx1OTZqIhppcGZzOi8vYmFmeWZpeHR1cmVzZWN1cml0eSogRXZlcnkgc2VjdXJpdHkgYXV0aG9yaXR5IG1lc3NhZ2UyUEEgZml4dHVyZSBwcm9wb3NhbCBjYXJyeWluZyBlYWNoIGdvdmVybmFuY2Utb25seSBtZXNzYWdlIG9mIHRoZSBzZWN1cml0eSBtb2R1bGUu",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYCxIgChoKBWFub2FoEhE0MjAwMDAwMDAwMDAwMDAwMBCAtRg="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"3\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"42000000000000000\",\"denom\":\"anoah\"}],\"gas\":\"400000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"cosmos-sdk/v1/MsgSubmitProposal\",\"value\":{\"initial_deposit\":[{\"amount\":\"1000000000000000000000\",\"denom\":\"anoah\"}],\"messages\":[{\"type\":\"ark/security/MsgSetSecurityMandate\",\"value\":{\"activation_time\":\"1\",\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"committee\":\"ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9\",\"expiry_time\":\"4102444800\"}}],\"metadata\":\"ipfs://bafyfixturesecurity\",\"proposer\":\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\",\"summary\":\"A fixture proposal carrying each governance-only message of the security module.\",\"title\":\"Every security authority message\"}}],\"sequence\":\"11\"}"
+  },
+  "signature": "sFi9QnIkgUVM4jy4fkSwHioyaqHr9lODybObCYiv55lYMNxW5hVM7RCZAojIuCO1zz1On8NZPuO55Hw8Y5eILA==",
+  "tx_bytes": "CpIDCo8DCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBLqAgqKAQomL2Fyay5zZWN1cml0eS52MS5Nc2dTZXRTZWN1cml0eU1hbmRhdGUSYAoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEiphcmsxMnJ2c3FucmduZWd6cGY4ODkzNGxramc3ejkzd3E5OG13Y3pkbDkYASCArpmkDxIfCgVhbm9haBIWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMBoqYXJrMWZlYzdkbnhsM2ZyZTl6bWMza3l2dHQzNTdkZTNlazlmbmx1OTZqIhppcGZzOi8vYmFmeWZpeHR1cmVzZWN1cml0eSogRXZlcnkgc2VjdXJpdHkgYXV0aG9yaXR5IG1lc3NhZ2UyUEEgZml4dHVyZSBwcm9wb3NhbCBjYXJyeWluZyBlYWNoIGdvdmVybmFuY2Utb25seSBtZXNzYWdlIG9mIHRoZSBzZWN1cml0eSBtb2R1bGUuEnQKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQOAfcy2Q8ASKuVnWbc5DVkhahinvPX4WgUK4D2ls0F9BxIECgIIARgLEiAKGgoFYW5vYWgSETQyMDAwMDAwMDAwMDAwMDAwEIC1GBpAsFi9QnIkgUVM4jy4fkSwHioyaqHr9lODybObCYiv55lYMNxW5hVM7RCZAojIuCO1zz1On8NZPuO55Hw8Y5eILA==",
+  "tx_hash": "0C6BCE3408770BF699AA5163666ACFCA7F8B62F9AD5E336F50B3E93487E4FD75",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmos.gov.v1.MsgSubmitProposal",
+          "messages": [
+            {
+              "@type": "/ark.security.v1.MsgSetSecurityMandate",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "committee": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+              "activation_time": "1",
+              "expiry_time": "4102444800"
+            }
+          ],
+          "initial_deposit": [
+            {
+              "denom": "anoah",
+              "amount": "1000000000000000000000"
+            }
+          ],
+          "proposer": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "metadata": "ipfs://bafyfixturesecurity",
+          "title": "Every security authority message",
+          "summary": "A fixture proposal carrying each governance-only message of the security module.",
+          "expedited": false
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "11"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "42000000000000000"
+          }
+        ],
+        "gas_limit": "400000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "sFi9QnIkgUVM4jy4fkSwHioyaqHr9lODybObCYiv55lYMNxW5hVM7RCZAojIuCO1zz1On8NZPuO55Hw8Y5eILA=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "400000",
+    "gas_used": "190999"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "42000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "2000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j/11",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "sFi9QnIkgUVM4jy4fkSwHioyaqHr9lODybObCYiv55lYMNxW5hVM7RCZAojIuCO1zz1On8NZPuO55Hw8Y5eILA==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/cosmos.gov.v1.MsgSubmitProposal",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "gov",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "submit_proposal",
+      "attributes": [
+        {
+          "key": "proposal_id",
+          "value": "8",
+          "index": true
+        },
+        {
+          "key": "proposal_proposer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "proposal_messages",
+          "value": "/ark.security.v1.MsgSetSecurityMandate",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "proposal_deposit",
+      "attributes": [
+        {
+          "key": "depositor",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "proposal_id",
+          "value": "8",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "submit_proposal",
+      "attributes": [
+        {
+          "key": "voting_period_start",
+          "value": "8",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

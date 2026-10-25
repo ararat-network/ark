@@ -1,0 +1,250 @@
+{
+  "name": "wasm_update_contract_label",
+  "description": "The new admin relabels the contract.",
+  "chain_id": "ark-fixtures-1",
+  "height": 82,
+  "block_time": "1700000082",
+  "signer": {
+    "key": "other",
+    "address": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+    "public_key": "AtBL/N950tiS/Q335U/lMZXP7dXziTahATKekrVmKYxq",
+    "account_number": "6",
+    "sequence": "4"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "300000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "30000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "31500000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CqwBCqkBCigvY29zbXdhc20ud2FzbS52MS5Nc2dVcGRhdGVDb250cmFjdExhYmVsEn0KKmFyazFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWZlbDhucRIPY291bnRlci1yZW5hbWVkGj5hcmsxNGhqMnRhdnE4ZnBlc2R3eHhjdTQ0cnR5M2hoOTB2aHVqcnZjbXN0bDR6cjN0eG1mdnc5czlkcnVkdRJ0ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEC0Ev833nS2JL9DfflT+Uxlc/t1fOJNqEBMp6StWYpjGoSBAoCCAEYBBIgChoKBWFub2FoEhEzMTUwMDAwMDAwMDAwMDAwMBDgpxIaDmFyay1maXh0dXJlcy0xIAY=",
+    "body_bytes": "CqkBCigvY29zbXdhc20ud2FzbS52MS5Nc2dVcGRhdGVDb250cmFjdExhYmVsEn0KKmFyazFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWZlbDhucRIPY291bnRlci1yZW5hbWVkGj5hcmsxNGhqMnRhdnE4ZnBlc2R3eHhjdTQ0cnR5M2hoOTB2aHVqcnZjbXN0bDR6cjN0eG1mdnc5czlkcnVkdQ==",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEC0Ev833nS2JL9DfflT+Uxlc/t1fOJNqEBMp6StWYpjGoSBAoCCAEYBBIgChoKBWFub2FoEhEzMTUwMDAwMDAwMDAwMDAwMBDgpxI="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"6\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"31500000000000000\",\"denom\":\"anoah\"}],\"gas\":\"300000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"wasm/MsgUpdateContractLabel\",\"value\":{\"contract\":\"ark14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s9drudu\",\"new_label\":\"counter-renamed\",\"sender\":\"ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq\"}}],\"sequence\":\"4\"}"
+  },
+  "signature": "PFk8OrIoBon1ZHMYnBWtNo5jHmEW0fPlUgd8MDmpxrVOlOkIwEkbpHjb9zfResy/KurqT6o9JHqvYphrO/VCQg==",
+  "tx_bytes": "CqwBCqkBCigvY29zbXdhc20ud2FzbS52MS5Nc2dVcGRhdGVDb250cmFjdExhYmVsEn0KKmFyazFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWZlbDhucRIPY291bnRlci1yZW5hbWVkGj5hcmsxNGhqMnRhdnE4ZnBlc2R3eHhjdTQ0cnR5M2hoOTB2aHVqcnZjbXN0bDR6cjN0eG1mdnc5czlkcnVkdRJ0ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEC0Ev833nS2JL9DfflT+Uxlc/t1fOJNqEBMp6StWYpjGoSBAoCCAEYBBIgChoKBWFub2FoEhEzMTUwMDAwMDAwMDAwMDAwMBDgpxIaQDxZPDqyKAaJ9WRzGJwVrTaOYx5hFtHz5VIHfDA5qca1TpTpCMBJG6R42/c30XrMvyrq6k+qPSR6r2KYazv1QkI=",
+  "tx_hash": "E548C484C9A24ED30B5867180827AC952F10AD9173EF7E8CD0BD55820BC80F74",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmwasm.wasm.v1.MsgUpdateContractLabel",
+          "sender": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "new_label": "counter-renamed",
+          "contract": "ark14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s9drudu"
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "AtBL/N950tiS/Q335U/lMZXP7dXziTahATKekrVmKYxq"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "4"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "31500000000000000"
+          }
+        ],
+        "gas_limit": "300000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "PFk8OrIoBon1ZHMYnBWtNo5jHmEW0fPlUgd8MDmpxrVOlOkIwEkbpHjb9zfResy/KurqT6o9JHqvYphrO/VCQg=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "300000",
+    "gas_used": "68596"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "31500000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "1500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq/4",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "PFk8OrIoBon1ZHMYnBWtNo5jHmEW0fPlUgd8MDmpxrVOlOkIwEkbpHjb9zfResy/KurqT6o9JHqvYphrO/VCQg==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/cosmwasm.wasm.v1.MsgUpdateContractLabel",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "wasm",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "update_contract_label",
+      "attributes": [
+        {
+          "key": "_contract_address",
+          "value": "ark14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s9drudu",
+          "index": true
+        },
+        {
+          "key": "new_label",
+          "value": "counter-renamed",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

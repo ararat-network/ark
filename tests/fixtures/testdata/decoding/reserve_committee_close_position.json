@@ -1,0 +1,303 @@
+{
+  "name": "reserve_committee_close_position",
+  "description": "The reserve committee closes position 1, crystallising its result.",
+  "chain_id": "ark-fixtures-1",
+  "height": 27,
+  "block_time": "1700000027",
+  "signer": {
+    "key": "committee",
+    "address": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+    "public_key": "Ar2MRP2t3VX197erR5Yqk++UXfUWJdZhBPZ7K8ccpQXU",
+    "account_number": "0",
+    "sequence": "12"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "300000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "30000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "31500000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CmgKZgopL2Fyay5yZXNlcnZlLnYxLk1zZ0NvbW1pdHRlZUNsb3NlUG9zaXRpb24SOQoqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5EAEYASIHY2xvc3VyZRJ0ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiECvYxE/a3dVfX3t6tHliqT75Rd9RYl1mEE9nsrxxylBdQSBAoCCAEYDBIgChoKBWFub2FoEhEzMTUwMDAwMDAwMDAwMDAwMBDgpxIaDmFyay1maXh0dXJlcy0x",
+    "body_bytes": "CmYKKS9hcmsucmVzZXJ2ZS52MS5Nc2dDb21taXR0ZWVDbG9zZVBvc2l0aW9uEjkKKmFyazEycnZzcW5yZ25lZ3pwZjg4OTM0bGtqZzd6OTN3cTk4bXdjemRsORABGAEiB2Nsb3N1cmU=",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiECvYxE/a3dVfX3t6tHliqT75Rd9RYl1mEE9nsrxxylBdQSBAoCCAEYDBIgChoKBWFub2FoEhEzMTUwMDAwMDAwMDAwMDAwMBDgpxI="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"0\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"31500000000000000\",\"denom\":\"anoah\"}],\"gas\":\"300000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"ark/reserve/MsgCommitteeClosePosition\",\"value\":{\"committee\":\"ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9\",\"expected_term\":\"1\",\"position_id\":\"1\",\"reference\":\"closure\"}}],\"sequence\":\"12\"}"
+  },
+  "signature": "qSqmJgoxn9hlpCXJuXv7u3NC3FUzK77QLnsPEkHin9okgInbR0gFzIAeDxKLFk/32jIsz69zSpyR90HEqQ1ZUw==",
+  "tx_bytes": "CmgKZgopL2Fyay5yZXNlcnZlLnYxLk1zZ0NvbW1pdHRlZUNsb3NlUG9zaXRpb24SOQoqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5EAEYASIHY2xvc3VyZRJ0ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiECvYxE/a3dVfX3t6tHliqT75Rd9RYl1mEE9nsrxxylBdQSBAoCCAEYDBIgChoKBWFub2FoEhEzMTUwMDAwMDAwMDAwMDAwMBDgpxIaQKkqpiYKMZ/YZaQlybl7+7tzQtxVMyu+0C57DxJB4p/aJICJ20dIBcyAHg8SixZP99oyLM+vc0qckfdBxKkNWVM=",
+  "tx_hash": "F5E095E1290E6591A5A36068AC4AC93F5C72817581F625E12C5227B1C440E4EF",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/ark.reserve.v1.MsgCommitteeClosePosition",
+          "committee": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "expected_term": "1",
+          "position_id": "1",
+          "reference": "closure"
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "Ar2MRP2t3VX197erR5Yqk++UXfUWJdZhBPZ7K8ccpQXU"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "12"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "31500000000000000"
+          }
+        ],
+        "gas_limit": "300000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "qSqmJgoxn9hlpCXJuXv7u3NC3FUzK77QLnsPEkHin9okgInbR0gFzIAeDxKLFk/32jIsz69zSpyR90HEqQ1ZUw=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "300000",
+    "gas_used": "80723"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "31500000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "1500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9/12",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "qSqmJgoxn9hlpCXJuXv7u3NC3FUzK77QLnsPEkHin9okgInbR0gFzIAeDxKLFk/32jIsz69zSpyR90HEqQ1ZUw==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/ark.reserve.v1.MsgCommitteeClosePosition",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "reserve",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "ark.reserve.v1.EventLedgerEntryRecorded",
+      "attributes": [
+        {
+          "key": "entry_id",
+          "value": "\"8\"",
+          "index": true
+        },
+        {
+          "key": "kind",
+          "value": "\"ENTRY_KIND_CLOSURE\"",
+          "index": true
+        },
+        {
+          "key": "position_id",
+          "value": "\"1\"",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ],
+      "typed": {
+        "entry_id": "8",
+        "position_id": "1",
+        "kind": "ENTRY_KIND_CLOSURE"
+      }
+    },
+    {
+      "type": "ark.reserve.v1.EventPositionClosed",
+      "attributes": [
+        {
+          "key": "deployed",
+          "value": "{\"denom\":\"anoah\",\"amount\":\"500000000000000000000\"}",
+          "index": true
+        },
+        {
+          "key": "position_id",
+          "value": "\"1\"",
+          "index": true
+        },
+        {
+          "key": "realised",
+          "value": "\"-500000000000000000000\"",
+          "index": true
+        },
+        {
+          "key": "returned",
+          "value": "{\"denom\":\"anoah\",\"amount\":\"0\"}",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ],
+      "typed": {
+        "position_id": "1",
+        "deployed": {
+          "denom": "anoah",
+          "amount": "500000000000000000000"
+        },
+        "returned": {
+          "denom": "anoah",
+          "amount": "0"
+        },
+        "realised": "-500000000000000000000"
+      }
+    }
+  ]
+}

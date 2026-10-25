@@ -1,0 +1,390 @@
+{
+  "name": "bank_send_taxed",
+  "description": "The trader sends ausd and pays the fee in ausd: the declared fee carries the transfer tax beside the gas leg.",
+  "chain_id": "ark-fixtures-1",
+  "height": 7,
+  "block_time": "1700000007",
+  "signer": {
+    "key": "trader",
+    "address": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+    "public_key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H",
+    "account_number": "3",
+    "sequence": "2"
+  },
+  "fee": {
+    "fee_denom": "ausd",
+    "gas_limit": "250000",
+    "tax": [
+      {
+        "denom": "ausd",
+        "amount": "50000000000000000"
+      }
+    ],
+    "gas_price": {
+      "denom": "ausd",
+      "gas_price": "72939460247.994164800000000000",
+      "derived_height": "2"
+    },
+    "required": {
+      "denom": "ausd",
+      "amount": "18234865061998542"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "ausd",
+        "amount": "75058351568198397"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CpkBCpYBChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEnYKKmFyazFmZWM3ZG54bDNmcmU5em1jM2t5dnR0MzU3ZGUzZWs5Zm5sdTk2ahIqYXJrMTAycDZzNTJuOTdlN3pjbXhjNDl1Znd4MDRsbnRyZTVrdHFra3pwGhwKBGF1c2QSFDEwMDAwMDAwMDAwMDAwMDAwMDAwEnMKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQOAfcy2Q8ASKuVnWbc5DVkhahinvPX4WgUK4D2ls0F9BxIECgIIARgCEh8KGQoEYXVzZBIRNzUwNTgzNTE1NjgxOTgzOTcQkKEPGg5hcmstZml4dHVyZXMtMSAD",
+    "body_bytes": "CpYBChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEnYKKmFyazFmZWM3ZG54bDNmcmU5em1jM2t5dnR0MzU3ZGUzZWs5Zm5sdTk2ahIqYXJrMTAycDZzNTJuOTdlN3pjbXhjNDl1Znd4MDRsbnRyZTVrdHFra3pwGhwKBGF1c2QSFDEwMDAwMDAwMDAwMDAwMDAwMDAw",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYAhIfChkKBGF1c2QSETc1MDU4MzUxNTY4MTk4Mzk3EJChDw=="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"3\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"75058351568198397\",\"denom\":\"ausd\"}],\"gas\":\"250000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"cosmos-sdk/MsgSend\",\"value\":{\"amount\":[{\"amount\":\"10000000000000000000\",\"denom\":\"ausd\"}],\"from_address\":\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\",\"to_address\":\"ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp\"}}],\"sequence\":\"2\"}"
+  },
+  "signature": "JGML6cNP8WDSxYUtruL4oXadkjrPw2l4+WqpuPYBIrcUKcaiBXa2jLJM+enuJhUmHZXYtswLRtRkvdfUQCCNuA==",
+  "tx_bytes": "CpkBCpYBChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEnYKKmFyazFmZWM3ZG54bDNmcmU5em1jM2t5dnR0MzU3ZGUzZWs5Zm5sdTk2ahIqYXJrMTAycDZzNTJuOTdlN3pjbXhjNDl1Znd4MDRsbnRyZTVrdHFra3pwGhwKBGF1c2QSFDEwMDAwMDAwMDAwMDAwMDAwMDAwEnMKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQOAfcy2Q8ASKuVnWbc5DVkhahinvPX4WgUK4D2ls0F9BxIECgIIARgCEh8KGQoEYXVzZBIRNzUwNTgzNTE1NjgxOTgzOTcQkKEPGkAkYwvpw0/xYNLFhS2u4vihdp2SOs/DaXj5aqm49gEitxQpxqIFdraMskz56e4mFSYdldi2zAtG1GS919RAII24",
+  "tx_hash": "861F5D4824CECE1A5A1F9FCB43280CD6AB38491D10AFF22939B94FEDE66802B0",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmos.bank.v1beta1.MsgSend",
+          "from_address": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "to_address": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "amount": [
+            {
+              "denom": "ausd",
+              "amount": "10000000000000000000"
+            }
+          ]
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "2"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "ausd",
+            "amount": "75058351568198397"
+          }
+        ],
+        "gas_limit": "250000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "JGML6cNP8WDSxYUtruL4oXadkjrPw2l4+WqpuPYBIrcUKcaiBXa2jLJM+enuJhUmHZXYtswLRtRkvdfUQCCNuA=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "250000",
+    "gas_used": "98227"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "18234865061998542ausd",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "18234865061998542ausd",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "18234865061998542ausd",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "18234865061998542ausd",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j/2",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "JGML6cNP8WDSxYUtruL4oXadkjrPw2l4+WqpuPYBIrcUKcaiBXa2jLJM+enuJhUmHZXYtswLRtRkvdfUQCCNuA==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/cosmos.bank.v1beta1.MsgSend",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "bank",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "10000000000000000000ausd",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "10000000000000000000ausd",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "10000000000000000000ausd",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "50000000000000000ausd",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1d0sh6wpev05edp6tdxjs6alazqd7suyqzxee35",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "50000000000000000ausd",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1d0sh6wpev05edp6tdxjs6alazqd7suyqzxee35",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "50000000000000000ausd",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "transfer_tax",
+          "value": "50000000000000000ausd",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

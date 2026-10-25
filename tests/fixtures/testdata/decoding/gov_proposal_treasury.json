@@ -1,0 +1,457 @@
+{
+  "name": "gov_proposal_treasury",
+  "description": "A proposal carrying every treasury authority message: params, the economic mandate, a policy update, and a subsidy return.",
+  "chain_id": "ark-fixtures-1",
+  "height": 47,
+  "block_time": "1700000047",
+  "signer": {
+    "key": "trader",
+    "address": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+    "public_key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H",
+    "account_number": "3",
+    "sequence": "12"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "500000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "50000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "52500000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CtkICtYICiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBKxCAqCAgogL2Fyay50cmVhc3VyeS52MS5Nc2dVcGRhdGVQYXJhbXMS3QEKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhKuAQoEYXhkchIBMRjAkwYiEjk5NzUwMDAwMDAwMDAwMDAwMCoSOTk4ODUwMDAwMDAwMDAwMDAwMhM0MDAwMDAwMDAwMDAwMDAwMDAwOhIyNTAwMDAwMDAwMDAwMDAwMDBA2ARKEjUwMDAwMDAwMDAwMDAwMDAwMFIRMjUwMDAwMDAwMDAwMDAwMDBaHjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMGIBMGisAgrTAgomL2Fyay50cmVhc3VyeS52MS5Nc2dTZXRFY29ub21pY01hbmRhdGUSqAIKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5GAEggK6ZpA8qGAoBMBIBMBoBMCIBMCoBMDIBMDoBMEIBMDKrAQoWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMBIWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMBoSNTAwMDAwMDAwMDAwMDAwMDAwIhI1MDAwMDAwMDAwMDAwMDAwMDAqEjUwMDAwMDAwMDAwMDAwMDAwMDITMTAwMDAwMDAwMDAwMDAwMDAwMDoTMTAwMDAwMDAwMDAwMDAwMDAwMEITMTAwMDAwMDAwMDAwMDAwMDAwMAp6CiAvYXJrLnRyZWFzdXJ5LnYxLk1zZ1VwZGF0ZVBvbGljeRJWCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKAoBMBIBMBoBMCIBMCoRNTAwMDAwMDAwMDAwMDAwMDAyATA6ATBCATAKewohL2Fyay50cmVhc3VyeS52MS5Nc2dSZXR1cm5TdWJzaWR5ElYKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIcCgVhbm9haBITMTAwMDAwMDAwMDAwMDAwMDAwMBoKCgVhbm9haBIBMBIfCgVhbm9haBIWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMBoqYXJrMWZlYzdkbnhsM2ZyZTl6bWMza3l2dHQzNTdkZTNlazlmbmx1OTZqIhppcGZzOi8vYmFmeWZpeHR1cmV0cmVhc3VyeSogRXZlcnkgdHJlYXN1cnkgYXV0aG9yaXR5IG1lc3NhZ2UyUEEgZml4dHVyZSBwcm9wb3NhbCBjYXJyeWluZyBlYWNoIGdvdmVybmFuY2Utb25seSBtZXNzYWdlIG9mIHRoZSB0cmVhc3VyeSBtb2R1bGUuEnQKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQOAfcy2Q8ASKuVnWbc5DVkhahinvPX4WgUK4D2ls0F9BxIECgIIARgMEiAKGgoFYW5vYWgSETUyNTAwMDAwMDAwMDAwMDAwEKDCHhoOYXJrLWZpeHR1cmVzLTEgAw==",
+    "body_bytes": "CtYICiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBKxCAqCAgogL2Fyay50cmVhc3VyeS52MS5Nc2dVcGRhdGVQYXJhbXMS3QEKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhKuAQoEYXhkchIBMRjAkwYiEjk5NzUwMDAwMDAwMDAwMDAwMCoSOTk4ODUwMDAwMDAwMDAwMDAwMhM0MDAwMDAwMDAwMDAwMDAwMDAwOhIyNTAwMDAwMDAwMDAwMDAwMDBA2ARKEjUwMDAwMDAwMDAwMDAwMDAwMFIRMjUwMDAwMDAwMDAwMDAwMDBaHjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMGIBMGisAgrTAgomL2Fyay50cmVhc3VyeS52MS5Nc2dTZXRFY29ub21pY01hbmRhdGUSqAIKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5GAEggK6ZpA8qGAoBMBIBMBoBMCIBMCoBMDIBMDoBMEIBMDKrAQoWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMBIWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMBoSNTAwMDAwMDAwMDAwMDAwMDAwIhI1MDAwMDAwMDAwMDAwMDAwMDAqEjUwMDAwMDAwMDAwMDAwMDAwMDITMTAwMDAwMDAwMDAwMDAwMDAwMDoTMTAwMDAwMDAwMDAwMDAwMDAwMEITMTAwMDAwMDAwMDAwMDAwMDAwMAp6CiAvYXJrLnRyZWFzdXJ5LnYxLk1zZ1VwZGF0ZVBvbGljeRJWCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKAoBMBIBMBoBMCIBMCoRNTAwMDAwMDAwMDAwMDAwMDAyATA6ATBCATAKewohL2Fyay50cmVhc3VyeS52MS5Nc2dSZXR1cm5TdWJzaWR5ElYKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIcCgVhbm9haBITMTAwMDAwMDAwMDAwMDAwMDAwMBoKCgVhbm9haBIBMBIfCgVhbm9haBIWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMBoqYXJrMWZlYzdkbnhsM2ZyZTl6bWMza3l2dHQzNTdkZTNlazlmbmx1OTZqIhppcGZzOi8vYmFmeWZpeHR1cmV0cmVhc3VyeSogRXZlcnkgdHJlYXN1cnkgYXV0aG9yaXR5IG1lc3NhZ2UyUEEgZml4dHVyZSBwcm9wb3NhbCBjYXJyeWluZyBlYWNoIGdvdmVybmFuY2Utb25seSBtZXNzYWdlIG9mIHRoZSB0cmVhc3VyeSBtb2R1bGUu",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYDBIgChoKBWFub2FoEhE1MjUwMDAwMDAwMDAwMDAwMBCgwh4="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"3\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"52500000000000000\",\"denom\":\"anoah\"}],\"gas\":\"500000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"cosmos-sdk/v1/MsgSubmitProposal\",\"value\":{\"initial_deposit\":[{\"amount\":\"1000000000000000000000\",\"denom\":\"anoah\"}],\"messages\":[{\"type\":\"ark/treasury/MsgUpdateParams\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"params\":{\"base_fee_adjustment_rate\":\"0.025000000000000000\",\"base_fee_target_utilisation\":\"0.500000000000000000\",\"exposure_refresh_period_blocks\":\"600\",\"flow_decay\":\"0.998850000000000000\",\"min_base_gas_price\":\"100000000000.000000000000000000\",\"multiplier_cap\":\"4.000000000000000000\",\"multiplier_max_step\":\"0.250000000000000000\",\"reference_denom\":\"axdr\",\"reference_tax_cap\":\"1\",\"reward_funding_window\":\"100800\",\"transfer_tax_rate\":\"0.000000000000000000\",\"volatility_decay\":\"0.997500000000000000\",\"volatility_sample_seconds\":\"300\"}}},{\"type\":\"ark/treasury/MsgSetEconomicMandate\",\"value\":{\"activation_time\":\"1\",\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"committee\":\"ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9\",\"expiry_time\":\"4102444800\",\"maximum_policy\":{\"flow_weight\":\"1.000000000000000000\",\"insurance_target_ratio\":\"0.500000000000000000\",\"liability_ratio_weight\":\"1.000000000000000000\",\"oracle_block_reward_target\":\"1000000000000000000000\",\"redemption_buffer_target_ratio\":\"0.500000000000000000\",\"strategic_reserve_target_ratio\":\"0.500000000000000000\",\"validator_block_reward_target\":\"1000000000000000000000\",\"volatility_weight\":\"1.000000000000000000\"},\"minimum_policy\":{\"flow_weight\":\"0.000000000000000000\",\"insurance_target_ratio\":\"0.000000000000000000\",\"liability_ratio_weight\":\"0.000000000000000000\",\"oracle_block_reward_target\":\"0\",\"redemption_buffer_target_ratio\":\"0.000000000000000000\",\"strategic_reserve_target_ratio\":\"0.000000000000000000\",\"validator_block_reward_target\":\"0\",\"volatility_weight\":\"0.000000000000000000\"}}},{\"type\":\"ark/treasury/MsgUpdatePolicy\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"policy\":{\"flow_weight\":\"0.000000000000000000\",\"insurance_target_ratio\":\"0.050000000000000000\",\"liability_ratio_weight\":\"0.000000000000000000\",\"oracle_block_reward_target\":\"0\",\"redemption_buffer_target_ratio\":\"0.000000000000000000\",\"strategic_reserve_target_ratio\":\"0.000000000000000000\",\"validator_block_reward_target\":\"0\",\"volatility_weight\":\"0.000000000000000000\"}}},{\"type\":\"ark/treasury/MsgReturnSubsidy\",\"value\":{\"amount\":{\"amount\":\"1000000000000000000\",\"denom\":\"anoah\"},\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"minimum_subsidy_balance\":{\"amount\":\"0\",\"denom\":\"anoah\"}}}],\"metadata\":\"ipfs://bafyfixturetreasury\",\"proposer\":\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\",\"summary\":\"A fixture proposal carrying each governance-only message of the treasury module.\",\"title\":\"Every treasury authority message\"}}],\"sequence\":\"12\"}"
+  },
+  "signature": "jn8hTNTBkfoneME4FyPIFuYUKkBErqfdJGI22vXHGi52ZpQM/7/MR2iUyGgq39IdmvKDBsQ4D1sHdLyuBCQdrA==",
+  "tx_bytes": "CtkICtYICiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBKxCAqCAgogL2Fyay50cmVhc3VyeS52MS5Nc2dVcGRhdGVQYXJhbXMS3QEKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhKuAQoEYXhkchIBMRjAkwYiEjk5NzUwMDAwMDAwMDAwMDAwMCoSOTk4ODUwMDAwMDAwMDAwMDAwMhM0MDAwMDAwMDAwMDAwMDAwMDAwOhIyNTAwMDAwMDAwMDAwMDAwMDBA2ARKEjUwMDAwMDAwMDAwMDAwMDAwMFIRMjUwMDAwMDAwMDAwMDAwMDBaHjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMGIBMGisAgrTAgomL2Fyay50cmVhc3VyeS52MS5Nc2dTZXRFY29ub21pY01hbmRhdGUSqAIKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5GAEggK6ZpA8qGAoBMBIBMBoBMCIBMCoBMDIBMDoBMEIBMDKrAQoWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMBIWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMBoSNTAwMDAwMDAwMDAwMDAwMDAwIhI1MDAwMDAwMDAwMDAwMDAwMDAqEjUwMDAwMDAwMDAwMDAwMDAwMDITMTAwMDAwMDAwMDAwMDAwMDAwMDoTMTAwMDAwMDAwMDAwMDAwMDAwMEITMTAwMDAwMDAwMDAwMDAwMDAwMAp6CiAvYXJrLnRyZWFzdXJ5LnYxLk1zZ1VwZGF0ZVBvbGljeRJWCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKAoBMBIBMBoBMCIBMCoRNTAwMDAwMDAwMDAwMDAwMDAyATA6ATBCATAKewohL2Fyay50cmVhc3VyeS52MS5Nc2dSZXR1cm5TdWJzaWR5ElYKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIcCgVhbm9haBITMTAwMDAwMDAwMDAwMDAwMDAwMBoKCgVhbm9haBIBMBIfCgVhbm9haBIWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMBoqYXJrMWZlYzdkbnhsM2ZyZTl6bWMza3l2dHQzNTdkZTNlazlmbmx1OTZqIhppcGZzOi8vYmFmeWZpeHR1cmV0cmVhc3VyeSogRXZlcnkgdHJlYXN1cnkgYXV0aG9yaXR5IG1lc3NhZ2UyUEEgZml4dHVyZSBwcm9wb3NhbCBjYXJyeWluZyBlYWNoIGdvdmVybmFuY2Utb25seSBtZXNzYWdlIG9mIHRoZSB0cmVhc3VyeSBtb2R1bGUuEnQKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQOAfcy2Q8ASKuVnWbc5DVkhahinvPX4WgUK4D2ls0F9BxIECgIIARgMEiAKGgoFYW5vYWgSETUyNTAwMDAwMDAwMDAwMDAwEKDCHhpAjn8hTNTBkfoneME4FyPIFuYUKkBErqfdJGI22vXHGi52ZpQM/7/MR2iUyGgq39IdmvKDBsQ4D1sHdLyuBCQdrA==",
+  "tx_hash": "9D340DDD4C3ECF2162C97E2DCF39ABEAC24933D07C0739C4F112456F4E319279",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmos.gov.v1.MsgSubmitProposal",
+          "messages": [
+            {
+              "@type": "/ark.treasury.v1.MsgUpdateParams",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "params": {
+                "reference_denom": "axdr",
+                "reference_tax_cap": "1",
+                "reward_funding_window": "100800",
+                "volatility_decay": "0.997500000000000000",
+                "volatility_sample_seconds": "300",
+                "flow_decay": "0.998850000000000000",
+                "multiplier_cap": "4.000000000000000000",
+                "multiplier_max_step": "0.250000000000000000",
+                "exposure_refresh_period_blocks": "600",
+                "base_fee_target_utilisation": "0.500000000000000000",
+                "base_fee_adjustment_rate": "0.025000000000000000",
+                "min_base_gas_price": "100000000000.000000000000000000",
+                "transfer_tax_rate": "0.000000000000000000"
+              }
+            },
+            {
+              "@type": "/ark.treasury.v1.MsgSetEconomicMandate",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "committee": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+              "activation_time": "1",
+              "expiry_time": "4102444800",
+              "minimum_policy": {
+                "validator_block_reward_target": "0",
+                "oracle_block_reward_target": "0",
+                "redemption_buffer_target_ratio": "0.000000000000000000",
+                "strategic_reserve_target_ratio": "0.000000000000000000",
+                "insurance_target_ratio": "0.000000000000000000",
+                "liability_ratio_weight": "0.000000000000000000",
+                "volatility_weight": "0.000000000000000000",
+                "flow_weight": "0.000000000000000000"
+              },
+              "maximum_policy": {
+                "validator_block_reward_target": "1000000000000000000000",
+                "oracle_block_reward_target": "1000000000000000000000",
+                "redemption_buffer_target_ratio": "0.500000000000000000",
+                "strategic_reserve_target_ratio": "0.500000000000000000",
+                "insurance_target_ratio": "0.500000000000000000",
+                "liability_ratio_weight": "1.000000000000000000",
+                "volatility_weight": "1.000000000000000000",
+                "flow_weight": "1.000000000000000000"
+              }
+            },
+            {
+              "@type": "/ark.treasury.v1.MsgUpdatePolicy",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "policy": {
+                "validator_block_reward_target": "0",
+                "oracle_block_reward_target": "0",
+                "redemption_buffer_target_ratio": "0.000000000000000000",
+                "strategic_reserve_target_ratio": "0.000000000000000000",
+                "insurance_target_ratio": "0.050000000000000000",
+                "liability_ratio_weight": "0.000000000000000000",
+                "volatility_weight": "0.000000000000000000",
+                "flow_weight": "0.000000000000000000"
+              }
+            },
+            {
+              "@type": "/ark.treasury.v1.MsgReturnSubsidy",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "amount": {
+                "denom": "anoah",
+                "amount": "1000000000000000000"
+              },
+              "minimum_subsidy_balance": {
+                "denom": "anoah",
+                "amount": "0"
+              }
+            }
+          ],
+          "initial_deposit": [
+            {
+              "denom": "anoah",
+              "amount": "1000000000000000000000"
+            }
+          ],
+          "proposer": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "metadata": "ipfs://bafyfixturetreasury",
+          "title": "Every treasury authority message",
+          "summary": "A fixture proposal carrying each governance-only message of the treasury module.",
+          "expedited": false
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "12"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "52500000000000000"
+          }
+        ],
+        "gas_limit": "500000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "jn8hTNTBkfoneME4FyPIFuYUKkBErqfdJGI22vXHGi52ZpQM/7/MR2iUyGgq39IdmvKDBsQ4D1sHdLyuBCQdrA=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "500000",
+    "gas_used": "332383"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "52500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "52500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "52500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "52500000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "2500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j/12",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "jn8hTNTBkfoneME4FyPIFuYUKkBErqfdJGI22vXHGi52ZpQM/7/MR2iUyGgq39IdmvKDBsQ4D1sHdLyuBCQdrA==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/cosmos.gov.v1.MsgSubmitProposal",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "gov",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "submit_proposal",
+      "attributes": [
+        {
+          "key": "proposal_id",
+          "value": "9",
+          "index": true
+        },
+        {
+          "key": "proposal_proposer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "proposal_messages",
+          "value": "/ark.treasury.v1.MsgUpdateParams,/ark.treasury.v1.MsgSetEconomicMandate,/ark.treasury.v1.MsgUpdatePolicy,/ark.treasury.v1.MsgReturnSubsidy",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "proposal_deposit",
+      "attributes": [
+        {
+          "key": "depositor",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "proposal_id",
+          "value": "9",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "submit_proposal",
+      "attributes": [
+        {
+          "key": "voting_period_start",
+          "value": "9",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

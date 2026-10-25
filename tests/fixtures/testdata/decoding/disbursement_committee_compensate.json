@@ -1,0 +1,298 @@
+{
+  "name": "disbursement_committee_compensate",
+  "description": "The grants committee awards NOAH compensation within its term's allowance, clocked from the block.",
+  "chain_id": "ark-fixtures-1",
+  "height": 37,
+  "block_time": "1700000037",
+  "signer": {
+    "key": "committee",
+    "address": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+    "public_key": "Ar2MRP2t3VX197erR5Yqk++UXfUWJdZhBPZ7K8ccpQXU",
+    "account_number": "0",
+    "sequence": "22"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "400000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "40000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "42000000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CssBCsgBCisvYXJrLmRpc2J1cnNlbWVudC52MS5Nc2dDb21taXR0ZWVDb21wZW5zYXRlEpgBCiphcmsxMnJ2c3FucmduZWd6cGY4ODkzNGxramc3ejkzd3E5OG13Y3pkbDkQARoqYXJrMWx3N2pybmdkZ204OHJ1ejh2N2s2czcwZ3NzdTZ2cnl1ZmVsOG5xIh4KBWFub2FoEhUxMDAwMDAwMDAwMDAwMDAwMDAwMDAqEWJvdW50eSBmaXh0dXJlcy0xMKXiz6oGOAJCATASdApQCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohAr2MRP2t3VX197erR5Yqk++UXfUWJdZhBPZ7K8ccpQXUEgQKAggBGBYSIAoaCgVhbm9haBIRNDIwMDAwMDAwMDAwMDAwMDAQgLUYGg5hcmstZml4dHVyZXMtMQ==",
+    "body_bytes": "CsgBCisvYXJrLmRpc2J1cnNlbWVudC52MS5Nc2dDb21taXR0ZWVDb21wZW5zYXRlEpgBCiphcmsxMnJ2c3FucmduZWd6cGY4ODkzNGxramc3ejkzd3E5OG13Y3pkbDkQARoqYXJrMWx3N2pybmdkZ204OHJ1ejh2N2s2czcwZ3NzdTZ2cnl1ZmVsOG5xIh4KBWFub2FoEhUxMDAwMDAwMDAwMDAwMDAwMDAwMDAqEWJvdW50eSBmaXh0dXJlcy0xMKXiz6oGOAJCATA=",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiECvYxE/a3dVfX3t6tHliqT75Rd9RYl1mEE9nsrxxylBdQSBAoCCAEYFhIgChoKBWFub2FoEhE0MjAwMDAwMDAwMDAwMDAwMBCAtRg="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"0\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"42000000000000000\",\"denom\":\"anoah\"}],\"gas\":\"400000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"ark/disbursement/MsgCommitteeCompensate\",\"value\":{\"amount\":{\"amount\":\"100000000000000000000\",\"denom\":\"anoah\"},\"beneficiary\":\"ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq\",\"committee\":\"ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9\",\"expected_term\":\"1\",\"max_offer\":\"0\",\"periods\":2,\"reference\":\"bounty fixtures-1\",\"start_time\":\"1700000037\"}}],\"sequence\":\"22\"}"
+  },
+  "signature": "piRBRjx5M9RGZQa+IWfPkenejar2wgxdwI4KXdsVIEp9Hewa7eeJKtwZXGwVz3njSfx/6PvXas1llCfoRnNQKA==",
+  "tx_bytes": "CssBCsgBCisvYXJrLmRpc2J1cnNlbWVudC52MS5Nc2dDb21taXR0ZWVDb21wZW5zYXRlEpgBCiphcmsxMnJ2c3FucmduZWd6cGY4ODkzNGxramc3ejkzd3E5OG13Y3pkbDkQARoqYXJrMWx3N2pybmdkZ204OHJ1ejh2N2s2czcwZ3NzdTZ2cnl1ZmVsOG5xIh4KBWFub2FoEhUxMDAwMDAwMDAwMDAwMDAwMDAwMDAqEWJvdW50eSBmaXh0dXJlcy0xMKXiz6oGOAJCATASdApQCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohAr2MRP2t3VX197erR5Yqk++UXfUWJdZhBPZ7K8ccpQXUEgQKAggBGBYSIAoaCgVhbm9haBIRNDIwMDAwMDAwMDAwMDAwMDAQgLUYGkCmJEFGPHkz1EZlBr4hZ8+R6d6NqvbCDF3Ajgpd2xUgSn0d7Brt54kq3BlcbBXPeeNJ/H/o+9dqzWWUJ+hGc1Ao",
+  "tx_hash": "7EF2D5677188C86109557DAF33E067E87639EAB06F72C496A3B7D5A2CA2BE2E0",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/ark.disbursement.v1.MsgCommitteeCompensate",
+          "committee": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "expected_term": "1",
+          "beneficiary": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "amount": {
+            "denom": "anoah",
+            "amount": "100000000000000000000"
+          },
+          "reference": "bounty fixtures-1",
+          "start_time": "1700000037",
+          "periods": 2,
+          "max_offer": "0"
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "Ar2MRP2t3VX197erR5Yqk++UXfUWJdZhBPZ7K8ccpQXU"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "22"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "42000000000000000"
+          }
+        ],
+        "gas_limit": "400000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "piRBRjx5M9RGZQa+IWfPkenejar2wgxdwI4KXdsVIEp9Hewa7eeJKtwZXGwVz3njSfx/6PvXas1llCfoRnNQKA=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "400000",
+    "gas_used": "121597"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "42000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "2000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9/22",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "piRBRjx5M9RGZQa+IWfPkenejar2wgxdwI4KXdsVIEp9Hewa7eeJKtwZXGwVz3njSfx/6PvXas1llCfoRnNQKA==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/ark.disbursement.v1.MsgCommitteeCompensate",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "disbursement",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "ark.disbursement.v1.EventGrantEntryRecorded",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "\"GRANT_ACTION_CREATED\"",
+          "index": true
+        },
+        {
+          "key": "actor",
+          "value": "\"ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9\"",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "\"100000000000000000000\"",
+          "index": true
+        },
+        {
+          "key": "amount_denom",
+          "value": "\"anoah\"",
+          "index": true
+        },
+        {
+          "key": "grant_id",
+          "value": "\"3\"",
+          "index": true
+        },
+        {
+          "key": "id",
+          "value": "\"6\"",
+          "index": true
+        },
+        {
+          "key": "offer",
+          "value": "\"0\"",
+          "index": true
+        },
+        {
+          "key": "subject",
+          "value": "\"\"",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ],
+      "typed": {
+        "id": "6",
+        "grant_id": "3",
+        "action": "GRANT_ACTION_CREATED",
+        "actor": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+        "amount_denom": "anoah",
+        "amount": "100000000000000000000",
+        "subject": "",
+        "offer": "0"
+      }
+    }
+  ]
+}

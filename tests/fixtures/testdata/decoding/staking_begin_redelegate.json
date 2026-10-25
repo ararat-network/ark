@@ -1,0 +1,374 @@
+{
+  "name": "staking_begin_redelegate",
+  "description": "A member moves part of a delegation to the second validator.",
+  "chain_id": "ark-fixtures-1",
+  "height": 70,
+  "block_time": "1700000070",
+  "signer": {
+    "key": "member",
+    "address": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+    "public_key": "A78is1Wfs35NQxx0ZQEfb6ACqKiIt4FQ94QQl0VN1PJ0",
+    "account_number": "2",
+    "sequence": "12"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "400000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "40000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "42000000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CuIBCt8BCiovY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dCZWdpblJlZGVsZWdhdGUSsAEKKmFyazEwMnA2czUybjk3ZTd6Y214YzQ5dWZ3eDA0bG50cmU1a3Rxa2t6cBIxYXJrdmFsb3BlcjEwN3NuNm42eWx4eGw2bWQzd3R3eTluNHUwajVhM2F6ZXU3MGdyahoxYXJrdmFsb3BlcjFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWE1cjZreSIcCgVhbm9haBITMTAwMDAwMDAwMDAwMDAwMDAwMBJ0ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDvyKzVZ+zfk1DHHRlAR9voAKoqIi3gVD3hBCXRU3U8nQSBAoCCAEYDBIgChoKBWFub2FoEhE0MjAwMDAwMDAwMDAwMDAwMBCAtRgaDmFyay1maXh0dXJlcy0xIAI=",
+    "body_bytes": "Ct8BCiovY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dCZWdpblJlZGVsZWdhdGUSsAEKKmFyazEwMnA2czUybjk3ZTd6Y214YzQ5dWZ3eDA0bG50cmU1a3Rxa2t6cBIxYXJrdmFsb3BlcjEwN3NuNm42eWx4eGw2bWQzd3R3eTluNHUwajVhM2F6ZXU3MGdyahoxYXJrdmFsb3BlcjFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWE1cjZreSIcCgVhbm9haBITMTAwMDAwMDAwMDAwMDAwMDAwMA==",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDvyKzVZ+zfk1DHHRlAR9voAKoqIi3gVD3hBCXRU3U8nQSBAoCCAEYDBIgChoKBWFub2FoEhE0MjAwMDAwMDAwMDAwMDAwMBCAtRg="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"2\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"42000000000000000\",\"denom\":\"anoah\"}],\"gas\":\"400000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"cosmos-sdk/MsgBeginRedelegate\",\"value\":{\"amount\":{\"amount\":\"1000000000000000000\",\"denom\":\"anoah\"},\"delegator_address\":\"ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp\",\"validator_dst_address\":\"arkvaloper1lw7jrngdgm88ruz8v7k6s70gssu6vryua5r6ky\",\"validator_src_address\":\"arkvaloper107sn6n6ylxxl6md3wtwy9n4u0j5a3azeu70grj\"}}],\"sequence\":\"12\"}"
+  },
+  "signature": "DZ2XWT3/yEz9aJPVchlO5mmGGcSTL+igM7GqSrOCGwBTmgzkE19Fl3peA2sZde4p3z8AVDCBgWTaAQIoZnSLIw==",
+  "tx_bytes": "CuIBCt8BCiovY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dCZWdpblJlZGVsZWdhdGUSsAEKKmFyazEwMnA2czUybjk3ZTd6Y214YzQ5dWZ3eDA0bG50cmU1a3Rxa2t6cBIxYXJrdmFsb3BlcjEwN3NuNm42eWx4eGw2bWQzd3R3eTluNHUwajVhM2F6ZXU3MGdyahoxYXJrdmFsb3BlcjFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWE1cjZreSIcCgVhbm9haBITMTAwMDAwMDAwMDAwMDAwMDAwMBJ0ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDvyKzVZ+zfk1DHHRlAR9voAKoqIi3gVD3hBCXRU3U8nQSBAoCCAEYDBIgChoKBWFub2FoEhE0MjAwMDAwMDAwMDAwMDAwMBCAtRgaQA2dl1k9/8hM/WiT1XIZTuZphhnEky/ooDOxqkqzghsAU5oM5BNfRZd6XgNrGXXuKd8/AFQwgYFk2gECKGZ0iyM=",
+  "tx_hash": "AE3D59875068C96B3ADDD4C12A3B72016EAD3E0F63D9DED34790388BA18B949A",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmos.staking.v1beta1.MsgBeginRedelegate",
+          "delegator_address": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "validator_src_address": "arkvaloper107sn6n6ylxxl6md3wtwy9n4u0j5a3azeu70grj",
+          "validator_dst_address": "arkvaloper1lw7jrngdgm88ruz8v7k6s70gssu6vryua5r6ky",
+          "amount": {
+            "denom": "anoah",
+            "amount": "1000000000000000000"
+          }
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A78is1Wfs35NQxx0ZQEfb6ACqKiIt4FQ94QQl0VN1PJ0"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "12"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "42000000000000000"
+          }
+        ],
+        "gas_limit": "400000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "DZ2XWT3/yEz9aJPVchlO5mmGGcSTL+igM7GqSrOCGwBTmgzkE19Fl3peA2sZde4p3z8AVDCBgWTaAQIoZnSLIw=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "400000",
+    "gas_used": "258489"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "42000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "2000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp/12",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "DZ2XWT3/yEz9aJPVchlO5mmGGcSTL+igM7GqSrOCGwBTmgzkE19Fl3peA2sZde4p3z8AVDCBgWTaAQIoZnSLIw==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/cosmos.staking.v1beta1.MsgBeginRedelegate",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "staking",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8h9tdgl",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "28063636363636360anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "28063636363636360anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8h9tdgl",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "28063636363636360anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8h9tdgl",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "withdraw_rewards",
+      "attributes": [
+        {
+          "key": "amount",
+          "value": "28063636363636360anoah",
+          "index": true
+        },
+        {
+          "key": "validator",
+          "value": "arkvaloper107sn6n6ylxxl6md3wtwy9n4u0j5a3azeu70grj",
+          "index": true
+        },
+        {
+          "key": "delegator",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "redelegate",
+      "attributes": [
+        {
+          "key": "source_validator",
+          "value": "arkvaloper107sn6n6ylxxl6md3wtwy9n4u0j5a3azeu70grj",
+          "index": true
+        },
+        {
+          "key": "destination_validator",
+          "value": "arkvaloper1lw7jrngdgm88ruz8v7k6s70gssu6vryua5r6ky",
+          "index": true
+        },
+        {
+          "key": "delegator",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "completion_time",
+          "value": "2023-12-05T22:14:30Z",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

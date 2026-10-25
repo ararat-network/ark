@@ -1,0 +1,207 @@
+{
+  "name": "market_settle_refused",
+  "description": "A settlement redemption with no settlement open: execution refuses it, which pins the message and the refusal.",
+  "chain_id": "ark-fixtures-1",
+  "height": 16,
+  "block_time": "1700000016",
+  "signer": {
+    "key": "trader",
+    "address": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+    "public_key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H",
+    "account_number": "3",
+    "sequence": "4"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "300000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "30000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "31500000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CmcKZQoYL2Fyay5tYXJrZXQudjEuTXNnU2V0dGxlEkkKKmFyazFmZWM3ZG54bDNmcmU5em1jM2t5dnR0MzU3ZGUzZWs5Zm5sdTk2ahIbCgRhdXNkEhMxMDAwMDAwMDAwMDAwMDAwMDAwEnQKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQOAfcy2Q8ASKuVnWbc5DVkhahinvPX4WgUK4D2ls0F9BxIECgIIARgEEiAKGgoFYW5vYWgSETMxNTAwMDAwMDAwMDAwMDAwEOCnEhoOYXJrLWZpeHR1cmVzLTEgAw==",
+    "body_bytes": "CmUKGC9hcmsubWFya2V0LnYxLk1zZ1NldHRsZRJJCiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoSGwoEYXVzZBITMTAwMDAwMDAwMDAwMDAwMDAwMA==",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYBBIgChoKBWFub2FoEhEzMTUwMDAwMDAwMDAwMDAwMBDgpxI="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"3\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"31500000000000000\",\"denom\":\"anoah\"}],\"gas\":\"300000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"ark/market/MsgSettle\",\"value\":{\"offer_coin\":{\"amount\":\"1000000000000000000\",\"denom\":\"ausd\"},\"trader\":\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\"}}],\"sequence\":\"4\"}"
+  },
+  "signature": "QQk9M1lCHI6yMYxAuQHfEy9swScKD/vzywqMGzjW3eRKTcp6l5rgOOmtVK8k8tO27fAimBqu8sIoJcS6avX5Bg==",
+  "tx_bytes": "CmcKZQoYL2Fyay5tYXJrZXQudjEuTXNnU2V0dGxlEkkKKmFyazFmZWM3ZG54bDNmcmU5em1jM2t5dnR0MzU3ZGUzZWs5Zm5sdTk2ahIbCgRhdXNkEhMxMDAwMDAwMDAwMDAwMDAwMDAwEnQKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQOAfcy2Q8ASKuVnWbc5DVkhahinvPX4WgUK4D2ls0F9BxIECgIIARgEEiAKGgoFYW5vYWgSETMxNTAwMDAwMDAwMDAwMDAwEOCnEhpAQQk9M1lCHI6yMYxAuQHfEy9swScKD/vzywqMGzjW3eRKTcp6l5rgOOmtVK8k8tO27fAimBqu8sIoJcS6avX5Bg==",
+  "tx_hash": "C77E0ADFD55E8DEABB3D04F9A1FB0623A1D3DB19005EADF8FECC8D6BEF3A1B6B",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/ark.market.v1.MsgSettle",
+          "trader": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "offer_coin": {
+            "denom": "ausd",
+            "amount": "1000000000000000000"
+          }
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "4"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "31500000000000000"
+          }
+        ],
+        "gas_limit": "300000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "QQk9M1lCHI6yMYxAuQHfEy9swScKD/vzywqMGzjW3eRKTcp6l5rgOOmtVK8k8tO27fAimBqu8sIoJcS6avX5Bg=="
+    ]
+  },
+  "result": {
+    "code": 5,
+    "codespace": "market",
+    "log": "failed to execute message; message index: 0: settling 1000000000000000000ausd: ASSET_STATUS_ACTIVE asset ausd cannot be settled: asset is not eligible for conversion",
+    "gas_wanted": "300000",
+    "gas_used": "59296"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "31500000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "1500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j/4",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "QQk9M1lCHI6yMYxAuQHfEy9swScKD/vzywqMGzjW3eRKTcp6l5rgOOmtVK8k8tO27fAimBqu8sIoJcS6avX5Bg==",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,285 @@
+{
+  "name": "market_committee_update_policy",
+  "description": "The conversion committee moves the live policy inside its mandate's bounds.",
+  "chain_id": "ark-fixtures-1",
+  "height": 14,
+  "block_time": "1700000014",
+  "signer": {
+    "key": "committee",
+    "address": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+    "public_key": "Ar2MRP2t3VX197erR5Yqk++UXfUWJdZhBPZ7K8ccpQXU",
+    "account_number": "0",
+    "sequence": "0"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "300000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "30000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "31500000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CqkBCqYBCicvYXJrLm1hcmtldC52MS5Nc2dDb21taXR0ZWVVcGRhdGVQb2xpY3kSewoqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5EAEaSwozCgRheGRyEisxNTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwEMBwGhEyMDAwMDAwMDAwMDAwMDAwMBJyCk4KRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiECvYxE/a3dVfX3t6tHliqT75Rd9RYl1mEE9nsrxxylBdQSBAoCCAESIAoaCgVhbm9haBIRMzE1MDAwMDAwMDAwMDAwMDAQ4KcSGg5hcmstZml4dHVyZXMtMQ==",
+    "body_bytes": "CqYBCicvYXJrLm1hcmtldC52MS5Nc2dDb21taXR0ZWVVcGRhdGVQb2xpY3kSewoqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5EAEaSwozCgRheGRyEisxNTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwEMBwGhEyMDAwMDAwMDAwMDAwMDAwMA==",
+    "auth_info_bytes": "Ck4KRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiECvYxE/a3dVfX3t6tHliqT75Rd9RYl1mEE9nsrxxylBdQSBAoCCAESIAoaCgVhbm9haBIRMzE1MDAwMDAwMDAwMDAwMDAQ4KcS"
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"0\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"31500000000000000\",\"denom\":\"anoah\"}],\"gas\":\"300000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"ark/market/MsgCommitteeUpdatePolicy\",\"value\":{\"committee\":\"ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9\",\"expected_term\":\"1\",\"policy\":{\"base_pool\":{\"amount\":\"1500000000000000000000000.000000000000000000\",\"denom\":\"axdr\"},\"min_stability_spread\":\"0.020000000000000000\",\"pool_recovery_period\":\"14400\"}}}],\"sequence\":\"0\"}"
+  },
+  "signature": "jat5VoLCiOmfpi6pO385n47DNpUcy16fDyJFDklGi6xgHvP0mLl/uUvsXv45gm5OTImQqMX/Zb3THeEl22Wb2g==",
+  "tx_bytes": "CqkBCqYBCicvYXJrLm1hcmtldC52MS5Nc2dDb21taXR0ZWVVcGRhdGVQb2xpY3kSewoqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5EAEaSwozCgRheGRyEisxNTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwEMBwGhEyMDAwMDAwMDAwMDAwMDAwMBJyCk4KRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiECvYxE/a3dVfX3t6tHliqT75Rd9RYl1mEE9nsrxxylBdQSBAoCCAESIAoaCgVhbm9haBIRMzE1MDAwMDAwMDAwMDAwMDAQ4KcSGkCNq3lWgsKI6Z+mLqk7fzmfjsM2lRzLXp8PIkUOSUaLrGAe8/SYuX+5S+xe/jmCbk5MiZCoxf9lvdMd4SXbZZva",
+  "tx_hash": "B4DAA66B7DEE454B974E55C42DBA27A61F051D872EAC39FB9BF516C3AC4FF7C3",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/ark.market.v1.MsgCommitteeUpdatePolicy",
+          "committee": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "expected_term": "1",
+          "policy": {
+            "base_pool": {
+              "denom": "axdr",
+              "amount": "1500000000000000000000000.000000000000000000"
+            },
+            "pool_recovery_period": "14400",
+            "min_stability_spread": "0.020000000000000000"
+          }
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "Ar2MRP2t3VX197erR5Yqk++UXfUWJdZhBPZ7K8ccpQXU"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "0"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "31500000000000000"
+          }
+        ],
+        "gas_limit": "300000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "jat5VoLCiOmfpi6pO385n47DNpUcy16fDyJFDklGi6xgHvP0mLl/uUvsXv45gm5OTImQqMX/Zb3THeEl22Wb2g=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "300000",
+    "gas_used": "71722"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "31500000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "1500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9/0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "jat5VoLCiOmfpi6pO385n47DNpUcy16fDyJFDklGi6xgHvP0mLl/uUvsXv45gm5OTImQqMX/Zb3THeEl22Wb2g==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/ark.market.v1.MsgCommitteeUpdatePolicy",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "market",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "ark.market.v1.EventPoolUpdated",
+      "attributes": [
+        {
+          "key": "new_ark_pool_delta",
+          "value": "\"-145388378579606690721.057285838840076115\"",
+          "index": true
+        },
+        {
+          "key": "new_base_pool_amount",
+          "value": "\"1500000000000000000000000.000000000000000000\"",
+          "index": true
+        },
+        {
+          "key": "new_base_pool_denom",
+          "value": "\"axdr\"",
+          "index": true
+        },
+        {
+          "key": "old_ark_pool_delta",
+          "value": "\"-96925585719737793814.038190559226717410\"",
+          "index": true
+        },
+        {
+          "key": "old_base_pool_amount",
+          "value": "\"1000000000000000000000000.000000000000000000\"",
+          "index": true
+        },
+        {
+          "key": "old_base_pool_denom",
+          "value": "\"axdr\"",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ],
+      "typed": {
+        "old_base_pool_denom": "axdr",
+        "old_base_pool_amount": "1000000000000000000000000.000000000000000000",
+        "new_base_pool_denom": "axdr",
+        "new_base_pool_amount": "1500000000000000000000000.000000000000000000",
+        "old_ark_pool_delta": "-96925585719737793814.038190559226717410",
+        "new_ark_pool_delta": "-145388378579606690721.057285838840076115"
+      }
+    }
+  ]
+}

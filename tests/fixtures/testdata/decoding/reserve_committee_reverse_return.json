@@ -1,0 +1,262 @@
+{
+  "name": "reserve_committee_reverse_return",
+  "description": "The reserve committee reverses the return it attributed in entry 3.",
+  "chain_id": "ark-fixtures-1",
+  "height": 26,
+  "block_time": "1700000026",
+  "signer": {
+    "key": "committee",
+    "address": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+    "public_key": "Ar2MRP2t3VX197erR5Yqk++UXfUWJdZhBPZ7K8ccpQXU",
+    "account_number": "0",
+    "sequence": "11"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "300000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "30000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "31500000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CnYKdAopL2Fyay5yZXNlcnZlLnYxLk1zZ0NvbW1pdHRlZVJldmVyc2VSZXR1cm4SRwoqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5EAEYASADKhNyZXZlcnNhbCBvZiBlbnRyeSAzEnQKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQK9jET9rd1V9fe3q0eWKpPvlF31FiXWYQT2eyvHHKUF1BIECgIIARgLEiAKGgoFYW5vYWgSETMxNTAwMDAwMDAwMDAwMDAwEOCnEhoOYXJrLWZpeHR1cmVzLTE=",
+    "body_bytes": "CnQKKS9hcmsucmVzZXJ2ZS52MS5Nc2dDb21taXR0ZWVSZXZlcnNlUmV0dXJuEkcKKmFyazEycnZzcW5yZ25lZ3pwZjg4OTM0bGtqZzd6OTN3cTk4bXdjemRsORABGAEgAyoTcmV2ZXJzYWwgb2YgZW50cnkgMw==",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiECvYxE/a3dVfX3t6tHliqT75Rd9RYl1mEE9nsrxxylBdQSBAoCCAEYCxIgChoKBWFub2FoEhEzMTUwMDAwMDAwMDAwMDAwMBDgpxI="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"0\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"31500000000000000\",\"denom\":\"anoah\"}],\"gas\":\"300000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"ark/reserve/MsgCommitteeReverseReturn\",\"value\":{\"committee\":\"ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9\",\"expected_term\":\"1\",\"position_id\":\"1\",\"reference\":\"reversal of entry 3\",\"reverses\":\"3\"}}],\"sequence\":\"11\"}"
+  },
+  "signature": "oRuQVQHK27Ss0mg5DBXIpoKThwq3uFlZeJKXhbU8RgBr5Ysk9gBJydpnqIfNV+7HxZ9Muc0l+x4ZhaMZ7aThsQ==",
+  "tx_bytes": "CnYKdAopL2Fyay5yZXNlcnZlLnYxLk1zZ0NvbW1pdHRlZVJldmVyc2VSZXR1cm4SRwoqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5EAEYASADKhNyZXZlcnNhbCBvZiBlbnRyeSAzEnQKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQK9jET9rd1V9fe3q0eWKpPvlF31FiXWYQT2eyvHHKUF1BIECgIIARgLEiAKGgoFYW5vYWgSETMxNTAwMDAwMDAwMDAwMDAwEOCnEhpAoRuQVQHK27Ss0mg5DBXIpoKThwq3uFlZeJKXhbU8RgBr5Ysk9gBJydpnqIfNV+7HxZ9Muc0l+x4ZhaMZ7aThsQ==",
+  "tx_hash": "B1CCC584F2FF2FEFC195E8DFB07CF4E079F4EEED8498D63C865A899AA4F86892",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/ark.reserve.v1.MsgCommitteeReverseReturn",
+          "committee": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "expected_term": "1",
+          "position_id": "1",
+          "reverses": "3",
+          "reference": "reversal of entry 3"
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "Ar2MRP2t3VX197erR5Yqk++UXfUWJdZhBPZ7K8ccpQXU"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "11"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "31500000000000000"
+          }
+        ],
+        "gas_limit": "300000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "oRuQVQHK27Ss0mg5DBXIpoKThwq3uFlZeJKXhbU8RgBr5Ysk9gBJydpnqIfNV+7HxZ9Muc0l+x4ZhaMZ7aThsQ=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "300000",
+    "gas_used": "86206"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "31500000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "1500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9/11",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "oRuQVQHK27Ss0mg5DBXIpoKThwq3uFlZeJKXhbU8RgBr5Ysk9gBJydpnqIfNV+7HxZ9Muc0l+x4ZhaMZ7aThsQ==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/ark.reserve.v1.MsgCommitteeReverseReturn",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "reserve",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "ark.reserve.v1.EventLedgerEntryRecorded",
+      "attributes": [
+        {
+          "key": "entry_id",
+          "value": "\"7\"",
+          "index": true
+        },
+        {
+          "key": "kind",
+          "value": "\"ENTRY_KIND_RETURN_REVERSAL\"",
+          "index": true
+        },
+        {
+          "key": "position_id",
+          "value": "\"1\"",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ],
+      "typed": {
+        "entry_id": "7",
+        "position_id": "1",
+        "kind": "ENTRY_KIND_RETURN_REVERSAL"
+      }
+    }
+  ]
+}

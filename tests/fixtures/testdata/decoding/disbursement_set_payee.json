@@ -1,0 +1,290 @@
+{
+  "name": "disbursement_set_payee",
+  "description": "A registered member moves the payee of their own grant to another address.",
+  "chain_id": "ark-fixtures-1",
+  "height": 10,
+  "block_time": "1700000010",
+  "signer": {
+    "key": "member2",
+    "address": "ark1nhfd6erhst0gespka23c8afl3fc0303msnfng6",
+    "public_key": "A7evvu2e8a+bwRgSW1Xelxsz6NBj0NTX9hscwoRinhCl",
+    "account_number": "4",
+    "sequence": "0"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "250000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "25000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "26250000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CoABCn4KIC9hcmsuZGlzYnVyc2VtZW50LnYxLk1zZ1NldFBheWVlEloKKmFyazFuaGZkNmVyaHN0MGdlc3BrYTIzYzhhZmwzZmMwMzAzbXNuZm5nNhABGiphcmsxbHc3anJuZ2RnbTg4cnV6OHY3azZzNzBnc3N1NnZyeXVmZWw4bnEScgpOCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohA7evvu2e8a+bwRgSW1Xelxsz6NBj0NTX9hscwoRinhClEgQKAggBEiAKGgoFYW5vYWgSETI2MjUwMDAwMDAwMDAwMDAwEJChDxoOYXJrLWZpeHR1cmVzLTEgBA==",
+    "body_bytes": "Cn4KIC9hcmsuZGlzYnVyc2VtZW50LnYxLk1zZ1NldFBheWVlEloKKmFyazFuaGZkNmVyaHN0MGdlc3BrYTIzYzhhZmwzZmMwMzAzbXNuZm5nNhABGiphcmsxbHc3anJuZ2RnbTg4cnV6OHY3azZzNzBnc3N1NnZyeXVmZWw4bnE=",
+    "auth_info_bytes": "Ck4KRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDt6++7Z7xr5vBGBJbVd6XGzPo0GPQ1Nf2GxzChGKeEKUSBAoCCAESIAoaCgVhbm9haBIRMjYyNTAwMDAwMDAwMDAwMDAQkKEP"
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"4\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"26250000000000000\",\"denom\":\"anoah\"}],\"gas\":\"250000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"ark/disbursement/MsgSetPayee\",\"value\":{\"grant_id\":\"1\",\"payee\":\"ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq\",\"sender\":\"ark1nhfd6erhst0gespka23c8afl3fc0303msnfng6\"}}],\"sequence\":\"0\"}"
+  },
+  "signature": "KURdiD0UaHB+MYmFbzbN0FpaREAdS2Ls0+M5PI4ERW1cEh3zSIMOfE0+jd4QbdIlClHgMK6wiyWpy6x5dBSHyg==",
+  "tx_bytes": "CoABCn4KIC9hcmsuZGlzYnVyc2VtZW50LnYxLk1zZ1NldFBheWVlEloKKmFyazFuaGZkNmVyaHN0MGdlc3BrYTIzYzhhZmwzZmMwMzAzbXNuZm5nNhABGiphcmsxbHc3anJuZ2RnbTg4cnV6OHY3azZzNzBnc3N1NnZyeXVmZWw4bnEScgpOCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohA7evvu2e8a+bwRgSW1Xelxsz6NBj0NTX9hscwoRinhClEgQKAggBEiAKGgoFYW5vYWgSETI2MjUwMDAwMDAwMDAwMDAwEJChDxpAKURdiD0UaHB+MYmFbzbN0FpaREAdS2Ls0+M5PI4ERW1cEh3zSIMOfE0+jd4QbdIlClHgMK6wiyWpy6x5dBSHyg==",
+  "tx_hash": "006C90F6DA0F9585DCD3950B43F6DC2BA1CAA4D085E43648EE23561163A04A2D",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/ark.disbursement.v1.MsgSetPayee",
+          "sender": "ark1nhfd6erhst0gespka23c8afl3fc0303msnfng6",
+          "grant_id": "1",
+          "payee": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq"
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A7evvu2e8a+bwRgSW1Xelxsz6NBj0NTX9hscwoRinhCl"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "0"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "26250000000000000"
+          }
+        ],
+        "gas_limit": "250000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "KURdiD0UaHB+MYmFbzbN0FpaREAdS2Ls0+M5PI4ERW1cEh3zSIMOfE0+jd4QbdIlClHgMK6wiyWpy6x5dBSHyg=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "250000",
+    "gas_used": "79781"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1nhfd6erhst0gespka23c8afl3fc0303msnfng6",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "26250000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "26250000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1nhfd6erhst0gespka23c8afl3fc0303msnfng6",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "26250000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1nhfd6erhst0gespka23c8afl3fc0303msnfng6",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "26250000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1nhfd6erhst0gespka23c8afl3fc0303msnfng6",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "1250000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1nhfd6erhst0gespka23c8afl3fc0303msnfng6/0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "KURdiD0UaHB+MYmFbzbN0FpaREAdS2Ls0+M5PI4ERW1cEh3zSIMOfE0+jd4QbdIlClHgMK6wiyWpy6x5dBSHyg==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/ark.disbursement.v1.MsgSetPayee",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1nhfd6erhst0gespka23c8afl3fc0303msnfng6",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "disbursement",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "ark.disbursement.v1.EventGrantEntryRecorded",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "\"GRANT_ACTION_PAYEE_CHANGED\"",
+          "index": true
+        },
+        {
+          "key": "actor",
+          "value": "\"ark1nhfd6erhst0gespka23c8afl3fc0303msnfng6\"",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "\"0\"",
+          "index": true
+        },
+        {
+          "key": "amount_denom",
+          "value": "\"anoah\"",
+          "index": true
+        },
+        {
+          "key": "grant_id",
+          "value": "\"1\"",
+          "index": true
+        },
+        {
+          "key": "id",
+          "value": "\"3\"",
+          "index": true
+        },
+        {
+          "key": "offer",
+          "value": "\"0\"",
+          "index": true
+        },
+        {
+          "key": "subject",
+          "value": "\"ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq\"",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ],
+      "typed": {
+        "id": "3",
+        "grant_id": "1",
+        "action": "GRANT_ACTION_PAYEE_CHANGED",
+        "actor": "ark1nhfd6erhst0gespka23c8afl3fc0303msnfng6",
+        "amount_denom": "anoah",
+        "amount": "0",
+        "subject": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+        "offer": "0"
+      }
+    }
+  ]
+}
