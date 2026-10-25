@@ -257,7 +257,7 @@ The [disbursement plan](DISBURSEMENT_PLAN.md) owns the grants programme these va
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
-| `params.member_amount` | 20,000 NOAH | Decided | Step 1's member grant. Each later step's proposal lowers it, and a member keeps the amount registered under ([plan §4](DISBURSEMENT_PLAN.md#steps-and-gates)). |
+| `params.member_amount` | 20,000 NOAH | Decided | Step 1's member grant. Each later step's proposal lowers it, and a member keeps the amount registered under ([plan §4](DISBURSEMENT_PLAN.md#steps)). |
 | `params.member_schedule` | two weeks at weight 13, then 13 periods of four weeks at weight 9 | Decided | A tenth after a two-week hold, the time to catch a fake before anything pays, then the rest over a year. |
 | `params.ownership_cap` | 15,000,000 NOAH | Decided | The most ownership one record's grants commit, checked at award. The founder's grant fills it ([plan §3](DISBURSEMENT_PLAN.md#3-grants)). |
 | `params.ownership_schedule` | 364 days at weight 26, then 78 fortnights at weight 1 | Decided | A quarter after a one-year cliff, then fortnightly for three years. |

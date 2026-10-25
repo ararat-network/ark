@@ -1,8 +1,8 @@
 # NOAH Genesis & Disbursement Plan
 
 - Status: the allocation, the founder's awards, and the grant rules are launch behaviour, with figures from
-  [Launch genesis](GENESIS.md) and rules from the [Disbursement module](../../x/disbursement/README.md). The steps,
-  gates, and proposal rules in §4 are governance policy the chain does not enforce.
+  [Launch genesis](GENESIS.md) and rules from the [Disbursement module](../../x/disbursement/README.md). The steps
+  and proposal rules in §4 are governance policy the chain does not enforce.
 
 **Goal:** hand the chain to its users. The founding validators hold every vote at launch and lose it as the
 disbursement pools are paid and staked. No party should hold ⅓ of bonded stake, which halts the chain and blocks any
@@ -39,8 +39,9 @@ genesis (§4).
 - **Income.** Each seat adds 0.025 NOAH a block to the reward targets, about 131,400 NOAH a year, split 70/30 between
   the validator and oracle lanes. Both lanes pay by bonded stake. At ten seats and 5% commission, the founder's seat
   earns about 421,000 a year and each other seat about 99,000. Only `MsgUpdatePolicy` moves the targets: the economic
-  committee within half to twice the launch values, governance beyond that. If public stake lags the gates, raising
-  them for a bounded period is the lever, at a cost to the subsidy pool.
+  committee within half to twice the launch values, governance beyond that. If public bonded stake runs under the
+  fifth of paid grants the reward figures assume (§5), raising them for a bounded period is the lever, at a cost to
+  the subsidy pool.
 
 ## 3. Grants
 
@@ -86,30 +87,44 @@ genesis. Every founding validator approves them by signing a gentx against the p
 
 Both grants pay, can be cancelled, and count against the caps like any other grant.
 
-### Steps and gates
+### Steps
 
-| Step | Distributed | Members | Member amount | Member count | Contributors | Gate   |
-| ---- | ----------: | ------: | ------------: | -----------: | -----------: | -----: |
-| 1    | 50M         | 30M     | 20,000        | 1,500        | 20M          | none   |
-| 2    | 150M        | 90M     | 15,000        | 5,500        | 60M          | 3.75M  |
-| 3    | 300M        | 180M    | 10,000        | 14,500       | 120M         | 18.75M |
-| 4    | 450M        | 270M    | 7,500         | 26,500       | 180M         | 41.25M |
-| 5    | 782M        | 469.2M  | 5,000         | ~66,300      | 312.8M       | 63.75M |
+| Step | Distributed | Members | Member amount | Member count | Contributors |
+| ---- | ----------: | ------: | ------------: | -----------: | -----------: |
+| 1    | 50M         | 30M     | 20,000        | 1,500        | 20M          |
+| 2    | 150M        | 90M     | 15,000        | 5,500        | 60M          |
+| 3    | 300M        | 180M    | 10,000        | 14,500       | 120M         |
+| 4    | 450M        | 270M    | 7,500         | 26,500       | 180M         |
+| 5    | 782M        | 469.2M  | 5,000         | ~66,300      | 312.8M       |
 
-All figures except the member amount and the gate are cumulative.
+All figures except the member amount are cumulative.
 
-- A step opens with a proposal that checks the gate and pairs `MsgOpenTranche` with the step's `member_amount`. Each
-  step's member budget opens in quarters, starting with 7.5M at step 1. A member keeps the amount and schedule they
-  registered under.
-- The chain records only the member tranche. The contributor figures are a guideline: a round can go over if its
-  proposal says why. The founder's 25M is charged to step 1's 20M contributor budget, the overrun the guideline
-  allows, and the gate base nets it out, so the first gate is 15% of the 25M the step distributes to others.
-- Anything either pool doesn't allocate rolls into the next step. The 60/40 split holds over the whole distribution.
-- **Gate:** public bonded stake must be at least 15% of the previous step's distribution, minus the founder's 25M.
-  Public bonded stake is the bonded total from `arkd query staking pool` minus what the founding accounts have
-  delegated: their seats, and whatever of their income and the founder's paid awards they have bonded, which
-  `arkd query staking delegations <address>` gives per account. Subtracting what the awards have paid would count
-  unbonded NOAH against the public and could go negative.
+- **A step is a headcount.** Step n runs from its predecessor's member count to its own, at its amount, so the step
+  number says how many members the chain has. Nothing else conditions a step: no date, no stake figure, and no
+  contributor budget spent. A step opens with a proposal that pairs `MsgOpenTranche` with the step's `member_amount`,
+  proposed as the open tranche nears exhaustion; anything still open is consumed at the new amount. A member keeps the
+  amount and schedule they registered under.
+- **Pace is admissions.** The registrar registers as fast as verified admissions clear, and opening moves no coins, so
+  an open tranche nobody fills costs nothing and a step that fills in a month opens the next in a month. The plan sets
+  no maximum pace.
+- **The amount is the vote's.** Each step's first proposal sets the amount by one rule: the whole above the cost of
+  joining, an identity check, a voucher, and a wallet, under which it reads as an airdrop; and the tenth, the part no
+  finding after the hold recovers, under the price of a bought identity at the oracle's NOAH rate. Step 1 runs at the
+  artefact's 20,000 with nothing priced and a founder-vouched cohort. Step 2 waits for the oracle to read a live NOAH
+  price, the reading that also opens conversion, since its amount cannot be checked without one. The amounts in the
+  table are the plan's expectation; each vote applies the rule.
+- **The fake rate is the step's check.** Each step's first proposal states the previous step's registrations,
+  suspensions, and cancellations from the journal, and what admissions changed if the rate warrants it. A step whose
+  predecessor's fakes have no answer waits for the admissions fix. This is the one condition that holds a step.
+- **The tranche is the exposure.** The open tranche is all a stolen registrar key commits, and a fake found within the
+  two-week hold costs nothing, so a tranche is sized to the loss governance accepts should a stolen key go unnoticed
+  through a hold. The launch default opens each step's member budget in quarters, 7.5M at step 1, so twenty votes cover
+  the distribution; a quarter grows with the step, from 375 grants to nearly 10,000, and governance that wants the
+  exposure flat splits the later tranches at the cost of more votes.
+- **Contributors.** The chain records only the member tranche. The contributor figures are a guideline: a round goes
+  over if its proposal says why, and need not be spent before the next step opens. The founder's 25M is charged to
+  step 1's 20M contributor budget, the overrun the guideline allows. Anything either pool doesn't allocate rolls into
+  the next step. The 60/40 split holds over the whole distribution.
 
 ### Contributor proposals
 
@@ -137,6 +152,14 @@ under 2.5M, the founder alone meets quorum and passes any proposal no other stak
 voting no, the founder's 51.35% stays under the 66.7% threshold. "Cannot pass one alone" holds at launch, not for the
 whole payout. A delegation that doesn't vote follows its validator's vote, so control passes only as grantees vote or
 delegate away from the founding set.
+
+**Public bonded stake** is the handover's measure and never a step's condition. It is the bonded total from
+`arkd query staking pool` minus what the founding accounts have delegated: their seats, and whatever of their income and
+the founder's paid awards they have bonded, which `arkd query staking delegations <address>` gives per account.
+Subtracting what the awards have paid would count unbonded NOAH against the public and could go negative. Each step's
+proposal reports it beside the headcount. The genesis reward figures are sized for a fifth of paid grants bonded, the
+rate a chain paying what Ark pays falls back to in a bad year; when public bonded stake runs under that, the reward
+targets are the margin (§2), not the distribution.
 
 ## 6. Open items
 

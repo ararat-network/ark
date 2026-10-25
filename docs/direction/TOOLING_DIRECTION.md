@@ -198,7 +198,8 @@ relationship among a transaction, its messages, emitted events, balance changes,
 The distribution is the explorer's first job. It should decode the Disbursement module's typed events, messages, and
 permanent journal, show each grant's original clock, accrued unpaid entitlement, next due payment and payee, and present the
 plan's numbers with the height they were read at: public bonded stake, the cap a grant was checked against, each step's
-gate, and the handover lines. A thin page on node queries meets round one; the full explorer follows the indexer.
+headcount and fake rate, and the handover lines. A thin page on node queries meets round one; the full explorer
+follows the indexer.
 
 The explorer is also an operational tool. It should make block production, validator status, governance, oracle
 activity, upgrades, and relevant network health visible without pretending that every off-chain observation
