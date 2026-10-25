@@ -198,7 +198,8 @@ relationship among a transaction, its messages, emitted events, balance changes,
 The distribution is the explorer's first job. It should decode the Disbursement module's typed events, messages, and
 permanent journal, show each grant's original clock, accrued unpaid entitlement, next due payment and payee, and present the
 plan's numbers with the height they were read at: public bonded stake, the cap a grant was checked against, each step's
-gate, and the handover lines. A thin page on node queries meets round one; the full explorer follows the indexer.
+headcount and fake rate, and the handover lines. A thin page on node queries meets round one; the full explorer
+follows the indexer.
 
 The explorer is also an operational tool. It should make block production, validator status, governance, oracle
 activity, upgrades, and relevant network health visible without pretending that every off-chain observation
@@ -281,7 +282,6 @@ source and runs the testnet artefact.
 | `ark-registry`     | The network registry                                                           | Public     | Yes           |
 | `ark-indexer`      | The indexer                                                                    | Public     | Later         |
 | `ark-explorer`     | The explorer                                                                   | Public     | Thin view     |
-| `ark-backend-api`  | The backend services' internal APIs                                            | Private    | Yes           |
 | `ark-identity`     | The identity vault                                                             | Private    | Later         |
 | `ark-registrar`    | The registrar signer                                                           | Private    | Yes           |
 | `ark-platform`     | The member platform                                                            | Private    | Yes           |
@@ -289,9 +289,12 @@ source and runs the testnet artefact.
 | `ark-compliance`   | Risk and compliance                                                            | Private    | Later         |
 
 The backend repositories are private: published monitoring rules are a guide to evading them, and the identity vault's
-code has the shortest access list in the organisation. The backend's internal APIs, the vault's included, live in
-`ark-backend-api`, so no service needs read access to another's repository to call it. The [build order](#build-order)
-says when each is built.
+code has the shortest access list in the organisation. A service defines the API it serves beside its code and its
+callers import the generated client; nothing outside the backend calls these APIs. A service whose code must be read by
+fewer people than call it, the vault, publishes its API as a versioned artifact its callers build against without
+reading the code, as `ark` publishes its protos. The platform's app-facing API is published beside the signup protocol
+in `ark-sdk`: the app's code and the browser show a request's shape in any case, and nothing sensitive is in the
+shape. The [build order](#build-order) says when each is built.
 
 ## Important considerations
 
@@ -384,10 +387,10 @@ metadata contracts underneath them.
    verification retrievable by reference; counsel on what those oblige the platform to protect; who vouches for the
    first members, who have no member to vouch for them; and who runs the backend and holds the committee and registrar
    keys. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md#6-open-items) holds each as an open item.
-1. **Fix the contracts.** The signup protocol (§6); the backend's internal APIs in `ark-backend-api`; a minimal network
-   registry for the local environment and testnet in `ark-registry`; and a local environment in `ark` that sets the
-   grants mandate, opens a member tranche, and appoints a registrar, as the e2e tier already does, so both tracks below
-   register against a real chain. Protocol schemas, signing modes, decoding, and public endpoints are treated as one
+1. **Fix the contracts.** The signup protocol (§6); the registrar's API, defined in `ark-registrar` for the platform
+   to import; a minimal network registry for the local environment and testnet in `ark-registry`; and a local
+   environment in `ark` that sets the grants mandate, opens a member tranche, and appoints a registrar, as the e2e tier
+   already does, so both tracks below register against a real chain. Protocol schemas, signing modes, decoding, and public endpoints are treated as one
    surface from here on.
 2. **Build two tracks in parallel.** The backend: `ark-registrar` first, the smallest part and the only one that writes
    to the chain, then `ark-platform` with its uniqueness store. The client: `ark-sdk` with the queries, transactions,

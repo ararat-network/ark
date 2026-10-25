@@ -328,9 +328,12 @@ the ownership cap is a param, 15,000,000 NOAH at launch, and founding identities
 and change only `member_amount`; the compensation and ownership terms stay unless one of them is the proposal. Step 1
 opens at the launch artefact's amount, so its proposals need only the tranche; each later step's first tranche carries
 both messages and its later ones the tranche alone, and the plan's schedule runs 20,000, 15,000, 10,000, 7,500, 5,000.
+A step's first proposal is due as the open tranche nears exhaustion. Its summary states the previous step's
+registrations, suspensions, and cancellations with any admissions change they prompted, and holds the new amount's
+tenth under the price of a bought identity at the oracle's NOAH rate ([plan §4](DISBURSEMENT_PLAN.md#steps)).
 Open each step's member budget in quarters: 7.5M at step 1, 375 members, then 15M, 22.5M, 22.5M, and 49.8M, so
 twenty tranche votes cover the distribution. The open tranche is all a stolen registrar key can commit, and the two-week
-hold is the time to suspend it; a step that fills fast may split a quarter in two.
+hold is the time to suspend it, so a tranche is the exposure governance accepts; split one rather than grow it.
 
 **The registrar.** The grants committee names the Disbursement registrar under its own term with
 `MsgCommitteeRegistrar`, for a window of block time inside its own. The registrar is an operational key, hardware-backed

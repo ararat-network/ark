@@ -32,7 +32,7 @@ links to explains the mechanism. It is not a claim of completeness: §3 lists wh
 The chain's safety assumption is CometBFT's: fewer than one third of voting power is faulty. Every control below keeps
 an honest validator honest under pressure; none survives a faulty supermajority. Until distributed NOAH is bonded the
 founding validators hold every vote, a proof-of-authority trust model on proof-of-stake machinery, which public stake
-erodes on the schedule in the [disbursement plan](../governance/DISBURSEMENT_PLAN.md#5-handover).
+erodes as the grants of the [disbursement plan](../governance/DISBURSEMENT_PLAN.md#5-handover) are paid and bonded.
 
 ## 2. Boundaries
 
