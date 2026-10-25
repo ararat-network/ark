@@ -1,0 +1,58 @@
+{
+  "notes": "Test keys for the decoding fixtures; never fund them on a public network. Private keys are secp256k1 scalars, public keys compressed, addresses Bech32 ark.",
+  "chain_id": "ark-fixtures-1",
+  "validator": {
+    "operator": "arkvaloper107sn6n6ylxxl6md3wtwy9n4u0j5a3azeu70grj",
+    "consensus_public_key": "AmNChAKQmVjkCDiYtNPaf0vu0jpml0rBCeE9K5klG3YK"
+  },
+  "accounts": [
+    {
+      "name": "committee",
+      "private_key_hex": "3a8c3f36d9afc9ac761d6f5351dec9e00b510772e6c8b52a9568c2bcc59ff1ac",
+      "public_key": "Ar2MRP2t3VX197erR5Yqk++UXfUWJdZhBPZ7K8ccpQXU",
+      "address": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9"
+    },
+    {
+      "name": "registrar",
+      "private_key_hex": "82aeabb130f07e6f4b5123fbdd1a8d08af5e0f3d51fd8a0df03d603c0d17c69f",
+      "public_key": "AqCgTLsdAMpd9HZ6lZP5VBTsvOP0bzoqeHXoK/2GVVux",
+      "address": "ark17gmuwtmu9nry8qyeyk8dg3zvr6g20kfgj2z9lt"
+    },
+    {
+      "name": "member",
+      "private_key_hex": "284e7dfd893c358583a14150c54bccf33078d27f7e32dc938a1ad66a53026886",
+      "public_key": "A78is1Wfs35NQxx0ZQEfb6ACqKiIt4FQ94QQl0VN1PJ0",
+      "address": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp"
+    },
+    {
+      "name": "trader",
+      "private_key_hex": "d5d9fa24d4aaba7730154f4c4c55d10ff727c37754bf2a8af8d4e82fede05e58",
+      "public_key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H",
+      "address": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j"
+    },
+    {
+      "name": "member2",
+      "private_key_hex": "a22e7406420c53a1e45c7b3688bf62672100e61b62f3083019acf975fa11ce84",
+      "public_key": "A7evvu2e8a+bwRgSW1Xelxsz6NBj0NTX9hscwoRinhCl",
+      "address": "ark1nhfd6erhst0gespka23c8afl3fc0303msnfng6"
+    },
+    {
+      "name": "member3",
+      "private_key_hex": "660818c9ba2b7e90af4e688d93766f9f318fd2779240efa07b7445ee7027682b",
+      "public_key": "AsXwKN2luLvErulWRjlrL0qa/ZFMMhFKP324DU0UfREz",
+      "address": "ark17qcgqe89j74txcs3vpdjdm6dnnwx62gpln4h5g"
+    },
+    {
+      "name": "other",
+      "private_key_hex": "ff03a38c4bd86e6670bf7c21b8b63c16931512c1240fca1c5ec2a07f80b9d8e3",
+      "public_key": "AtBL/N950tiS/Q335U/lMZXP7dXziTahATKekrVmKYxq",
+      "address": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq"
+    },
+    {
+      "name": "validator",
+      "private_key_hex": "287cd02b713cd06b95c4282cd1db65b9a490c8b1cdd3690b92b5e929ca36fa19",
+      "public_key": "AmNChAKQmVjkCDiYtNPaf0vu0jpml0rBCeE9K5klG3YK",
+      "address": "ark107sn6n6ylxxl6md3wtwy9n4u0j5a3azegnn4xk"
+    }
+  ]
+}

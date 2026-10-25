@@ -1,0 +1,393 @@
+{
+  "name": "gov_proposal_wasm_migrate",
+  "description": "A proposal carrying a store-and-migrate with a stub binary, kept apart so the two binaries never share a transaction.",
+  "chain_id": "ark-fixtures-1",
+  "height": 87,
+  "block_time": "1700000087",
+  "signer": {
+    "key": "trader",
+    "address": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+    "public_key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H",
+    "account_number": "3",
+    "sequence": "35"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "400000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "40000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "42000000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "Cr4DCrsDCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBKWAwqqAQosL2Nvc213YXNtLndhc20udjEuTXNnU3RvcmVBbmRNaWdyYXRlQ29udHJhY3QSegoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEggAYXNtAQAAACI+YXJrMTRoajJ0YXZxOGZwZXNkd3h4Y3U0NHJ0eTNoaDkwdmh1anJ2Y21zdGw0enIzdHhtZnZ3OXM5ZHJ1ZHUqAnt9Eh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwGiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoiHmlwZnM6Ly9iYWZ5Zml4dHVyZXdhc20tbWlncmF0ZSokRXZlcnkgd2FzbS1taWdyYXRlIGF1dGhvcml0eSBtZXNzYWdlMlRBIGZpeHR1cmUgcHJvcG9zYWwgY2FycnlpbmcgZWFjaCBnb3Zlcm5hbmNlLW9ubHkgbWVzc2FnZSBvZiB0aGUgd2FzbS1taWdyYXRlIG1vZHVsZS4SdApQCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohA4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0HEgQKAggBGCMSIAoaCgVhbm9haBIRNDIwMDAwMDAwMDAwMDAwMDAQgLUYGg5hcmstZml4dHVyZXMtMSAD",
+    "body_bytes": "CrsDCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBKWAwqqAQosL2Nvc213YXNtLndhc20udjEuTXNnU3RvcmVBbmRNaWdyYXRlQ29udHJhY3QSegoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEggAYXNtAQAAACI+YXJrMTRoajJ0YXZxOGZwZXNkd3h4Y3U0NHJ0eTNoaDkwdmh1anJ2Y21zdGw0enIzdHhtZnZ3OXM5ZHJ1ZHUqAnt9Eh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwGiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoiHmlwZnM6Ly9iYWZ5Zml4dHVyZXdhc20tbWlncmF0ZSokRXZlcnkgd2FzbS1taWdyYXRlIGF1dGhvcml0eSBtZXNzYWdlMlRBIGZpeHR1cmUgcHJvcG9zYWwgY2FycnlpbmcgZWFjaCBnb3Zlcm5hbmNlLW9ubHkgbWVzc2FnZSBvZiB0aGUgd2FzbS1taWdyYXRlIG1vZHVsZS4=",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYIxIgChoKBWFub2FoEhE0MjAwMDAwMDAwMDAwMDAwMBCAtRg="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"3\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"42000000000000000\",\"denom\":\"anoah\"}],\"gas\":\"400000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"cosmos-sdk/v1/MsgSubmitProposal\",\"value\":{\"initial_deposit\":[{\"amount\":\"1000000000000000000000\",\"denom\":\"anoah\"}],\"messages\":[{\"type\":\"wasm/MsgStoreAndMigrateContract\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"contract\":\"ark14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s9drudu\",\"msg\":{},\"wasm_byte_code\":\"AGFzbQEAAAA=\"}}],\"metadata\":\"ipfs://bafyfixturewasm-migrate\",\"proposer\":\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\",\"summary\":\"A fixture proposal carrying each governance-only message of the wasm-migrate module.\",\"title\":\"Every wasm-migrate authority message\"}}],\"sequence\":\"35\"}"
+  },
+  "signature": "AiMzaZ1IyQAa95pMmtz9HL7LUxbL7K+OZivUOGPtqfwkTDr8VASr7VZQwf6pGrEf1opsS4Tzvr0RrGFKqlJ22w==",
+  "tx_bytes": "Cr4DCrsDCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBKWAwqqAQosL2Nvc213YXNtLndhc20udjEuTXNnU3RvcmVBbmRNaWdyYXRlQ29udHJhY3QSegoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEggAYXNtAQAAACI+YXJrMTRoajJ0YXZxOGZwZXNkd3h4Y3U0NHJ0eTNoaDkwdmh1anJ2Y21zdGw0enIzdHhtZnZ3OXM5ZHJ1ZHUqAnt9Eh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwGiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoiHmlwZnM6Ly9iYWZ5Zml4dHVyZXdhc20tbWlncmF0ZSokRXZlcnkgd2FzbS1taWdyYXRlIGF1dGhvcml0eSBtZXNzYWdlMlRBIGZpeHR1cmUgcHJvcG9zYWwgY2FycnlpbmcgZWFjaCBnb3Zlcm5hbmNlLW9ubHkgbWVzc2FnZSBvZiB0aGUgd2FzbS1taWdyYXRlIG1vZHVsZS4SdApQCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohA4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0HEgQKAggBGCMSIAoaCgVhbm9haBIRNDIwMDAwMDAwMDAwMDAwMDAQgLUYGkACIzNpnUjJABr3mkya3P0cvstTFsvsr45mK9Q4Y+2p/CRMOvxUBKvtVlDB/qkasR/WimxLhPO+vRGsYUqqUnbb",
+  "tx_hash": "B80877704682BA1D45210425E3587C95D8F8F7D450B994C634BBC7658FBF5DAE",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmos.gov.v1.MsgSubmitProposal",
+          "messages": [
+            {
+              "@type": "/cosmwasm.wasm.v1.MsgStoreAndMigrateContract",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "wasm_byte_code": "AGFzbQEAAAA=",
+              "instantiate_permission": null,
+              "contract": "ark14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s9drudu",
+              "msg": {}
+            }
+          ],
+          "initial_deposit": [
+            {
+              "denom": "anoah",
+              "amount": "1000000000000000000000"
+            }
+          ],
+          "proposer": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "metadata": "ipfs://bafyfixturewasm-migrate",
+          "title": "Every wasm-migrate authority message",
+          "summary": "A fixture proposal carrying each governance-only message of the wasm-migrate module.",
+          "expedited": false
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "35"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "42000000000000000"
+          }
+        ],
+        "gas_limit": "400000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "AiMzaZ1IyQAa95pMmtz9HL7LUxbL7K+OZivUOGPtqfwkTDr8VASr7VZQwf6pGrEf1opsS4Tzvr0RrGFKqlJ22w=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "400000",
+    "gas_used": "199524"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "42000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "2000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j/35",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "AiMzaZ1IyQAa95pMmtz9HL7LUxbL7K+OZivUOGPtqfwkTDr8VASr7VZQwf6pGrEf1opsS4Tzvr0RrGFKqlJ22w==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/cosmos.gov.v1.MsgSubmitProposal",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "gov",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "submit_proposal",
+      "attributes": [
+        {
+          "key": "proposal_id",
+          "value": "13",
+          "index": true
+        },
+        {
+          "key": "proposal_proposer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "proposal_messages",
+          "value": "/cosmwasm.wasm.v1.MsgStoreAndMigrateContract",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "proposal_deposit",
+      "attributes": [
+        {
+          "key": "depositor",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "proposal_id",
+          "value": "13",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "submit_proposal",
+      "attributes": [
+        {
+          "key": "voting_period_start",
+          "value": "13",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

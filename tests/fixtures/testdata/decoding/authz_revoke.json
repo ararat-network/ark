@@ -1,0 +1,260 @@
+{
+  "name": "authz_revoke",
+  "description": "The granter revokes the send authorisation.",
+  "chain_id": "ark-fixtures-1",
+  "height": 50,
+  "block_time": "1700000050",
+  "signer": {
+    "key": "member",
+    "address": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+    "public_key": "A78is1Wfs35NQxx0ZQEfb6ACqKiIt4FQ94QQl0VN1PJ0",
+    "account_number": "2",
+    "sequence": "5"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "300000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "30000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "31500000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CpwBCpkBCh8vY29zbW9zLmF1dGh6LnYxYmV0YTEuTXNnUmV2b2tlEnYKKmFyazEwMnA2czUybjk3ZTd6Y214YzQ5dWZ3eDA0bG50cmU1a3Rxa2t6cBIqYXJrMWx3N2pybmdkZ204OHJ1ejh2N2s2czcwZ3NzdTZ2cnl1ZmVsOG5xGhwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEnQKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQO/IrNVn7N+TUMcdGUBH2+gAqioiLeBUPeEEJdFTdTydBIECgIIARgFEiAKGgoFYW5vYWgSETMxNTAwMDAwMDAwMDAwMDAwEOCnEhoOYXJrLWZpeHR1cmVzLTEgAg==",
+    "body_bytes": "CpkBCh8vY29zbW9zLmF1dGh6LnYxYmV0YTEuTXNnUmV2b2tlEnYKKmFyazEwMnA2czUybjk3ZTd6Y214YzQ5dWZ3eDA0bG50cmU1a3Rxa2t6cBIqYXJrMWx3N2pybmdkZ204OHJ1ejh2N2s2czcwZ3NzdTZ2cnl1ZmVsOG5xGhwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5k",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDvyKzVZ+zfk1DHHRlAR9voAKoqIi3gVD3hBCXRU3U8nQSBAoCCAEYBRIgChoKBWFub2FoEhEzMTUwMDAwMDAwMDAwMDAwMBDgpxI="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"2\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"31500000000000000\",\"denom\":\"anoah\"}],\"gas\":\"300000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"cosmos-sdk/MsgRevoke\",\"value\":{\"grantee\":\"ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq\",\"granter\":\"ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp\",\"msg_type_url\":\"/cosmos.bank.v1beta1.MsgSend\"}}],\"sequence\":\"5\"}"
+  },
+  "signature": "muPGQqgRDI3o4nnFoEvp5fJSOcqi/aOGZ7x8O55wmo4691P2CkybtZQi/GkSpSkNMEXzFVflMak+cIAxf1kgcg==",
+  "tx_bytes": "CpwBCpkBCh8vY29zbW9zLmF1dGh6LnYxYmV0YTEuTXNnUmV2b2tlEnYKKmFyazEwMnA2czUybjk3ZTd6Y214YzQ5dWZ3eDA0bG50cmU1a3Rxa2t6cBIqYXJrMWx3N2pybmdkZ204OHJ1ejh2N2s2czcwZ3NzdTZ2cnl1ZmVsOG5xGhwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEnQKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQO/IrNVn7N+TUMcdGUBH2+gAqioiLeBUPeEEJdFTdTydBIECgIIARgFEiAKGgoFYW5vYWgSETMxNTAwMDAwMDAwMDAwMDAwEOCnEhpAmuPGQqgRDI3o4nnFoEvp5fJSOcqi/aOGZ7x8O55wmo4691P2CkybtZQi/GkSpSkNMEXzFVflMak+cIAxf1kgcg==",
+  "tx_hash": "D4E96F5E2BDE6211785A5F3508973C1AAAE912DE3FC8EFD38B5DFCFAF80E3270",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmos.authz.v1beta1.MsgRevoke",
+          "granter": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "grantee": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "msg_type_url": "/cosmos.bank.v1beta1.MsgSend"
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A78is1Wfs35NQxx0ZQEfb6ACqKiIt4FQ94QQl0VN1PJ0"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "5"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "31500000000000000"
+          }
+        ],
+        "gas_limit": "300000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "muPGQqgRDI3o4nnFoEvp5fJSOcqi/aOGZ7x8O55wmo4691P2CkybtZQi/GkSpSkNMEXzFVflMak+cIAxf1kgcg=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "300000",
+    "gas_used": "66442"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "31500000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "1500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp/5",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "muPGQqgRDI3o4nnFoEvp5fJSOcqi/aOGZ7x8O55wmo4691P2CkybtZQi/GkSpSkNMEXzFVflMak+cIAxf1kgcg==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/cosmos.authz.v1beta1.MsgRevoke",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "authz",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "cosmos.authz.v1beta1.EventRevoke",
+      "attributes": [
+        {
+          "key": "grantee",
+          "value": "\"ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq\"",
+          "index": true
+        },
+        {
+          "key": "granter",
+          "value": "\"ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp\"",
+          "index": true
+        },
+        {
+          "key": "msg_type_url",
+          "value": "\"/cosmos.bank.v1beta1.MsgSend\"",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ],
+      "typed": {
+        "msg_type_url": "/cosmos.bank.v1beta1.MsgSend",
+        "granter": "ark102p6s52n97e7zcmxc49ufwx04lntre5ktqkkzp",
+        "grantee": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq"
+      }
+    }
+  ]
+}

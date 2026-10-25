@@ -1,0 +1,491 @@
+{
+  "name": "gov_proposal_reserve",
+  "description": "A proposal carrying every reserve authority message: the mandate, the recognition policy, funding, each position correction, and a burn.",
+  "chain_id": "ark-fixtures-1",
+  "height": 45,
+  "block_time": "1700000045",
+  "signer": {
+    "key": "trader",
+    "address": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+    "public_key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H",
+    "account_number": "3",
+    "sequence": "10"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "600000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "60000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "63000000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CrMNCrANCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBKLDQr2AQokL2Fyay5yZXNlcnZlLnYxLk1zZ1NldFJlc2VydmVNYW5kYXRlEs0BCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKmFyazEycnZzcW5yZ25lZ3pwZjg4OTM0bGtqZzd6OTN3cTk4bXdjemRsORgBIICumaQPKh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwMh4KBWFub2FoEhUxMDAwMDAwMDAwMDAwMDAwMDAwMDA6KmFyazFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWZlbDhucQqVAQonL2Fyay5yZXNlcnZlLnYxLk1zZ1NldFJlY29nbml0aW9uUG9saWN5EmoKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhI8CgphdXNkLXZlbnVlEhI5MDAwMDAwMDAwMDAwMDAwMDAaEjUwMDAwMDAwMDAwMDAwMDAwMCCQHCiAmp4BCowBCh0vYXJrLnJlc2VydmUudjEuTXNnRnVuZEJ1ZmZlchJrCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SHQoFYW5vYWgSFDEwMDAwMDAwMDAwMDAwMDAwMDAwGh4KBWFub2FoEhUxMDAwMDAwMDAwMDAwMDAwMDAwMDAKjwEKIC9hcmsucmVzZXJ2ZS52MS5Nc2dGdW5kSW5zdXJhbmNlEmsKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIdCgVhbm9haBIUMTAwMDAwMDAwMDAwMDAwMDAwMDAaHgoFYW5vYWgSFTEwMDAwMDAwMDAwMDAwMDAwMDAwMAqzAQoiL2Fyay5yZXNlcnZlLnYxLk1zZ0NvcnJlY3RQb3NpdGlvbhKMAQoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEAEYAiIjCgphdXNkLXZlbnVlEhUzMDUwMDAwMDAwMDAwMDAwMDAwMDAqE2N1c3RvZGlhbiBhY2NvdW50IDEyIGdvdmVybmFuY2UgY29ycmVjdGlvbiBvZiBlbnRyeSAyCmoKIi9hcmsucmVzZXJ2ZS52MS5Nc2dDbGVhckltcGFpcm1lbnQSRAoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEAEaFGdvdmVybmFuY2UgY2xlYXJhbmNlCmgKHy9hcmsucmVzZXJ2ZS52MS5Nc2dNYXJrSW1wYWlyZWQSRQoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEAEaFWdvdmVybmFuY2UgaW1wYWlybWVudApmCiAvYXJrLnJlc2VydmUudjEuTXNnQ2xvc2VQb3NpdGlvbhJCCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4QARoSZ292ZXJuYW5jZSBjbG9zdXJlCnQKIC9hcmsucmVzZXJ2ZS52MS5Nc2dSZXZlcnNlUmV0dXJuElAKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhABGAMiHmdvdmVybmFuY2UgcmV2ZXJzYWwgb2YgZW50cnkgMwqSAQokL2Fyay5yZXNlcnZlLnYxLk1zZ0J1cm5SZXNlcnZlQXNzZXRzEmoKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIcCgRhdXNkEhQxMDAwMDAwMDAwMDAwMDAwMDAwMBoeCgVhbm9haBIVMTAwMDAwMDAwMDAwMDAwMDAwMDAwEh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwGiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoiGWlwZnM6Ly9iYWZ5Zml4dHVyZXJlc2VydmUqH0V2ZXJ5IHJlc2VydmUgYXV0aG9yaXR5IG1lc3NhZ2UyT0EgZml4dHVyZSBwcm9wb3NhbCBjYXJyeWluZyBlYWNoIGdvdmVybmFuY2Utb25seSBtZXNzYWdlIG9mIHRoZSByZXNlcnZlIG1vZHVsZS4SdApQCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohA4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0HEgQKAggBGAoSIAoaCgVhbm9haBIRNjMwMDAwMDAwMDAwMDAwMDAQwM8kGg5hcmstZml4dHVyZXMtMSAD",
+    "body_bytes": "CrANCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBKLDQr2AQokL2Fyay5yZXNlcnZlLnYxLk1zZ1NldFJlc2VydmVNYW5kYXRlEs0BCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKmFyazEycnZzcW5yZ25lZ3pwZjg4OTM0bGtqZzd6OTN3cTk4bXdjemRsORgBIICumaQPKh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwMh4KBWFub2FoEhUxMDAwMDAwMDAwMDAwMDAwMDAwMDA6KmFyazFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWZlbDhucQqVAQonL2Fyay5yZXNlcnZlLnYxLk1zZ1NldFJlY29nbml0aW9uUG9saWN5EmoKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhI8CgphdXNkLXZlbnVlEhI5MDAwMDAwMDAwMDAwMDAwMDAaEjUwMDAwMDAwMDAwMDAwMDAwMCCQHCiAmp4BCowBCh0vYXJrLnJlc2VydmUudjEuTXNnRnVuZEJ1ZmZlchJrCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SHQoFYW5vYWgSFDEwMDAwMDAwMDAwMDAwMDAwMDAwGh4KBWFub2FoEhUxMDAwMDAwMDAwMDAwMDAwMDAwMDAKjwEKIC9hcmsucmVzZXJ2ZS52MS5Nc2dGdW5kSW5zdXJhbmNlEmsKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIdCgVhbm9haBIUMTAwMDAwMDAwMDAwMDAwMDAwMDAaHgoFYW5vYWgSFTEwMDAwMDAwMDAwMDAwMDAwMDAwMAqzAQoiL2Fyay5yZXNlcnZlLnYxLk1zZ0NvcnJlY3RQb3NpdGlvbhKMAQoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEAEYAiIjCgphdXNkLXZlbnVlEhUzMDUwMDAwMDAwMDAwMDAwMDAwMDAqE2N1c3RvZGlhbiBhY2NvdW50IDEyIGdvdmVybmFuY2UgY29ycmVjdGlvbiBvZiBlbnRyeSAyCmoKIi9hcmsucmVzZXJ2ZS52MS5Nc2dDbGVhckltcGFpcm1lbnQSRAoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEAEaFGdvdmVybmFuY2UgY2xlYXJhbmNlCmgKHy9hcmsucmVzZXJ2ZS52MS5Nc2dNYXJrSW1wYWlyZWQSRQoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEAEaFWdvdmVybmFuY2UgaW1wYWlybWVudApmCiAvYXJrLnJlc2VydmUudjEuTXNnQ2xvc2VQb3NpdGlvbhJCCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4QARoSZ292ZXJuYW5jZSBjbG9zdXJlCnQKIC9hcmsucmVzZXJ2ZS52MS5Nc2dSZXZlcnNlUmV0dXJuElAKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhABGAMiHmdvdmVybmFuY2UgcmV2ZXJzYWwgb2YgZW50cnkgMwqSAQokL2Fyay5yZXNlcnZlLnYxLk1zZ0J1cm5SZXNlcnZlQXNzZXRzEmoKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIcCgRhdXNkEhQxMDAwMDAwMDAwMDAwMDAwMDAwMBoeCgVhbm9haBIVMTAwMDAwMDAwMDAwMDAwMDAwMDAwEh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwGiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoiGWlwZnM6Ly9iYWZ5Zml4dHVyZXJlc2VydmUqH0V2ZXJ5IHJlc2VydmUgYXV0aG9yaXR5IG1lc3NhZ2UyT0EgZml4dHVyZSBwcm9wb3NhbCBjYXJyeWluZyBlYWNoIGdvdmVybmFuY2Utb25seSBtZXNzYWdlIG9mIHRoZSByZXNlcnZlIG1vZHVsZS4=",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYChIgChoKBWFub2FoEhE2MzAwMDAwMDAwMDAwMDAwMBDAzyQ="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"3\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"63000000000000000\",\"denom\":\"anoah\"}],\"gas\":\"600000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"cosmos-sdk/v1/MsgSubmitProposal\",\"value\":{\"initial_deposit\":[{\"amount\":\"1000000000000000000000\",\"denom\":\"anoah\"}],\"messages\":[{\"type\":\"ark/reserve/MsgSetReserveMandate\",\"value\":{\"activation_time\":\"1\",\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"committee\":\"ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9\",\"deployment_allowance\":{\"amount\":\"1000000000000000000000\",\"denom\":\"anoah\"},\"destinations\":[\"ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq\"],\"expiry_time\":\"4102444800\",\"minimum_noah_balance\":{\"amount\":\"100000000000000000000\",\"denom\":\"anoah\"}}},{\"type\":\"ark/reserve/MsgSetRecognitionPolicy\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"entries\":[{\"denom\":\"ausd-venue\",\"haircut_factor\":\"0.900000000000000000\",\"max_attestation_age\":\"2592000\",\"max_credit_per_noah\":\"0.500000000000000000\",\"max_rate_age\":\"3600\"}]}},{\"type\":\"ark/reserve/MsgFundBuffer\",\"value\":{\"amount\":{\"amount\":\"10000000000000000000\",\"denom\":\"anoah\"},\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"minimum_reserve_balance\":{\"amount\":\"100000000000000000000\",\"denom\":\"anoah\"}}},{\"type\":\"ark/reserve/MsgFundInsurance\",\"value\":{\"amount\":{\"amount\":\"10000000000000000000\",\"denom\":\"anoah\"},\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"minimum_reserve_balance\":{\"amount\":\"100000000000000000000\",\"denom\":\"anoah\"}}},{\"type\":\"ark/reserve/MsgCorrectPosition\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"corrects\":\"2\",\"position_id\":\"1\",\"quantity\":{\"amount\":\"305000000000000000000\",\"denom\":\"ausd-venue\"},\"reference\":\"governance correction of entry 2\",\"venue_reference\":\"custodian account 1\"}},{\"type\":\"ark/reserve/MsgClearImpairment\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"position_id\":\"1\",\"reference\":\"governance clearance\"}},{\"type\":\"ark/reserve/MsgMarkImpaired\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"position_id\":\"1\",\"reference\":\"governance impairment\"}},{\"type\":\"ark/reserve/MsgClosePosition\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"position_id\":\"1\",\"reference\":\"governance closure\"}},{\"type\":\"ark/reserve/MsgReverseReturn\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"position_id\":\"1\",\"reference\":\"governance reversal of entry 3\",\"reverses\":\"3\"}},{\"type\":\"ark/reserve/MsgBurnReserveAssets\",\"value\":{\"amounts\":[{\"amount\":\"10000000000000000000\",\"denom\":\"ausd\"}],\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"minimum_reserve_balance\":{\"amount\":\"100000000000000000000\",\"denom\":\"anoah\"}}}],\"metadata\":\"ipfs://bafyfixturereserve\",\"proposer\":\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\",\"summary\":\"A fixture proposal carrying each governance-only message of the reserve module.\",\"title\":\"Every reserve authority message\"}}],\"sequence\":\"10\"}"
+  },
+  "signature": "fcaNZhML0AbqTsr/h0DSu29VTjebOiOIrST9ALOXSKRp9ufTXpFyKPQoZvLGPztF5fR21y80ZZpQZPlNKrGKkA==",
+  "tx_bytes": "CrMNCrANCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBKLDQr2AQokL2Fyay5yZXNlcnZlLnYxLk1zZ1NldFJlc2VydmVNYW5kYXRlEs0BCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKmFyazEycnZzcW5yZ25lZ3pwZjg4OTM0bGtqZzd6OTN3cTk4bXdjemRsORgBIICumaQPKh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwMh4KBWFub2FoEhUxMDAwMDAwMDAwMDAwMDAwMDAwMDA6KmFyazFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWZlbDhucQqVAQonL2Fyay5yZXNlcnZlLnYxLk1zZ1NldFJlY29nbml0aW9uUG9saWN5EmoKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhI8CgphdXNkLXZlbnVlEhI5MDAwMDAwMDAwMDAwMDAwMDAaEjUwMDAwMDAwMDAwMDAwMDAwMCCQHCiAmp4BCowBCh0vYXJrLnJlc2VydmUudjEuTXNnRnVuZEJ1ZmZlchJrCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SHQoFYW5vYWgSFDEwMDAwMDAwMDAwMDAwMDAwMDAwGh4KBWFub2FoEhUxMDAwMDAwMDAwMDAwMDAwMDAwMDAKjwEKIC9hcmsucmVzZXJ2ZS52MS5Nc2dGdW5kSW5zdXJhbmNlEmsKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIdCgVhbm9haBIUMTAwMDAwMDAwMDAwMDAwMDAwMDAaHgoFYW5vYWgSFTEwMDAwMDAwMDAwMDAwMDAwMDAwMAqzAQoiL2Fyay5yZXNlcnZlLnYxLk1zZ0NvcnJlY3RQb3NpdGlvbhKMAQoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEAEYAiIjCgphdXNkLXZlbnVlEhUzMDUwMDAwMDAwMDAwMDAwMDAwMDAqE2N1c3RvZGlhbiBhY2NvdW50IDEyIGdvdmVybmFuY2UgY29ycmVjdGlvbiBvZiBlbnRyeSAyCmoKIi9hcmsucmVzZXJ2ZS52MS5Nc2dDbGVhckltcGFpcm1lbnQSRAoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEAEaFGdvdmVybmFuY2UgY2xlYXJhbmNlCmgKHy9hcmsucmVzZXJ2ZS52MS5Nc2dNYXJrSW1wYWlyZWQSRQoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEAEaFWdvdmVybmFuY2UgaW1wYWlybWVudApmCiAvYXJrLnJlc2VydmUudjEuTXNnQ2xvc2VQb3NpdGlvbhJCCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4QARoSZ292ZXJuYW5jZSBjbG9zdXJlCnQKIC9hcmsucmVzZXJ2ZS52MS5Nc2dSZXZlcnNlUmV0dXJuElAKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhABGAMiHmdvdmVybmFuY2UgcmV2ZXJzYWwgb2YgZW50cnkgMwqSAQokL2Fyay5yZXNlcnZlLnYxLk1zZ0J1cm5SZXNlcnZlQXNzZXRzEmoKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIcCgRhdXNkEhQxMDAwMDAwMDAwMDAwMDAwMDAwMBoeCgVhbm9haBIVMTAwMDAwMDAwMDAwMDAwMDAwMDAwEh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwGiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoiGWlwZnM6Ly9iYWZ5Zml4dHVyZXJlc2VydmUqH0V2ZXJ5IHJlc2VydmUgYXV0aG9yaXR5IG1lc3NhZ2UyT0EgZml4dHVyZSBwcm9wb3NhbCBjYXJyeWluZyBlYWNoIGdvdmVybmFuY2Utb25seSBtZXNzYWdlIG9mIHRoZSByZXNlcnZlIG1vZHVsZS4SdApQCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohA4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0HEgQKAggBGAoSIAoaCgVhbm9haBIRNjMwMDAwMDAwMDAwMDAwMDAQwM8kGkB9xo1mEwvQBupOyv+HQNK7b1VON5s6I4itJP0As5dIpGn259NekXIo9Chm8sY/O0Xl9HbXLzRlmlBk+U0qsYqQ",
+  "tx_hash": "DDB4E25D3A69BD34FA3EF368C8D47AC753A7494B36B1264F72EAC48D98E7FBBA",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmos.gov.v1.MsgSubmitProposal",
+          "messages": [
+            {
+              "@type": "/ark.reserve.v1.MsgSetReserveMandate",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "committee": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+              "activation_time": "1",
+              "expiry_time": "4102444800",
+              "deployment_allowance": {
+                "denom": "anoah",
+                "amount": "1000000000000000000000"
+              },
+              "minimum_noah_balance": {
+                "denom": "anoah",
+                "amount": "100000000000000000000"
+              },
+              "destinations": [
+                "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq"
+              ]
+            },
+            {
+              "@type": "/ark.reserve.v1.MsgSetRecognitionPolicy",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "entries": [
+                {
+                  "denom": "ausd-venue",
+                  "haircut_factor": "0.900000000000000000",
+                  "max_credit_per_noah": "0.500000000000000000",
+                  "max_rate_age": "3600",
+                  "max_attestation_age": "2592000"
+                }
+              ]
+            },
+            {
+              "@type": "/ark.reserve.v1.MsgFundBuffer",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "amount": {
+                "denom": "anoah",
+                "amount": "10000000000000000000"
+              },
+              "minimum_reserve_balance": {
+                "denom": "anoah",
+                "amount": "100000000000000000000"
+              }
+            },
+            {
+              "@type": "/ark.reserve.v1.MsgFundInsurance",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "amount": {
+                "denom": "anoah",
+                "amount": "10000000000000000000"
+              },
+              "minimum_reserve_balance": {
+                "denom": "anoah",
+                "amount": "100000000000000000000"
+              }
+            },
+            {
+              "@type": "/ark.reserve.v1.MsgCorrectPosition",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "position_id": "1",
+              "corrects": "2",
+              "quantity": {
+                "denom": "ausd-venue",
+                "amount": "305000000000000000000"
+              },
+              "venue_reference": "custodian account 1",
+              "reference": "governance correction of entry 2"
+            },
+            {
+              "@type": "/ark.reserve.v1.MsgClearImpairment",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "position_id": "1",
+              "reference": "governance clearance"
+            },
+            {
+              "@type": "/ark.reserve.v1.MsgMarkImpaired",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "position_id": "1",
+              "reference": "governance impairment"
+            },
+            {
+              "@type": "/ark.reserve.v1.MsgClosePosition",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "position_id": "1",
+              "reference": "governance closure"
+            },
+            {
+              "@type": "/ark.reserve.v1.MsgReverseReturn",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "position_id": "1",
+              "reverses": "3",
+              "reference": "governance reversal of entry 3"
+            },
+            {
+              "@type": "/ark.reserve.v1.MsgBurnReserveAssets",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "amounts": [
+                {
+                  "denom": "ausd",
+                  "amount": "10000000000000000000"
+                }
+              ],
+              "minimum_reserve_balance": {
+                "denom": "anoah",
+                "amount": "100000000000000000000"
+              }
+            }
+          ],
+          "initial_deposit": [
+            {
+              "denom": "anoah",
+              "amount": "1000000000000000000000"
+            }
+          ],
+          "proposer": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "metadata": "ipfs://bafyfixturereserve",
+          "title": "Every reserve authority message",
+          "summary": "A fixture proposal carrying each governance-only message of the reserve module.",
+          "expedited": false
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "10"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "63000000000000000"
+          }
+        ],
+        "gas_limit": "600000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "fcaNZhML0AbqTsr/h0DSu29VTjebOiOIrST9ALOXSKRp9ufTXpFyKPQoZvLGPztF5fR21y80ZZpQZPlNKrGKkA=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "600000",
+    "gas_used": "456891"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "63000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "63000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "63000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "63000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "3000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j/10",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "fcaNZhML0AbqTsr/h0DSu29VTjebOiOIrST9ALOXSKRp9ufTXpFyKPQoZvLGPztF5fR21y80ZZpQZPlNKrGKkA==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/cosmos.gov.v1.MsgSubmitProposal",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "gov",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "submit_proposal",
+      "attributes": [
+        {
+          "key": "proposal_id",
+          "value": "7",
+          "index": true
+        },
+        {
+          "key": "proposal_proposer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "proposal_messages",
+          "value": "/ark.reserve.v1.MsgSetReserveMandate,/ark.reserve.v1.MsgSetRecognitionPolicy,/ark.reserve.v1.MsgFundBuffer,/ark.reserve.v1.MsgFundInsurance,/ark.reserve.v1.MsgCorrectPosition,/ark.reserve.v1.MsgClearImpairment,/ark.reserve.v1.MsgMarkImpaired,/ark.reserve.v1.MsgClosePosition,/ark.reserve.v1.MsgReverseReturn,/ark.reserve.v1.MsgBurnReserveAssets",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "proposal_deposit",
+      "attributes": [
+        {
+          "key": "depositor",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "proposal_id",
+          "value": "7",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "submit_proposal",
+      "attributes": [
+        {
+          "key": "voting_period_start",
+          "value": "7",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

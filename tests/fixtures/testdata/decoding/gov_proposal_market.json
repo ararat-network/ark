@@ -1,0 +1,439 @@
+{
+  "name": "gov_proposal_market",
+  "description": "A proposal carrying every market authority message: params, a Tobin tax override and its removal, the conversion mandate, and a policy update.",
+  "chain_id": "ark-fixtures-1",
+  "height": 43,
+  "block_time": "1700000043",
+  "signer": {
+    "key": "trader",
+    "address": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+    "public_key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H",
+    "account_number": "3",
+    "sequence": "8"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "500000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "50000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "52500000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CowICokICiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBLkBwpiCh4vYXJrLm1hcmtldC52MS5Nc2dVcGRhdGVQYXJhbXMSQAoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEhIKEDI1MDAwMDAwMDAwMDAwMDAKbQolL2Fyay5tYXJrZXQudjEuTXNnU2V0VG9iaW5UYXhPdmVycmlkZRJECiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SBGF1c2QaEDUwMDAwMDAwMDAwMDAwMDAKXgooL2Fyay5tYXJrZXQudjEuTXNnUmVtb3ZlVG9iaW5UYXhPdmVycmlkZRIyCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SBGF1c2QKuQIKJi9hcmsubWFya2V0LnYxLk1zZ1NldENvbnZlcnNpb25NYW5kYXRlEo4CCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKmFyazEycnZzcW5yZ25lZ3pwZjg4OTM0bGtqZzd6OTN3cTk4bXdjemRsORgBIICumaQPKksKMwoEYXhkchIrMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMBDAcBoRMjAwMDAwMDAwMDAwMDAwMDAyTAozCgRheGRyEisyMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwEIDhARoRNDAwMDAwMDAwMDAwMDAwMDA6ETEwMDAwMDAwMDAwMDAwMDAwCpsBCh4vYXJrLm1hcmtldC52MS5Nc2dVcGRhdGVQb2xpY3kSeQoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEksKMwoEYXhkchIrMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMBDAcBoRMjAwMDAwMDAwMDAwMDAwMDASHwoFYW5vYWgSFjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAaKmFyazFmZWM3ZG54bDNmcmU5em1jM2t5dnR0MzU3ZGUzZWs5Zm5sdTk2aiIYaXBmczovL2JhZnlmaXh0dXJlbWFya2V0Kh5FdmVyeSBtYXJrZXQgYXV0aG9yaXR5IG1lc3NhZ2UyTkEgZml4dHVyZSBwcm9wb3NhbCBjYXJyeWluZyBlYWNoIGdvdmVybmFuY2Utb25seSBtZXNzYWdlIG9mIHRoZSBtYXJrZXQgbW9kdWxlLhJ0ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYCBIgChoKBWFub2FoEhE1MjUwMDAwMDAwMDAwMDAwMBCgwh4aDmFyay1maXh0dXJlcy0xIAM=",
+    "body_bytes": "CokICiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBLkBwpiCh4vYXJrLm1hcmtldC52MS5Nc2dVcGRhdGVQYXJhbXMSQAoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEhIKEDI1MDAwMDAwMDAwMDAwMDAKbQolL2Fyay5tYXJrZXQudjEuTXNnU2V0VG9iaW5UYXhPdmVycmlkZRJECiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SBGF1c2QaEDUwMDAwMDAwMDAwMDAwMDAKXgooL2Fyay5tYXJrZXQudjEuTXNnUmVtb3ZlVG9iaW5UYXhPdmVycmlkZRIyCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SBGF1c2QKuQIKJi9hcmsubWFya2V0LnYxLk1zZ1NldENvbnZlcnNpb25NYW5kYXRlEo4CCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKmFyazEycnZzcW5yZ25lZ3pwZjg4OTM0bGtqZzd6OTN3cTk4bXdjemRsORgBIICumaQPKksKMwoEYXhkchIrMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMBDAcBoRMjAwMDAwMDAwMDAwMDAwMDAyTAozCgRheGRyEisyMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwEIDhARoRNDAwMDAwMDAwMDAwMDAwMDA6ETEwMDAwMDAwMDAwMDAwMDAwCpsBCh4vYXJrLm1hcmtldC52MS5Nc2dVcGRhdGVQb2xpY3kSeQoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEksKMwoEYXhkchIrMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMBDAcBoRMjAwMDAwMDAwMDAwMDAwMDASHwoFYW5vYWgSFjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAaKmFyazFmZWM3ZG54bDNmcmU5em1jM2t5dnR0MzU3ZGUzZWs5Zm5sdTk2aiIYaXBmczovL2JhZnlmaXh0dXJlbWFya2V0Kh5FdmVyeSBtYXJrZXQgYXV0aG9yaXR5IG1lc3NhZ2UyTkEgZml4dHVyZSBwcm9wb3NhbCBjYXJyeWluZyBlYWNoIGdvdmVybmFuY2Utb25seSBtZXNzYWdlIG9mIHRoZSBtYXJrZXQgbW9kdWxlLg==",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYCBIgChoKBWFub2FoEhE1MjUwMDAwMDAwMDAwMDAwMBCgwh4="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"3\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"52500000000000000\",\"denom\":\"anoah\"}],\"gas\":\"500000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"cosmos-sdk/v1/MsgSubmitProposal\",\"value\":{\"initial_deposit\":[{\"amount\":\"1000000000000000000000\",\"denom\":\"anoah\"}],\"messages\":[{\"type\":\"ark/market/MsgUpdateParams\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"params\":{\"default_tobin_tax\":\"0.002500000000000000\"}}},{\"type\":\"ark/market/MsgSetTobinTaxOverride\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"denom\":\"ausd\",\"tobin_tax\":\"0.005000000000000000\"}},{\"type\":\"ark/market/MsgRemoveTobinTaxOverride\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"denom\":\"ausd\"}},{\"type\":\"ark/market/MsgSetConversionMandate\",\"value\":{\"activation_time\":\"1\",\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"committee\":\"ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9\",\"expiry_time\":\"4102444800\",\"max_tobin_tax\":\"0.010000000000000000\",\"maximum_policy\":{\"base_pool\":{\"amount\":\"2000000000000000000000000.000000000000000000\",\"denom\":\"axdr\"},\"min_stability_spread\":\"0.040000000000000000\",\"pool_recovery_period\":\"28800\"},\"minimum_policy\":{\"base_pool\":{\"amount\":\"1000000000000000000000000.000000000000000000\",\"denom\":\"axdr\"},\"min_stability_spread\":\"0.020000000000000000\",\"pool_recovery_period\":\"14400\"}}},{\"type\":\"ark/market/MsgUpdatePolicy\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"policy\":{\"base_pool\":{\"amount\":\"1000000000000000000000000.000000000000000000\",\"denom\":\"axdr\"},\"min_stability_spread\":\"0.020000000000000000\",\"pool_recovery_period\":\"14400\"}}}],\"metadata\":\"ipfs://bafyfixturemarket\",\"proposer\":\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\",\"summary\":\"A fixture proposal carrying each governance-only message of the market module.\",\"title\":\"Every market authority message\"}}],\"sequence\":\"8\"}"
+  },
+  "signature": "kqrfp4VGPssLsK3qb/eWwQNmkweHJL/7jYxc+xfYfhRh22sjaTJGiH2VVZ32OhqFgS0Z8Cd0iSnFbU/t1YdMzg==",
+  "tx_bytes": "CowICokICiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBLkBwpiCh4vYXJrLm1hcmtldC52MS5Nc2dVcGRhdGVQYXJhbXMSQAoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEhIKEDI1MDAwMDAwMDAwMDAwMDAKbQolL2Fyay5tYXJrZXQudjEuTXNnU2V0VG9iaW5UYXhPdmVycmlkZRJECiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SBGF1c2QaEDUwMDAwMDAwMDAwMDAwMDAKXgooL2Fyay5tYXJrZXQudjEuTXNnUmVtb3ZlVG9iaW5UYXhPdmVycmlkZRIyCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SBGF1c2QKuQIKJi9hcmsubWFya2V0LnYxLk1zZ1NldENvbnZlcnNpb25NYW5kYXRlEo4CCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKmFyazEycnZzcW5yZ25lZ3pwZjg4OTM0bGtqZzd6OTN3cTk4bXdjemRsORgBIICumaQPKksKMwoEYXhkchIrMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMBDAcBoRMjAwMDAwMDAwMDAwMDAwMDAyTAozCgRheGRyEisyMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwEIDhARoRNDAwMDAwMDAwMDAwMDAwMDA6ETEwMDAwMDAwMDAwMDAwMDAwCpsBCh4vYXJrLm1hcmtldC52MS5Nc2dVcGRhdGVQb2xpY3kSeQoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEksKMwoEYXhkchIrMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMBDAcBoRMjAwMDAwMDAwMDAwMDAwMDASHwoFYW5vYWgSFjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAaKmFyazFmZWM3ZG54bDNmcmU5em1jM2t5dnR0MzU3ZGUzZWs5Zm5sdTk2aiIYaXBmczovL2JhZnlmaXh0dXJlbWFya2V0Kh5FdmVyeSBtYXJrZXQgYXV0aG9yaXR5IG1lc3NhZ2UyTkEgZml4dHVyZSBwcm9wb3NhbCBjYXJyeWluZyBlYWNoIGdvdmVybmFuY2Utb25seSBtZXNzYWdlIG9mIHRoZSBtYXJrZXQgbW9kdWxlLhJ0ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYCBIgChoKBWFub2FoEhE1MjUwMDAwMDAwMDAwMDAwMBCgwh4aQJKq36eFRj7LC7Ct6m/3lsEDZpMHhyS/+42MXPsX2H4UYdtrI2kyRoh9lVWd9joahYEtGfAndIkpxW1P7dWHTM4=",
+  "tx_hash": "08962C62C9F3FEB618D78207872622F949FF6901E79CDF831AC4EA11236015B0",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmos.gov.v1.MsgSubmitProposal",
+          "messages": [
+            {
+              "@type": "/ark.market.v1.MsgUpdateParams",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "params": {
+                "default_tobin_tax": "0.002500000000000000"
+              }
+            },
+            {
+              "@type": "/ark.market.v1.MsgSetTobinTaxOverride",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "denom": "ausd",
+              "tobin_tax": "0.005000000000000000"
+            },
+            {
+              "@type": "/ark.market.v1.MsgRemoveTobinTaxOverride",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "denom": "ausd"
+            },
+            {
+              "@type": "/ark.market.v1.MsgSetConversionMandate",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "committee": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+              "activation_time": "1",
+              "expiry_time": "4102444800",
+              "minimum_policy": {
+                "base_pool": {
+                  "denom": "axdr",
+                  "amount": "1000000000000000000000000.000000000000000000"
+                },
+                "pool_recovery_period": "14400",
+                "min_stability_spread": "0.020000000000000000"
+              },
+              "maximum_policy": {
+                "base_pool": {
+                  "denom": "axdr",
+                  "amount": "2000000000000000000000000.000000000000000000"
+                },
+                "pool_recovery_period": "28800",
+                "min_stability_spread": "0.040000000000000000"
+              },
+              "max_tobin_tax": "0.010000000000000000"
+            },
+            {
+              "@type": "/ark.market.v1.MsgUpdatePolicy",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "policy": {
+                "base_pool": {
+                  "denom": "axdr",
+                  "amount": "1000000000000000000000000.000000000000000000"
+                },
+                "pool_recovery_period": "14400",
+                "min_stability_spread": "0.020000000000000000"
+              }
+            }
+          ],
+          "initial_deposit": [
+            {
+              "denom": "anoah",
+              "amount": "1000000000000000000000"
+            }
+          ],
+          "proposer": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "metadata": "ipfs://bafyfixturemarket",
+          "title": "Every market authority message",
+          "summary": "A fixture proposal carrying each governance-only message of the market module.",
+          "expedited": false
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "8"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "52500000000000000"
+          }
+        ],
+        "gas_limit": "500000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "kqrfp4VGPssLsK3qb/eWwQNmkweHJL/7jYxc+xfYfhRh22sjaTJGiH2VVZ32OhqFgS0Z8Cd0iSnFbU/t1YdMzg=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "500000",
+    "gas_used": "318909"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "52500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "52500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "52500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "52500000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "2500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j/8",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "kqrfp4VGPssLsK3qb/eWwQNmkweHJL/7jYxc+xfYfhRh22sjaTJGiH2VVZ32OhqFgS0Z8Cd0iSnFbU/t1YdMzg==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/cosmos.gov.v1.MsgSubmitProposal",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "gov",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "submit_proposal",
+      "attributes": [
+        {
+          "key": "proposal_id",
+          "value": "5",
+          "index": true
+        },
+        {
+          "key": "proposal_proposer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "proposal_messages",
+          "value": "/ark.market.v1.MsgUpdateParams,/ark.market.v1.MsgSetTobinTaxOverride,/ark.market.v1.MsgRemoveTobinTaxOverride,/ark.market.v1.MsgSetConversionMandate,/ark.market.v1.MsgUpdatePolicy",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "proposal_deposit",
+      "attributes": [
+        {
+          "key": "depositor",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "proposal_id",
+          "value": "5",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "submit_proposal",
+      "attributes": [
+        {
+          "key": "voting_period_start",
+          "value": "5",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

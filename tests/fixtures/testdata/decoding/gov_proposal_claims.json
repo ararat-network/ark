@@ -1,0 +1,416 @@
+{
+  "name": "gov_proposal_claims",
+  "description": "A proposal carrying every claims authority message: params, the claims mandate, a governance claim, and a cancellation.",
+  "chain_id": "ark-fixtures-1",
+  "height": 41,
+  "block_time": "1700000041",
+  "signer": {
+    "key": "trader",
+    "address": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+    "public_key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H",
+    "account_number": "3",
+    "sequence": "6"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "500000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "50000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "52500000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CosGCogGCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBLjBQpUCh4vYXJrLmNsYWltcy52MS5Nc2dVcGRhdGVQYXJhbXMSMgoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEgQIgPUkCp4BCiIvYXJrLmNsYWltcy52MS5Nc2dTZXRDbGFpbXNNYW5kYXRlEngKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5GAEggK6ZpA8qFjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAKwQEKHS9hcmsuY2xhaW1zLnYxLk1zZ1N1Ym1pdENsYWltEp8BCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SEGNsYWltIGNhc2UgZ292LTEaKmFyazFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWZlbDhucSIcCgRhdXNkEhQxMDAwMDAwMDAwMDAwMDAwMDAwMCoVMTAwMDAwMDAwMDAwMDAwMDAwMDAwCk8KHS9hcmsuY2xhaW1zLnYxLk1zZ0NhbmNlbENsYWltEi4KKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhABEh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwGiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoiGGlwZnM6Ly9iYWZ5Zml4dHVyZWNsYWltcyoeRXZlcnkgY2xhaW1zIGF1dGhvcml0eSBtZXNzYWdlMk5BIGZpeHR1cmUgcHJvcG9zYWwgY2FycnlpbmcgZWFjaCBnb3Zlcm5hbmNlLW9ubHkgbWVzc2FnZSBvZiB0aGUgY2xhaW1zIG1vZHVsZS4SdApQCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohA4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0HEgQKAggBGAYSIAoaCgVhbm9haBIRNTI1MDAwMDAwMDAwMDAwMDAQoMIeGg5hcmstZml4dHVyZXMtMSAD",
+    "body_bytes": "CogGCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBLjBQpUCh4vYXJrLmNsYWltcy52MS5Nc2dVcGRhdGVQYXJhbXMSMgoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEgQIgPUkCp4BCiIvYXJrLmNsYWltcy52MS5Nc2dTZXRDbGFpbXNNYW5kYXRlEngKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5GAEggK6ZpA8qFjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAKwQEKHS9hcmsuY2xhaW1zLnYxLk1zZ1N1Ym1pdENsYWltEp8BCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SEGNsYWltIGNhc2UgZ292LTEaKmFyazFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWZlbDhucSIcCgRhdXNkEhQxMDAwMDAwMDAwMDAwMDAwMDAwMCoVMTAwMDAwMDAwMDAwMDAwMDAwMDAwCk8KHS9hcmsuY2xhaW1zLnYxLk1zZ0NhbmNlbENsYWltEi4KKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhABEh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwGiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoiGGlwZnM6Ly9iYWZ5Zml4dHVyZWNsYWltcyoeRXZlcnkgY2xhaW1zIGF1dGhvcml0eSBtZXNzYWdlMk5BIGZpeHR1cmUgcHJvcG9zYWwgY2FycnlpbmcgZWFjaCBnb3Zlcm5hbmNlLW9ubHkgbWVzc2FnZSBvZiB0aGUgY2xhaW1zIG1vZHVsZS4=",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYBhIgChoKBWFub2FoEhE1MjUwMDAwMDAwMDAwMDAwMBCgwh4="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"3\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"52500000000000000\",\"denom\":\"anoah\"}],\"gas\":\"500000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"cosmos-sdk/v1/MsgSubmitProposal\",\"value\":{\"initial_deposit\":[{\"amount\":\"1000000000000000000000\",\"denom\":\"anoah\"}],\"messages\":[{\"type\":\"ark/claims/MsgUpdateParams\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"params\":{\"claim_cancellation_period\":\"604800\"}}},{\"type\":\"ark/claims/MsgSetClaimsMandate\",\"value\":{\"activation_time\":\"1\",\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"committee\":\"ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9\",\"committee_claim_limit\":\"1000000000000000000000\",\"expiry_time\":\"4102444800\"}},{\"type\":\"ark/claims/MsgSubmitClaim\",\"value\":{\"amount\":{\"amount\":\"10000000000000000000\",\"denom\":\"ausd\"},\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"max_offer\":\"100000000000000000000\",\"recipient\":\"ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq\",\"reference\":\"claim case gov-1\"}},{\"type\":\"ark/claims/MsgCancelClaim\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"claim_id\":\"1\"}}],\"metadata\":\"ipfs://bafyfixtureclaims\",\"proposer\":\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\",\"summary\":\"A fixture proposal carrying each governance-only message of the claims module.\",\"title\":\"Every claims authority message\"}}],\"sequence\":\"6\"}"
+  },
+  "signature": "GXNNhZQJ+/TS6V9Zj2skftlj7Rgfbck1W4fbaa8P7JsgDA9FdslucSIo+o/qO7OT3YGqjKVWqWbeFuySBLWFcg==",
+  "tx_bytes": "CosGCogGCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBLjBQpUCh4vYXJrLmNsYWltcy52MS5Nc2dVcGRhdGVQYXJhbXMSMgoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEgQIgPUkCp4BCiIvYXJrLmNsYWltcy52MS5Nc2dTZXRDbGFpbXNNYW5kYXRlEngKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIqYXJrMTJydnNxbnJnbmVnenBmODg5MzRsa2pnN3o5M3dxOThtd2N6ZGw5GAEggK6ZpA8qFjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAKwQEKHS9hcmsuY2xhaW1zLnYxLk1zZ1N1Ym1pdENsYWltEp8BCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SEGNsYWltIGNhc2UgZ292LTEaKmFyazFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWZlbDhucSIcCgRhdXNkEhQxMDAwMDAwMDAwMDAwMDAwMDAwMCoVMTAwMDAwMDAwMDAwMDAwMDAwMDAwCk8KHS9hcmsuY2xhaW1zLnYxLk1zZ0NhbmNlbENsYWltEi4KKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhABEh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwGiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoiGGlwZnM6Ly9iYWZ5Zml4dHVyZWNsYWltcyoeRXZlcnkgY2xhaW1zIGF1dGhvcml0eSBtZXNzYWdlMk5BIGZpeHR1cmUgcHJvcG9zYWwgY2FycnlpbmcgZWFjaCBnb3Zlcm5hbmNlLW9ubHkgbWVzc2FnZSBvZiB0aGUgY2xhaW1zIG1vZHVsZS4SdApQCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohA4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0HEgQKAggBGAYSIAoaCgVhbm9haBIRNTI1MDAwMDAwMDAwMDAwMDAQoMIeGkAZc02FlAn79NLpX1mPayR+2WPtGB9tyTVbh9tprw/smyAMD0V2yW5xIij6j+o7s5PdgaqMpVapZt4W7JIEtYVy",
+  "tx_hash": "36876CD7862EF1FA307656D9B1F06AA545CBB3E79C102DCF87E68767C798F3BD",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmos.gov.v1.MsgSubmitProposal",
+          "messages": [
+            {
+              "@type": "/ark.claims.v1.MsgUpdateParams",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "params": {
+                "claim_cancellation_period": "604800"
+              }
+            },
+            {
+              "@type": "/ark.claims.v1.MsgSetClaimsMandate",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "committee": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+              "activation_time": "1",
+              "expiry_time": "4102444800",
+              "committee_claim_limit": "1000000000000000000000"
+            },
+            {
+              "@type": "/ark.claims.v1.MsgSubmitClaim",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "reference": "claim case gov-1",
+              "recipient": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+              "amount": {
+                "denom": "ausd",
+                "amount": "10000000000000000000"
+              },
+              "max_offer": "100000000000000000000"
+            },
+            {
+              "@type": "/ark.claims.v1.MsgCancelClaim",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "claim_id": "1"
+            }
+          ],
+          "initial_deposit": [
+            {
+              "denom": "anoah",
+              "amount": "1000000000000000000000"
+            }
+          ],
+          "proposer": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "metadata": "ipfs://bafyfixtureclaims",
+          "title": "Every claims authority message",
+          "summary": "A fixture proposal carrying each governance-only message of the claims module.",
+          "expedited": false
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "6"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "52500000000000000"
+          }
+        ],
+        "gas_limit": "500000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "GXNNhZQJ+/TS6V9Zj2skftlj7Rgfbck1W4fbaa8P7JsgDA9FdslucSIo+o/qO7OT3YGqjKVWqWbeFuySBLWFcg=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "500000",
+    "gas_used": "267921"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "52500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "52500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "52500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "52500000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "2500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j/6",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "GXNNhZQJ+/TS6V9Zj2skftlj7Rgfbck1W4fbaa8P7JsgDA9FdslucSIo+o/qO7OT3YGqjKVWqWbeFuySBLWFcg==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/cosmos.gov.v1.MsgSubmitProposal",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "gov",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "submit_proposal",
+      "attributes": [
+        {
+          "key": "proposal_id",
+          "value": "3",
+          "index": true
+        },
+        {
+          "key": "proposal_proposer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "proposal_messages",
+          "value": "/ark.claims.v1.MsgUpdateParams,/ark.claims.v1.MsgSetClaimsMandate,/ark.claims.v1.MsgSubmitClaim,/ark.claims.v1.MsgCancelClaim",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "proposal_deposit",
+      "attributes": [
+        {
+          "key": "depositor",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "proposal_id",
+          "value": "3",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "submit_proposal",
+      "attributes": [
+        {
+          "key": "voting_period_start",
+          "value": "3",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

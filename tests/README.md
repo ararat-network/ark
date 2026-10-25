@@ -1,10 +1,11 @@
 # Testing Ark
 
-Most tests live beside the implementation. This directory holds two tiers above them: [integration](integration/)
+Most tests live beside the implementation. This directory holds three tiers above them: [integration](integration/)
 runs cross-module scenarios in-process against the real application, with [fixture_test.go](integration/fixture_test.go)
-constructing funded validators, driving blocks, and supplying oracle reports; [e2e](e2e/README.md) runs the built
-`arkd` image on a Docker network under interchaintest, driven through the CLI, REST, and RPC. The e2e tree is its own
-Go module and needs Docker; see its README for the packages and the variables.
+constructing funded validators, driving blocks, and supplying oracle reports; [fixtures](fixtures/README.md) signs
+real transactions through the application and writes the decoding fixtures every client decoder is tested against;
+[e2e](e2e/README.md) runs the built `arkd` image on a Docker network under interchaintest, driven through the CLI,
+REST, and RPC. The e2e tree is its own Go module and needs Docker; see its README for the packages and the variables.
 
 ## Where a test lives
 
@@ -15,6 +16,7 @@ A test lives with the code whose change would break it.
 | Beside the package | One package's logic: types validation and parsing as plain functions, keepers as suites over mocked neighbours. |
 | [app](../app/) | The application's own machinery: module wiring and order, the ABCI lifecycle, ante and fees, transaction signing, the pending pool and its lanes, the Wasm boundary, genesis, export, upgrades, and simulations. Tests here may use package internals. |
 | [integration](integration/) | Behaviour that spans modules, driven through the real application's keepers and message router. |
+| [fixtures](fixtures/README.md) | The decoding fixtures: signed transactions, their sign documents, results, and events, as golden files consumers copy at a tag. |
 | [e2e](e2e/README.md) | What needs the built binary on a network: the CLI, node configuration, REST and RPC, several validators, and relaunch. |
 
 A test that touches both `app` and a module goes where its likelier break comes from: a rewiring sends it to `app`, a
@@ -43,7 +45,8 @@ a sandbox bind/cache failure is an environment issue, not by itself a failing pr
 Keeper tests use module-local fixtures; type validation/parsing tests use table-driven functions. Start validation cases
 from default params/genesis and mutate one field; test accepted boundaries as well as errors. Shared application fixtures
 live in [app/testutil](../app/testutil/). [counter.wasm](e2e/testdata/counter.wasm) is the e2e tier's contract fixture.
-Metric golden fixtures and their intentional update workflow are owned by [telemetry](../pkg/telemetry/README.md).
+Metric golden fixtures and their intentional update workflow are owned by [telemetry](../pkg/telemetry/README.md);
+the decoding fixtures and theirs by [fixtures](fixtures/README.md).
 
 ## Simulation and live rehearsals
 

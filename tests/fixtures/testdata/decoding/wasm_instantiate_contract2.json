@@ -1,0 +1,287 @@
+{
+  "name": "wasm_instantiate_contract2",
+  "description": "A second instance at a salted, predictable address.",
+  "chain_id": "ark-fixtures-1",
+  "height": 78,
+  "block_time": "1700000078",
+  "signer": {
+    "key": "trader",
+    "address": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+    "public_key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H",
+    "account_number": "3",
+    "sequence": "28"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "1000000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "100000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "105000000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CrEBCq4BCikvY29zbXdhc20ud2FzbS52MS5Nc2dJbnN0YW50aWF0ZUNvbnRyYWN0MhKAAQoqYXJrMWZlYzdkbnhsM2ZyZTl6bWMza3l2dHQzNTdkZTNlazlmbmx1OTZqEiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoYASIJY291bnRlci0yKgt7ImNvdW50IjowfToMZml4dHVyZSBzYWx0EnUKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQOAfcy2Q8ASKuVnWbc5DVkhahinvPX4WgUK4D2ls0F9BxIECgIIARgcEiEKGwoFYW5vYWgSEjEwNTAwMDAwMDAwMDAwMDAwMBDAhD0aDmFyay1maXh0dXJlcy0xIAM=",
+    "body_bytes": "Cq4BCikvY29zbXdhc20ud2FzbS52MS5Nc2dJbnN0YW50aWF0ZUNvbnRyYWN0MhKAAQoqYXJrMWZlYzdkbnhsM2ZyZTl6bWMza3l2dHQzNTdkZTNlazlmbmx1OTZqEiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoYASIJY291bnRlci0yKgt7ImNvdW50IjowfToMZml4dHVyZSBzYWx0",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYHBIhChsKBWFub2FoEhIxMDUwMDAwMDAwMDAwMDAwMDAQwIQ9"
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"3\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"105000000000000000\",\"denom\":\"anoah\"}],\"gas\":\"1000000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"wasm/MsgInstantiateContract2\",\"value\":{\"admin\":\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\",\"code_id\":\"1\",\"funds\":[],\"label\":\"counter-2\",\"msg\":{\"count\":0},\"salt\":\"Zml4dHVyZSBzYWx0\",\"sender\":\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\"}}],\"sequence\":\"28\"}"
+  },
+  "signature": "up+oAdpOgHLN9ik0j/7bIDX/ah/ny/bF7Jd24Br7tRApKJmaij64tUA5mTskxnsjdG8RW5t57DMMhbcZw/oeDg==",
+  "tx_bytes": "CrEBCq4BCikvY29zbXdhc20ud2FzbS52MS5Nc2dJbnN0YW50aWF0ZUNvbnRyYWN0MhKAAQoqYXJrMWZlYzdkbnhsM2ZyZTl6bWMza3l2dHQzNTdkZTNlazlmbmx1OTZqEiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoYASIJY291bnRlci0yKgt7ImNvdW50IjowfToMZml4dHVyZSBzYWx0EnUKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQOAfcy2Q8ASKuVnWbc5DVkhahinvPX4WgUK4D2ls0F9BxIECgIIARgcEiEKGwoFYW5vYWgSEjEwNTAwMDAwMDAwMDAwMDAwMBDAhD0aQLqfqAHaToByzfYpNI/+2yA1/2of58v2xeyXduAa+7UQKSiZmoo+uLVAOZk7JMZ7I3RvEVubeewzDIW3GcP6Hg4=",
+  "tx_hash": "534B60C10B924528EC5DA33780FFC6F6C1A8EC8E89270F3FE6F23584BFA2AB8E",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmwasm.wasm.v1.MsgInstantiateContract2",
+          "sender": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "admin": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "code_id": "1",
+          "label": "counter-2",
+          "msg": {
+            "count": 0
+          },
+          "funds": [],
+          "salt": "Zml4dHVyZSBzYWx0",
+          "fix_msg": false
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "28"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "105000000000000000"
+          }
+        ],
+        "gas_limit": "1000000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "up+oAdpOgHLN9ik0j/7bIDX/ah/ny/bF7Jd24Br7tRApKJmaij64tUA5mTskxnsjdG8RW5t57DMMhbcZw/oeDg=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "1000000",
+    "gas_used": "165356"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "105000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "105000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "105000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "105000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "5000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j/28",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "up+oAdpOgHLN9ik0j/7bIDX/ah/ny/bF7Jd24Br7tRApKJmaij64tUA5mTskxnsjdG8RW5t57DMMhbcZw/oeDg==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/cosmwasm.wasm.v1.MsgInstantiateContract2",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "wasm",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "instantiate",
+      "attributes": [
+        {
+          "key": "_contract_address",
+          "value": "ark15j25k634y4rw8nm4zm8cz5aq3k7xy9tghfuwva8aq7le30rp726saupkqv",
+          "index": true
+        },
+        {
+          "key": "code_id",
+          "value": "1",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "wasm",
+      "attributes": [
+        {
+          "key": "_contract_address",
+          "value": "ark15j25k634y4rw8nm4zm8cz5aq3k7xy9tghfuwva8aq7le30rp726saupkqv",
+          "index": true
+        },
+        {
+          "key": "method",
+          "value": "instantiate",
+          "index": true
+        },
+        {
+          "key": "owner",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "count",
+          "value": "0",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

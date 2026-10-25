@@ -1,0 +1,260 @@
+{
+  "name": "wasm_update_instantiate_config",
+  "description": "The code's creator restricts who may instantiate it.",
+  "chain_id": "ark-fixtures-1",
+  "height": 84,
+  "block_time": "1700000084",
+  "signer": {
+    "key": "trader",
+    "address": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+    "public_key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H",
+    "account_number": "3",
+    "sequence": "32"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "300000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "30000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "31500000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CpEBCo4BCiwvY29zbXdhc20ud2FzbS52MS5Nc2dVcGRhdGVJbnN0YW50aWF0ZUNvbmZpZxJeCiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoQARouCAQaKmFyazFmZWM3ZG54bDNmcmU5em1jM2t5dnR0MzU3ZGUzZWs5Zm5sdTk2ahJ0ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYIBIgChoKBWFub2FoEhEzMTUwMDAwMDAwMDAwMDAwMBDgpxIaDmFyay1maXh0dXJlcy0xIAM=",
+    "body_bytes": "Co4BCiwvY29zbXdhc20ud2FzbS52MS5Nc2dVcGRhdGVJbnN0YW50aWF0ZUNvbmZpZxJeCiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoQARouCAQaKmFyazFmZWM3ZG54bDNmcmU5em1jM2t5dnR0MzU3ZGUzZWs5Zm5sdTk2ag==",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYIBIgChoKBWFub2FoEhEzMTUwMDAwMDAwMDAwMDAwMBDgpxI="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"3\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"31500000000000000\",\"denom\":\"anoah\"}],\"gas\":\"300000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"wasm/MsgUpdateInstantiateConfig\",\"value\":{\"code_id\":\"1\",\"new_instantiate_permission\":{\"addresses\":[\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\"],\"permission\":4},\"sender\":\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\"}}],\"sequence\":\"32\"}"
+  },
+  "signature": "T01aB2gaPKcz6h2W9Am1vw2vYeCuKx6JwDfr0LxSXa5Q5RFqWI2u/oYFFoYjanh7mFwrEbbnhOKaqZu8ygca6Q==",
+  "tx_bytes": "CpEBCo4BCiwvY29zbXdhc20ud2FzbS52MS5Nc2dVcGRhdGVJbnN0YW50aWF0ZUNvbmZpZxJeCiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoQARouCAQaKmFyazFmZWM3ZG54bDNmcmU5em1jM2t5dnR0MzU3ZGUzZWs5Zm5sdTk2ahJ0ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYIBIgChoKBWFub2FoEhEzMTUwMDAwMDAwMDAwMDAwMBDgpxIaQE9NWgdoGjynM+odlvQJtb8Nr2HgriseicA369C8Ul2uUOURaliNrv6GBRaGI2p4e5hcKxG254TimqmbvMoHGuk=",
+  "tx_hash": "C3D964B33CD9BF99E685752EE07568773D3BD7398AF372245F6307BD221D0E98",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmwasm.wasm.v1.MsgUpdateInstantiateConfig",
+          "sender": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "code_id": "1",
+          "new_instantiate_permission": {
+            "permission": "AnyOfAddresses",
+            "addresses": [
+              "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j"
+            ]
+          }
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "32"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "31500000000000000"
+          }
+        ],
+        "gas_limit": "300000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "T01aB2gaPKcz6h2W9Am1vw2vYeCuKx6JwDfr0LxSXa5Q5RFqWI2u/oYFFoYjanh7mFwrEbbnhOKaqZu8ygca6Q=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "300000",
+    "gas_used": "66731"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "31500000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "1500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j/32",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "T01aB2gaPKcz6h2W9Am1vw2vYeCuKx6JwDfr0LxSXa5Q5RFqWI2u/oYFFoYjanh7mFwrEbbnhOKaqZu8ygca6Q==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/cosmwasm.wasm.v1.MsgUpdateInstantiateConfig",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "wasm",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "update_code_access_config",
+      "attributes": [
+        {
+          "key": "code_permission",
+          "value": "AnyOfAddresses",
+          "index": true
+        },
+        {
+          "key": "code_id",
+          "value": "1",
+          "index": true
+        },
+        {
+          "key": "authorized_addresses",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

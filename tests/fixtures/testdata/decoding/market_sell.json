@@ -1,0 +1,829 @@
+{
+  "name": "market_sell",
+  "description": "The trader sells NOAH for ausd at the oracle rate with no minimum; settlement lands in the block's EndBlock events.",
+  "chain_id": "ark-fixtures-1",
+  "height": 6,
+  "block_time": "1700000006",
+  "signer": {
+    "key": "trader",
+    "address": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+    "public_key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H",
+    "account_number": "3",
+    "sequence": "1"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "400000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "40000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "42000000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CnMKcQoWL2Fyay5tYXJrZXQudjEuTXNnU2VsbBJXCiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoSHgoFYW5vYWgSFTEwMDAwMDAwMDAwMDAwMDAwMDAwMBoEYXVzZCIDEgEwEnQKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQOAfcy2Q8ASKuVnWbc5DVkhahinvPX4WgUK4D2ls0F9BxIECgIIARgBEiAKGgoFYW5vYWgSETQyMDAwMDAwMDAwMDAwMDAwEIC1GBoOYXJrLWZpeHR1cmVzLTEgAw==",
+    "body_bytes": "CnEKFi9hcmsubWFya2V0LnYxLk1zZ1NlbGwSVwoqYXJrMWZlYzdkbnhsM2ZyZTl6bWMza3l2dHQzNTdkZTNlazlmbmx1OTZqEh4KBWFub2FoEhUxMDAwMDAwMDAwMDAwMDAwMDAwMDAaBGF1c2QiAxIBMA==",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYARIgChoKBWFub2FoEhE0MjAwMDAwMDAwMDAwMDAwMBCAtRg="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"3\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"42000000000000000\",\"denom\":\"anoah\"}],\"gas\":\"400000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"ark/market/MsgSell\",\"value\":{\"ask_denom\":\"ausd\",\"minimum_receive\":{\"amount\":\"0\"},\"offer_coin\":{\"amount\":\"100000000000000000000\",\"denom\":\"anoah\"},\"trader\":\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\"}}],\"sequence\":\"1\"}"
+  },
+  "signature": "ZPkEJszH1kN+GAIczD2PNn99Bpeeh/BD30sK6UhtxSYcqDA8T9O1wUTtZph0ElYm3/NKOSZt9YWwVEMdbdwMZA==",
+  "tx_bytes": "CnMKcQoWL2Fyay5tYXJrZXQudjEuTXNnU2VsbBJXCiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoSHgoFYW5vYWgSFTEwMDAwMDAwMDAwMDAwMDAwMDAwMBoEYXVzZCIDEgEwEnQKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQOAfcy2Q8ASKuVnWbc5DVkhahinvPX4WgUK4D2ls0F9BxIECgIIARgBEiAKGgoFYW5vYWgSETQyMDAwMDAwMDAwMDAwMDAwEIC1GBpAZPkEJszH1kN+GAIczD2PNn99Bpeeh/BD30sK6UhtxSYcqDA8T9O1wUTtZph0ElYm3/NKOSZt9YWwVEMdbdwMZA==",
+  "tx_hash": "CE0DE47A0B49C8CF3FE3F00B1134BAB3786513FAF5787042BBEFCF4CE2B8B08D",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/ark.market.v1.MsgSell",
+          "trader": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "offer_coin": {
+            "denom": "anoah",
+            "amount": "100000000000000000000"
+          },
+          "ask_denom": "ausd",
+          "minimum_receive": {
+            "denom": "",
+            "amount": "0"
+          }
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "1"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "42000000000000000"
+          }
+        ],
+        "gas_limit": "400000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "ZPkEJszH1kN+GAIczD2PNn99Bpeeh/BD30sK6UhtxSYcqDA8T9O1wUTtZph0ElYm3/NKOSZt9YWwVEMdbdwMZA=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "400000",
+    "gas_used": "119944"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "42000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "2000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j/1",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "ZPkEJszH1kN+GAIczD2PNn99Bpeeh/BD30sK6UhtxSYcqDA8T9O1wUTtZph0ElYm3/NKOSZt9YWwVEMdbdwMZA==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/ark.market.v1.MsgSell",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "market",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "100000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1untf85jwv3kt0puyyc39myxjvplagr3wx4aphs",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "100000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1untf85jwv3kt0puyyc39myxjvplagr3wx4aphs",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "100000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1untf85jwv3kt0puyyc39myxjvplagr3wx4aphs",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "71480671043034281494ausd",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coinbase",
+      "attributes": [
+        {
+          "key": "minter",
+          "value": "ark1untf85jwv3kt0puyyc39myxjvplagr3wx4aphs",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "71480671043034281494ausd",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1untf85jwv3kt0puyyc39myxjvplagr3wx4aphs",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "71480671043034281494ausd",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "71480671043034281494ausd",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1untf85jwv3kt0puyyc39myxjvplagr3wx4aphs",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "71480671043034281494ausd",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1untf85jwv3kt0puyyc39myxjvplagr3wx4aphs",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "ark.market.v1.EventSwap",
+      "attributes": [
+        {
+          "key": "fee_amount",
+          "value": "\"1458789204959883295.978511854125335675\"",
+          "index": true
+        },
+        {
+          "key": "fee_denom",
+          "value": "\"ausd\"",
+          "index": true
+        },
+        {
+          "key": "offer_amount",
+          "value": "\"100000000000000000000\"",
+          "index": true
+        },
+        {
+          "key": "offer_denom",
+          "value": "\"anoah\"",
+          "index": true
+        },
+        {
+          "key": "swap_amount",
+          "value": "\"71480671043034281494\"",
+          "index": true
+        },
+        {
+          "key": "swap_denom",
+          "value": "\"ausd\"",
+          "index": true
+        },
+        {
+          "key": "trader",
+          "value": "\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\"",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ],
+      "typed": {
+        "trader": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+        "offer_denom": "anoah",
+        "offer_amount": "100000000000000000000",
+        "swap_denom": "ausd",
+        "swap_amount": "71480671043034281494",
+        "fee_denom": "ausd",
+        "fee_amount": "1458789204959883295.978511854125335675"
+      }
+    }
+  ],
+  "block_events": [
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"aaud\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "aaud",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"acad\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "acad",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"acny\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "acny",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"aeur\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "aeur",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"agbp\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "agbp",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"ajpy\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "ajpy",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"akrw\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "akrw",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"amxn\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "amxn",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"asgd\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "asgd",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"ausd\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.371000000000000001\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "ausd",
+        "exchange_rate": "1.371000000000000001"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"axdr\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "axdr",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "26250000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "BeginBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8h9tdgl",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "26250000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "BeginBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8h9tdgl",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "26250000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "BeginBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "ark.treasury.v1.EventExpansionAllocated",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"anoah\"",
+          "index": true
+        },
+        {
+          "key": "insurance_credit",
+          "value": "\"0\"",
+          "index": true
+        },
+        {
+          "key": "overflow_burn",
+          "value": "\"100000000000000000000\"",
+          "index": true
+        },
+        {
+          "key": "redemption_buffer_credit",
+          "value": "\"0\"",
+          "index": true
+        },
+        {
+          "key": "strategic_reserve_credit",
+          "value": "\"0\"",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "anoah",
+        "redemption_buffer_credit": "0",
+        "strategic_reserve_credit": "0",
+        "insurance_credit": "0",
+        "overflow_burn": "100000000000000000000"
+      }
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1untf85jwv3kt0puyyc39myxjvplagr3wx4aphs",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "100000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

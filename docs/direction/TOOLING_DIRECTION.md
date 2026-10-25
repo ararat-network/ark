@@ -202,8 +202,8 @@ activity, upgrades, and relevant network health visible without pretending that 
 is consensus state.
 
 The SDK, app, indexer, explorer, and compliance service must give each transaction one meaning. What they share is the
-proto schemas and typed events, with a set of fixture transactions kept in `ark` that every decoder, in TypeScript or
-Go, must read the same way.
+proto schemas and typed events, with the [decoding fixtures](../../tests/fixtures/README.md) kept in `ark` that every
+decoder, in TypeScript or Go, must read the same way.
 
 ### 9. Treat indexing as a separate derived-data system
 

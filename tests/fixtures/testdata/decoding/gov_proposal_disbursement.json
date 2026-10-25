@@ -1,0 +1,466 @@
+{
+  "name": "gov_proposal_disbursement",
+  "description": "A proposal carrying every disbursement authority message: params, the grants mandate, a tranche, a return, an ownership grant, a compensation award, a cancellation, and a reinstatement.",
+  "chain_id": "ark-fixtures-1",
+  "height": 42,
+  "block_time": "1700000042",
+  "signer": {
+    "key": "trader",
+    "address": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+    "public_key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H",
+    "account_number": "3",
+    "sequence": "7"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "600000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "60000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "63000000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CtgLCtULCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBKwCwrSAQokL2Fyay5kaXNidXJzZW1lbnQudjEuTXNnVXBkYXRlUGFyYW1zEqkBCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SewoXMjAwMDAwMDAwMDAwMDAwMDAwMDAwMDASDwiA6kkQDRiA1JMBIAkoDRoZMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCCAxP8OKIDqSTIaMTUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA6DwiAxP8OEBoYgOpJIAEoTgqnAQooL2Fyay5kaXNidXJzZW1lbnQudjEuTXNnU2V0R3JhbnRzTWFuZGF0ZRJ7CiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKmFyazEycnZzcW5yZ25lZ3pwZjg4OTM0bGtqZzd6OTN3cTk4bXdjemRsORgBIICumaQPKhkxMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwCm0KIy9hcmsuZGlzYnVyc2VtZW50LnYxLk1zZ09wZW5UcmFuY2hlEkYKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIYMjAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwCnoKKS9hcmsuZGlzYnVyc2VtZW50LnYxLk1zZ1JldHVyblVuYWxsb2NhdGVkEk0KKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIfCgVhbm9haBIWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMAq/AQomL2Fyay5kaXNidXJzZW1lbnQudjEuTXNnR3JhbnRPd25lcnNoaXASlAEKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIqYXJrMWx3N2pybmdkZ204OHJ1ejh2N2s2czcwZ3NzdTZ2cnl1ZmVsOG5xGhgxMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAiGm93bmVyc2hpcCBncmFudCBmaXh0dXJlcy0xKKriz6oGCrgBCiIvYXJrLmRpc2J1cnNlbWVudC52MS5Nc2dDb21wZW5zYXRlEpEBCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKmFyazFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWZlbDhucRoeCgVhbm9haBIVMTAwMDAwMDAwMDAwMDAwMDAwMDAwIgxib3VudHkgZ292LTEoquLPqgYwAjoBMApXCiQvYXJrLmRpc2J1cnNlbWVudC52MS5Nc2dDYW5jZWxHcmFudHMSLwoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEgEDCoQBCigvYXJrLmRpc2J1cnNlbWVudC52MS5Nc2dSZWluc3RhdGVNZW1iZXJzElgKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIqYXJrMTdxY2dxZTg5ajc0dHhjczN2cGRqZG02ZG5ud3g2MmdwbG40aDVnEh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwGiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoiHmlwZnM6Ly9iYWZ5Zml4dHVyZWRpc2J1cnNlbWVudCokRXZlcnkgZGlzYnVyc2VtZW50IGF1dGhvcml0eSBtZXNzYWdlMlRBIGZpeHR1cmUgcHJvcG9zYWwgY2FycnlpbmcgZWFjaCBnb3Zlcm5hbmNlLW9ubHkgbWVzc2FnZSBvZiB0aGUgZGlzYnVyc2VtZW50IG1vZHVsZS4SdApQCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohA4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0HEgQKAggBGAcSIAoaCgVhbm9haBIRNjMwMDAwMDAwMDAwMDAwMDAQwM8kGg5hcmstZml4dHVyZXMtMSAD",
+    "body_bytes": "CtULCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBKwCwrSAQokL2Fyay5kaXNidXJzZW1lbnQudjEuTXNnVXBkYXRlUGFyYW1zEqkBCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SewoXMjAwMDAwMDAwMDAwMDAwMDAwMDAwMDASDwiA6kkQDRiA1JMBIAkoDRoZMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCCAxP8OKIDqSTIaMTUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA6DwiAxP8OEBoYgOpJIAEoTgqnAQooL2Fyay5kaXNidXJzZW1lbnQudjEuTXNnU2V0R3JhbnRzTWFuZGF0ZRJ7CiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKmFyazEycnZzcW5yZ25lZ3pwZjg4OTM0bGtqZzd6OTN3cTk4bXdjemRsORgBIICumaQPKhkxMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwCm0KIy9hcmsuZGlzYnVyc2VtZW50LnYxLk1zZ09wZW5UcmFuY2hlEkYKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIYMjAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwCnoKKS9hcmsuZGlzYnVyc2VtZW50LnYxLk1zZ1JldHVyblVuYWxsb2NhdGVkEk0KKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIfCgVhbm9haBIWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMAq/AQomL2Fyay5kaXNidXJzZW1lbnQudjEuTXNnR3JhbnRPd25lcnNoaXASlAEKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIqYXJrMWx3N2pybmdkZ204OHJ1ejh2N2s2czcwZ3NzdTZ2cnl1ZmVsOG5xGhgxMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAiGm93bmVyc2hpcCBncmFudCBmaXh0dXJlcy0xKKriz6oGCrgBCiIvYXJrLmRpc2J1cnNlbWVudC52MS5Nc2dDb21wZW5zYXRlEpEBCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKmFyazFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWZlbDhucRoeCgVhbm9haBIVMTAwMDAwMDAwMDAwMDAwMDAwMDAwIgxib3VudHkgZ292LTEoquLPqgYwAjoBMApXCiQvYXJrLmRpc2J1cnNlbWVudC52MS5Nc2dDYW5jZWxHcmFudHMSLwoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEgEDCoQBCigvYXJrLmRpc2J1cnNlbWVudC52MS5Nc2dSZWluc3RhdGVNZW1iZXJzElgKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIqYXJrMTdxY2dxZTg5ajc0dHhjczN2cGRqZG02ZG5ud3g2MmdwbG40aDVnEh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwGiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoiHmlwZnM6Ly9iYWZ5Zml4dHVyZWRpc2J1cnNlbWVudCokRXZlcnkgZGlzYnVyc2VtZW50IGF1dGhvcml0eSBtZXNzYWdlMlRBIGZpeHR1cmUgcHJvcG9zYWwgY2FycnlpbmcgZWFjaCBnb3Zlcm5hbmNlLW9ubHkgbWVzc2FnZSBvZiB0aGUgZGlzYnVyc2VtZW50IG1vZHVsZS4=",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDgH3MtkPAEirlZ1m3OQ1ZIWoYp7z1+FoFCuA9pbNBfQcSBAoCCAEYBxIgChoKBWFub2FoEhE2MzAwMDAwMDAwMDAwMDAwMBDAzyQ="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"3\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"63000000000000000\",\"denom\":\"anoah\"}],\"gas\":\"600000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"cosmos-sdk/v1/MsgSubmitProposal\",\"value\":{\"initial_deposit\":[{\"amount\":\"1000000000000000000000\",\"denom\":\"anoah\"}],\"messages\":[{\"type\":\"ark/disbursement/MsgUpdateParams\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"params\":{\"compensation_cap\":\"1000000000000000000000000\",\"compensation_period\":\"1209600\",\"compensation_window\":\"31449600\",\"member_amount\":\"20000000000000000000000\",\"member_schedule\":{\"first_length\":\"1209600\",\"first_weight\":\"13\",\"period_length\":\"2419200\",\"period_weight\":\"9\",\"periods\":13},\"ownership_cap\":\"15000000000000000000000000\",\"ownership_schedule\":{\"first_length\":\"31449600\",\"first_weight\":\"26\",\"period_length\":\"1209600\",\"period_weight\":\"1\",\"periods\":78}}}},{\"type\":\"ark/disbursement/MsgSetGrantsMandate\",\"value\":{\"activation_time\":\"1\",\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"committee\":\"ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9\",\"compensation_allowance\":\"1000000000000000000000000\",\"expiry_time\":\"4102444800\"}},{\"type\":\"ark/disbursement/MsgOpenTranche\",\"value\":{\"amount\":\"200000000000000000000000\",\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\"}},{\"type\":\"ark/disbursement/MsgReturnUnallocated\",\"value\":{\"amount\":{\"amount\":\"1000000000000000000000\",\"denom\":\"anoah\"},\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\"}},{\"type\":\"ark/disbursement/MsgGrantOwnership\",\"value\":{\"amount\":\"100000000000000000000000\",\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"beneficiary\":\"ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq\",\"reference\":\"ownership grant fixtures-1\",\"start_time\":\"1700000042\"}},{\"type\":\"ark/disbursement/MsgCompensate\",\"value\":{\"amount\":{\"amount\":\"100000000000000000000\",\"denom\":\"anoah\"},\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"beneficiary\":\"ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq\",\"max_offer\":\"0\",\"periods\":2,\"reference\":\"bounty gov-1\",\"start_time\":\"1700000042\"}},{\"type\":\"ark/disbursement/MsgCancelGrants\",\"value\":{\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\",\"grant_ids\":[\"3\"]}},{\"type\":\"ark/disbursement/MsgReinstateMembers\",\"value\":{\"addresses\":[\"ark17qcgqe89j74txcs3vpdjdm6dnnwx62gpln4h5g\"],\"authority\":\"ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn\"}}],\"metadata\":\"ipfs://bafyfixturedisbursement\",\"proposer\":\"ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j\",\"summary\":\"A fixture proposal carrying each governance-only message of the disbursement module.\",\"title\":\"Every disbursement authority message\"}}],\"sequence\":\"7\"}"
+  },
+  "signature": "56kzbmJtAIW2OwXooxRwrpCcLG8CP/Llea9UBFNuN0FtRLntbxbVBMpZ4YAhk2PjcWYsjW0QBqfeAJlKmHFVQg==",
+  "tx_bytes": "CtgLCtULCiAvY29zbW9zLmdvdi52MS5Nc2dTdWJtaXRQcm9wb3NhbBKwCwrSAQokL2Fyay5kaXNidXJzZW1lbnQudjEuTXNnVXBkYXRlUGFyYW1zEqkBCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SewoXMjAwMDAwMDAwMDAwMDAwMDAwMDAwMDASDwiA6kkQDRiA1JMBIAkoDRoZMTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCCAxP8OKIDqSTIaMTUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA6DwiAxP8OEBoYgOpJIAEoTgqnAQooL2Fyay5kaXNidXJzZW1lbnQudjEuTXNnU2V0R3JhbnRzTWFuZGF0ZRJ7CiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKmFyazEycnZzcW5yZ25lZ3pwZjg4OTM0bGtqZzd6OTN3cTk4bXdjemRsORgBIICumaQPKhkxMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwCm0KIy9hcmsuZGlzYnVyc2VtZW50LnYxLk1zZ09wZW5UcmFuY2hlEkYKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIYMjAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwCnoKKS9hcmsuZGlzYnVyc2VtZW50LnYxLk1zZ1JldHVyblVuYWxsb2NhdGVkEk0KKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIfCgVhbm9haBIWMTAwMDAwMDAwMDAwMDAwMDAwMDAwMAq/AQomL2Fyay5kaXNidXJzZW1lbnQudjEuTXNnR3JhbnRPd25lcnNoaXASlAEKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIqYXJrMWx3N2pybmdkZ204OHJ1ejh2N2s2czcwZ3NzdTZ2cnl1ZmVsOG5xGhgxMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAiGm93bmVyc2hpcCBncmFudCBmaXh0dXJlcy0xKKriz6oGCrgBCiIvYXJrLmRpc2J1cnNlbWVudC52MS5Nc2dDb21wZW5zYXRlEpEBCiphcmsxMGQwN3kyNjVnbW11dnQ0ejB3OWF3ODgwam5zcjcwMGoyY3U1aG4SKmFyazFsdzdqcm5nZGdtODhydXo4djdrNnM3MGdzc3U2dnJ5dWZlbDhucRoeCgVhbm9haBIVMTAwMDAwMDAwMDAwMDAwMDAwMDAwIgxib3VudHkgZ292LTEoquLPqgYwAjoBMApXCiQvYXJrLmRpc2J1cnNlbWVudC52MS5Nc2dDYW5jZWxHcmFudHMSLwoqYXJrMTBkMDd5MjY1Z21tdXZ0NHowdzlhdzg4MGpuc3I3MDBqMmN1NWhuEgEDCoQBCigvYXJrLmRpc2J1cnNlbWVudC52MS5Nc2dSZWluc3RhdGVNZW1iZXJzElgKKmFyazEwZDA3eTI2NWdtbXV2dDR6MHc5YXc4ODBqbnNyNzAwajJjdTVobhIqYXJrMTdxY2dxZTg5ajc0dHhjczN2cGRqZG02ZG5ud3g2MmdwbG40aDVnEh8KBWFub2FoEhYxMDAwMDAwMDAwMDAwMDAwMDAwMDAwGiphcmsxZmVjN2RueGwzZnJlOXptYzNreXZ0dDM1N2RlM2VrOWZubHU5NmoiHmlwZnM6Ly9iYWZ5Zml4dHVyZWRpc2J1cnNlbWVudCokRXZlcnkgZGlzYnVyc2VtZW50IGF1dGhvcml0eSBtZXNzYWdlMlRBIGZpeHR1cmUgcHJvcG9zYWwgY2FycnlpbmcgZWFjaCBnb3Zlcm5hbmNlLW9ubHkgbWVzc2FnZSBvZiB0aGUgZGlzYnVyc2VtZW50IG1vZHVsZS4SdApQCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohA4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0HEgQKAggBGAcSIAoaCgVhbm9haBIRNjMwMDAwMDAwMDAwMDAwMDAQwM8kGkDnqTNuYm0AhbY7BeijFHCukJwsbwI/8uV5r1QEU243QW1Eue1vFtUEylnhgCGTY+NxZiyNbRAGp94AmUqYcVVC",
+  "tx_hash": "D1B7B79F31CA2E52A3107D9B6E82B4991BF2396630D8C6A15CFE485EB2E6C871",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmos.gov.v1.MsgSubmitProposal",
+          "messages": [
+            {
+              "@type": "/ark.disbursement.v1.MsgUpdateParams",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "params": {
+                "member_amount": "20000000000000000000000",
+                "member_schedule": {
+                  "first_length": "1209600",
+                  "first_weight": "13",
+                  "period_length": "2419200",
+                  "period_weight": "9",
+                  "periods": 13
+                },
+                "compensation_cap": "1000000000000000000000000",
+                "compensation_window": "31449600",
+                "compensation_period": "1209600",
+                "ownership_cap": "15000000000000000000000000",
+                "ownership_schedule": {
+                  "first_length": "31449600",
+                  "first_weight": "26",
+                  "period_length": "1209600",
+                  "period_weight": "1",
+                  "periods": 78
+                }
+              }
+            },
+            {
+              "@type": "/ark.disbursement.v1.MsgSetGrantsMandate",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "committee": "ark12rvsqnrgnegzpf88934lkjg7z93wq98mwczdl9",
+              "activation_time": "1",
+              "expiry_time": "4102444800",
+              "compensation_allowance": "1000000000000000000000000"
+            },
+            {
+              "@type": "/ark.disbursement.v1.MsgOpenTranche",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "amount": "200000000000000000000000"
+            },
+            {
+              "@type": "/ark.disbursement.v1.MsgReturnUnallocated",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "amount": {
+                "denom": "anoah",
+                "amount": "1000000000000000000000"
+              }
+            },
+            {
+              "@type": "/ark.disbursement.v1.MsgGrantOwnership",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "beneficiary": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+              "amount": "100000000000000000000000",
+              "reference": "ownership grant fixtures-1",
+              "start_time": "1700000042"
+            },
+            {
+              "@type": "/ark.disbursement.v1.MsgCompensate",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "beneficiary": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+              "amount": {
+                "denom": "anoah",
+                "amount": "100000000000000000000"
+              },
+              "reference": "bounty gov-1",
+              "start_time": "1700000042",
+              "periods": 2,
+              "max_offer": "0"
+            },
+            {
+              "@type": "/ark.disbursement.v1.MsgCancelGrants",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "grant_ids": [
+                "3"
+              ]
+            },
+            {
+              "@type": "/ark.disbursement.v1.MsgReinstateMembers",
+              "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+              "addresses": [
+                "ark17qcgqe89j74txcs3vpdjdm6dnnwx62gpln4h5g"
+              ]
+            }
+          ],
+          "initial_deposit": [
+            {
+              "denom": "anoah",
+              "amount": "1000000000000000000000"
+            }
+          ],
+          "proposer": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "metadata": "ipfs://bafyfixturedisbursement",
+          "title": "Every disbursement authority message",
+          "summary": "A fixture proposal carrying each governance-only message of the disbursement module.",
+          "expedited": false
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A4B9zLZDwBIq5WdZtzkNWSFqGKe89fhaBQrgPaWzQX0H"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "7"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "63000000000000000"
+          }
+        ],
+        "gas_limit": "600000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "56kzbmJtAIW2OwXooxRwrpCcLG8CP/Llea9UBFNuN0FtRLntbxbVBMpZ4YAhk2PjcWYsjW0QBqfeAJlKmHFVQg=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "600000",
+    "gas_used": "411850"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "63000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "63000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "63000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "63000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "3000000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j/7",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "56kzbmJtAIW2OwXooxRwrpCcLG8CP/Llea9UBFNuN0FtRLntbxbVBMpZ4YAhk2PjcWYsjW0QBqfeAJlKmHFVQg==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/cosmos.gov.v1.MsgSubmitProposal",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "gov",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "submit_proposal",
+      "attributes": [
+        {
+          "key": "proposal_id",
+          "value": "4",
+          "index": true
+        },
+        {
+          "key": "proposal_proposer",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "proposal_messages",
+          "value": "/ark.disbursement.v1.MsgUpdateParams,/ark.disbursement.v1.MsgSetGrantsMandate,/ark.disbursement.v1.MsgOpenTranche,/ark.disbursement.v1.MsgReturnUnallocated,/ark.disbursement.v1.MsgGrantOwnership,/ark.disbursement.v1.MsgCompensate,/ark.disbursement.v1.MsgCancelGrants,/ark.disbursement.v1.MsgReinstateMembers",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "proposal_deposit",
+      "attributes": [
+        {
+          "key": "depositor",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "proposal_id",
+          "value": "4",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "submit_proposal",
+      "attributes": [
+        {
+          "key": "voting_period_start",
+          "value": "4",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

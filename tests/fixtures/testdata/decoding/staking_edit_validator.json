@@ -1,0 +1,257 @@
+{
+  "name": "staking_edit_validator",
+  "description": "The operator edits the second validator's description.",
+  "chain_id": "ark-fixtures-1",
+  "height": 68,
+  "block_time": "1700000068",
+  "signer": {
+    "key": "other",
+    "address": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+    "public_key": "AtBL/N950tiS/Q335U/lMZXP7dXziTahATKekrVmKYxq",
+    "account_number": "6",
+    "sequence": "3"
+  },
+  "fee": {
+    "fee_denom": "anoah",
+    "gas_limit": "300000",
+    "tax": [],
+    "gas_price": {
+      "denom": "anoah",
+      "gas_price": "100000000000.000000000000000000",
+      "derived_height": "0"
+    },
+    "required": {
+      "denom": "anoah",
+      "amount": "30000000000000000"
+    },
+    "pad_stable": "1.1",
+    "pad_noah": "1.05",
+    "declared": [
+      {
+        "denom": "anoah",
+        "amount": "31500000000000000"
+      }
+    ]
+  },
+  "sign_mode_direct": {
+    "sign_doc": "CrMBCrABCigvY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dFZGl0VmFsaWRhdG9yEoMBCk4KEWZpeHR1cmUtdmFsaWRhdG9yEg9bZG8tbm90LW1vZGlmeV0aD1tkby1ub3QtbW9kaWZ5XSIPW2RvLW5vdC1tb2RpZnldKgZlZGl0ZWQSMWFya3ZhbG9wZXIxbHc3anJuZ2RnbTg4cnV6OHY3azZzNzBnc3N1NnZyeXVhNXI2a3kSdApQCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohAtBL/N950tiS/Q335U/lMZXP7dXziTahATKekrVmKYxqEgQKAggBGAMSIAoaCgVhbm9haBIRMzE1MDAwMDAwMDAwMDAwMDAQ4KcSGg5hcmstZml4dHVyZXMtMSAG",
+    "body_bytes": "CrABCigvY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dFZGl0VmFsaWRhdG9yEoMBCk4KEWZpeHR1cmUtdmFsaWRhdG9yEg9bZG8tbm90LW1vZGlmeV0aD1tkby1ub3QtbW9kaWZ5XSIPW2RvLW5vdC1tb2RpZnldKgZlZGl0ZWQSMWFya3ZhbG9wZXIxbHc3anJuZ2RnbTg4cnV6OHY3azZzNzBnc3N1NnZyeXVhNXI2a3k=",
+    "auth_info_bytes": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEC0Ev833nS2JL9DfflT+Uxlc/t1fOJNqEBMp6StWYpjGoSBAoCCAEYAxIgChoKBWFub2FoEhEzMTUwMDAwMDAwMDAwMDAwMBDgpxI="
+  },
+  "sign_mode_amino": {
+    "sign_bytes": "{\"account_number\":\"6\",\"chain_id\":\"ark-fixtures-1\",\"fee\":{\"amount\":[{\"amount\":\"31500000000000000\",\"denom\":\"anoah\"}],\"gas\":\"300000\"},\"memo\":\"\",\"msgs\":[{\"type\":\"cosmos-sdk/MsgEditValidator\",\"value\":{\"description\":{\"details\":\"edited\",\"identity\":\"[do-not-modify]\",\"moniker\":\"fixture-validator\",\"security_contact\":\"[do-not-modify]\",\"website\":\"[do-not-modify]\"},\"validator_address\":\"arkvaloper1lw7jrngdgm88ruz8v7k6s70gssu6vryua5r6ky\"}}],\"sequence\":\"3\"}"
+  },
+  "signature": "v2DQ/BBR0qFhPFdISqoUtbFUnpHPvfJ1jIJcnytUTwxyfOspeymBKUOSp82+dJcfZQ2Bgd3hiZnD3MIlDoyngA==",
+  "tx_bytes": "CrMBCrABCigvY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dFZGl0VmFsaWRhdG9yEoMBCk4KEWZpeHR1cmUtdmFsaWRhdG9yEg9bZG8tbm90LW1vZGlmeV0aD1tkby1ub3QtbW9kaWZ5XSIPW2RvLW5vdC1tb2RpZnldKgZlZGl0ZWQSMWFya3ZhbG9wZXIxbHc3anJuZ2RnbTg4cnV6OHY3azZzNzBnc3N1NnZyeXVhNXI2a3kSdApQCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohAtBL/N950tiS/Q335U/lMZXP7dXziTahATKekrVmKYxqEgQKAggBGAMSIAoaCgVhbm9haBIRMzE1MDAwMDAwMDAwMDAwMDAQ4KcSGkC/YND8EFHSoWE8V0hKqhS1sVSekc+98nWMglyfK1RPDHJ86yl7KYEpQ5Knzb50lx9lDYGB3eGJmcPcwiUOjKeA",
+  "tx_hash": "5214F94675B3F74097B8A833CC573450A443CBFF2361AB9D50BF65D21D2C2A9E",
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmos.staking.v1beta1.MsgEditValidator",
+          "description": {
+            "moniker": "fixture-validator",
+            "identity": "[do-not-modify]",
+            "website": "[do-not-modify]",
+            "security_contact": "[do-not-modify]",
+            "details": "edited"
+          },
+          "validator_address": "arkvaloper1lw7jrngdgm88ruz8v7k6s70gssu6vryua5r6ky",
+          "commission_rate": null,
+          "min_self_delegation": null
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "unordered": false,
+      "timeout_timestamp": null,
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "AtBL/N950tiS/Q335U/lMZXP7dXziTahATKekrVmKYxq"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "3"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "anoah",
+            "amount": "31500000000000000"
+          }
+        ],
+        "gas_limit": "300000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "v2DQ/BBR0qFhPFdISqoUtbFUnpHPvfJ1jIJcnytUTwxyfOspeymBKUOSp82+dJcfZQ2Bgd3hiZnD3MIlDoyngA=="
+    ]
+  },
+  "result": {
+    "code": 0,
+    "codespace": "",
+    "log": "",
+    "gas_wanted": "300000",
+    "gas_used": "72956"
+  },
+  "events": [
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "31500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "sender",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "fee",
+          "value": "31500000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "fee_payer",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        },
+        {
+          "key": "tip",
+          "value": "1500000000000000anoah",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "acc_seq",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq/3",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "tx",
+      "attributes": [
+        {
+          "key": "signature",
+          "value": "v2DQ/BBR0qFhPFdISqoUtbFUnpHPvfJ1jIJcnytUTwxyfOspeymBKUOSp82+dJcfZQ2Bgd3hiZnD3MIlDoyngA==",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "/cosmos.staking.v1beta1.MsgEditValidator",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        },
+        {
+          "key": "module",
+          "value": "staking",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "edit_validator",
+      "attributes": [
+        {
+          "key": "commission_rate",
+          "value": "commission_rates:\u003crate:\"100000000000000000\" max_rate:\"200000000000000000\" max_change_rate:\"10000000000000000\" \u003e update_time:\u003cseconds:1700000067 \u003e ",
+          "index": true
+        },
+        {
+          "key": "min_self_delegation",
+          "value": "1",
+          "index": true
+        },
+        {
+          "key": "msg_index",
+          "value": "0",
+          "index": true
+        }
+      ]
+    }
+  ]
+}

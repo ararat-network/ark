@@ -1,0 +1,1438 @@
+{
+  "name": "disbursement_payment_block",
+  "description": "Two weeks and a day after registration the block pays each member's tenth from custody: no transaction, only EndBlock events.",
+  "chain_id": "ark-fixtures-1",
+  "height": 88,
+  "block_time": "1701296088",
+  "block_events": [
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"aaud\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "aaud",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"acad\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "acad",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"acny\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "acny",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"aeur\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "aeur",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"agbp\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "agbp",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"ajpy\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "ajpy",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"akrw\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "akrw",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"amxn\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "amxn",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"asgd\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "asgd",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"ausd\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.371000000000000001\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "ausd",
+        "exchange_rate": "1.371000000000000001"
+      }
+    },
+    {
+      "type": "ark.oracle.v1.EventExchangeRateUpdate",
+      "attributes": [
+        {
+          "key": "denom",
+          "value": "\"axdr\"",
+          "index": true
+        },
+        {
+          "key": "exchange_rate",
+          "value": "\"1.000000000000000000\"",
+          "index": true
+        }
+      ],
+      "typed": {
+        "denom": "axdr",
+        "exchange_rate": "1.000000000000000000"
+      }
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "BeginBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8h9tdgl",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "BeginBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8h9tdgl",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark17xpfvakm2amg962yls6f84z3kell8c5lqrv32a",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "42000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "BeginBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1100000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1100000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1100000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1010000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1010000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1010000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1fec7dnxl3fre9zmc3kyvtt357de3ek9fnlu96j",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "1000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1m57j9q3qewpndygg6xc74m6eh0f8c8w3ulnme2",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "2000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "2000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1m57j9q3qewpndygg6xc74m6eh0f8c8w3ulnme2",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "2000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "ark.disbursement.v1.EventGrantEntryRecorded",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "\"GRANT_ACTION_PAID\"",
+          "index": true
+        },
+        {
+          "key": "actor",
+          "value": "\"ark1m57j9q3qewpndygg6xc74m6eh0f8c8w3ulnme2\"",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "\"2000000000000000000000\"",
+          "index": true
+        },
+        {
+          "key": "amount_denom",
+          "value": "\"anoah\"",
+          "index": true
+        },
+        {
+          "key": "grant_id",
+          "value": "\"1\"",
+          "index": true
+        },
+        {
+          "key": "id",
+          "value": "\"7\"",
+          "index": true
+        },
+        {
+          "key": "offer",
+          "value": "\"0\"",
+          "index": true
+        },
+        {
+          "key": "subject",
+          "value": "\"ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq\"",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ],
+      "typed": {
+        "id": "7",
+        "grant_id": "1",
+        "action": "GRANT_ACTION_PAID",
+        "actor": "ark1m57j9q3qewpndygg6xc74m6eh0f8c8w3ulnme2",
+        "amount_denom": "anoah",
+        "amount": "2000000000000000000000",
+        "subject": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+        "offer": "0"
+      }
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark1m57j9q3qewpndygg6xc74m6eh0f8c8w3ulnme2",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "2000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark17qcgqe89j74txcs3vpdjdm6dnnwx62gpln4h5g",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "2000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark17qcgqe89j74txcs3vpdjdm6dnnwx62gpln4h5g",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark1m57j9q3qewpndygg6xc74m6eh0f8c8w3ulnme2",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "2000000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "ark.disbursement.v1.EventGrantEntryRecorded",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "\"GRANT_ACTION_PAID\"",
+          "index": true
+        },
+        {
+          "key": "actor",
+          "value": "\"ark1m57j9q3qewpndygg6xc74m6eh0f8c8w3ulnme2\"",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "\"2000000000000000000000\"",
+          "index": true
+        },
+        {
+          "key": "amount_denom",
+          "value": "\"anoah\"",
+          "index": true
+        },
+        {
+          "key": "grant_id",
+          "value": "\"2\"",
+          "index": true
+        },
+        {
+          "key": "id",
+          "value": "\"8\"",
+          "index": true
+        },
+        {
+          "key": "offer",
+          "value": "\"0\"",
+          "index": true
+        },
+        {
+          "key": "subject",
+          "value": "\"ark17qcgqe89j74txcs3vpdjdm6dnnwx62gpln4h5g\"",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ],
+      "typed": {
+        "id": "8",
+        "grant_id": "2",
+        "action": "GRANT_ACTION_PAID",
+        "actor": "ark1m57j9q3qewpndygg6xc74m6eh0f8c8w3ulnme2",
+        "amount_denom": "anoah",
+        "amount": "2000000000000000000000",
+        "subject": "ark17qcgqe89j74txcs3vpdjdm6dnnwx62gpln4h5g",
+        "offer": "0"
+      }
+    },
+    {
+      "type": "coin_spent",
+      "attributes": [
+        {
+          "key": "spender",
+          "value": "ark130txsy9c4tfug4j555rvqt7vmz87dmfdc9kgu8",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "50000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "coin_received",
+      "attributes": [
+        {
+          "key": "receiver",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "50000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "transfer",
+      "attributes": [
+        {
+          "key": "recipient",
+          "value": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+          "index": true
+        },
+        {
+          "key": "sender",
+          "value": "ark130txsy9c4tfug4j555rvqt7vmz87dmfdc9kgu8",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "50000000000000000000anoah",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ]
+    },
+    {
+      "type": "ark.disbursement.v1.EventGrantEntryRecorded",
+      "attributes": [
+        {
+          "key": "action",
+          "value": "\"GRANT_ACTION_PAID\"",
+          "index": true
+        },
+        {
+          "key": "actor",
+          "value": "\"ark130txsy9c4tfug4j555rvqt7vmz87dmfdc9kgu8\"",
+          "index": true
+        },
+        {
+          "key": "amount",
+          "value": "\"50000000000000000000\"",
+          "index": true
+        },
+        {
+          "key": "amount_denom",
+          "value": "\"anoah\"",
+          "index": true
+        },
+        {
+          "key": "grant_id",
+          "value": "\"3\"",
+          "index": true
+        },
+        {
+          "key": "id",
+          "value": "\"9\"",
+          "index": true
+        },
+        {
+          "key": "offer",
+          "value": "\"0\"",
+          "index": true
+        },
+        {
+          "key": "subject",
+          "value": "\"ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq\"",
+          "index": true
+        },
+        {
+          "key": "mode",
+          "value": "EndBlock",
+          "index": true
+        }
+      ],
+      "typed": {
+        "id": "9",
+        "grant_id": "3",
+        "action": "GRANT_ACTION_PAID",
+        "actor": "ark130txsy9c4tfug4j555rvqt7vmz87dmfdc9kgu8",
+        "amount_denom": "anoah",
+        "amount": "50000000000000000000",
+        "subject": "ark1lw7jrngdgm88ruz8v7k6s70gssu6vryufel8nq",
+        "offer": "0"
+      }
+    }
+  ]
+}
