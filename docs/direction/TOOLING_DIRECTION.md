@@ -129,10 +129,11 @@ delegation of each payment that arrived; the validator picker that shows how clo
 defaults away from the founding set; every open proposal put in front of the member; and sending paid coins out. The app
 pays gas from the tenth the block sends two weeks after registration, so the member never has to fund it.
 
-The signup protocol, address, proof of possession, vouch reference, and identity attestation to the backend, is
-specified on its own so that a member signing with an external wallet can complete it. Proof of possession is an ADR-036
-off-chain signature over a challenge the backend issues, which common Cosmos wallets already produce; it signs no
-transaction and adds no legacy sign mode to transaction signing.
+The signup protocol, address, proof of possession, vouch, and identity attestation to the backend, is
+[specified on its own](https://github.com/ararat-network/ark-sdk/blob/main/docs/SIGNUP_PROTOCOL.md) so that a member
+signing with an external wallet can complete it. Proof of possession is an ADR-036 off-chain signature over a challenge
+the backend issues, which common Cosmos wallets already produce, and a vouch is the voucher's signature over a document
+naming the admission; neither signs a transaction or adds a legacy sign mode to transaction signing.
 
 The app's later scope covers simulation and comprehensible signing review, fee and tax presentation, Ark market
 operations with explicit pricing and slippage, a contributor's few interactions with the Disbursement module such as
@@ -158,9 +159,11 @@ platform; the others arrive with the uses that need them.
   records, inside the two-week hold before anything pays; grant-tranche funding requests to governance; and the
   committee's suspend, which stops a sybil's pay and moves nothing, for governance to cancel, and reaches a voucher
   whose vouchees are cancelled. Registration needs uniqueness, one grant per person, not identity: the identity
-  verifier, a third party that checks liveness and a document, returns a uniqueness attestation and a dedup token that
-  is the same each time the same person verifies, and the platform keeps those and the verifier's reference beside the
-  admission record; nothing it keeps names a person.
+  verifier, a third party that checks liveness and a document, returns a uniqueness attestation and the earlier
+  enrolments whose face matches this one. The platform derives the dedup token from that: a match above its threshold
+  takes the earlier enrolment's token, so the same person always resolves to one token however many times they verify.
+  It keeps the attestation, the token, and the verifier's reference beside the admission record; nothing it keeps names
+  a person.
 - **Identity vault.** Arrives with insurance coverage or AML. Person records, the verified attributes the other services
   need, the verifier's references, and the person ↔ address links, which it takes over from the platform. It is then the
   only service that holds personal data: every other service sees an opaque person ID, and the vault logs every
@@ -271,10 +274,10 @@ source and runs the testnet artefact.
 | Repository         | Holds                                                                          | Visibility | First tranche |
 | ------------------ | ------------------------------------------------------------------------------ | ---------- | ------------- |
 | `ark`              | The chain, protos, the local environment, and the decoding fixtures            | Public     | Yes           |
-| `ledger-ark`       | The Ledger app                                                                 | Public     | Later         |
+| `ledger-ark`       | The Ledger app                                                                 | Public     | Yes           |
 | `ark-app`          | The Ark app                                                                    | Public     | Yes           |
 | `ark-signer`       | The signer interface, device keystore, and Ledger and external-wallet adapters | Public     | Yes           |
-| `ark-sdk`          | The TypeScript SDK and its decoder                                             | Public     | Yes           |
+| `ark-sdk`          | The TypeScript SDK, its decoder, and the signup protocol with its vectors      | Public     | Yes           |
 | `ark-registry`     | The network registry                                                           | Public     | Yes           |
 | `ark-indexer`      | The indexer                                                                    | Public     | Later         |
 | `ark-explorer`     | The explorer                                                                   | Public     | Thin view     |
@@ -388,8 +391,9 @@ metadata contracts underneath them.
    surface from here on.
 2. **Build two tracks in parallel.** The backend: `ark-registrar` first, the smallest part and the only one that writes
    to the chain, then `ark-platform` with its uniqueness store. The client: `ark-sdk` with the queries, transactions,
-   ADR-036 signature, and decoding the app needs, then `ark-signer` with the device keystore, then the signup flow in
-   `ark-app`. The tracks meet when the app's signup registers a member through the platform on the local environment.
+   ADR-036 signature, and decoding the app needs, then `ark-signer` with the device keystore and the Ledger adapter,
+   then the signup flow in `ark-app`. The tracks meet when the app's signup registers a member through the platform
+   on the local environment, from a device key and from a Ledger.
 3. **Finish what a member needs before the first payment.** The grant view, staking, and voting in the app, since the
    first tenth pays two weeks after registration; the thin distribution view on node queries, the first release of
    `ark-explorer`; the Disbursement module's audit, which sits before the first tranche, not before the build; and a
@@ -400,7 +404,7 @@ metadata contracts underneath them.
 4. **Add identity where a use needs it.** The identity vault, the claims case service, and risk and compliance with the
    indexer under it, when insurance coverage of registered members or AML is adopted. If counsel requires monitoring
    from the first tranche, the indexer and compliance move into step 3 and become its longest part.
-5. **Widen the app.** Transfers, simulation, market operations, and the contributor interactions of §6, and Ledger and
+5. **Widen the app.** Transfers, simulation, market operations, and the contributor interactions of §6, and
    external-wallet signers behind the signer interface.
 6. **Add the information layer.** Replayable indexing, where step 4 has not built it, and the full explorer on it, once
    the meanings of messages, events, assets, and account activity are stable enough to share.
