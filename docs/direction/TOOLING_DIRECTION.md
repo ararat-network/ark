@@ -40,7 +40,7 @@ source and runs the testnet artefact. The rows follow the sections below: by lay
 | `ark`              | The chain: state, validation, policy, and protocol queries; the protos, decoding fixtures, and local environment | A product-specific UI backend                                                 | Public     | Yes           |
 | `ark-registry`     | Shared network configuration and asset metadata                                                                  | A second source of chain state                                                | Public     | Yes           |
 | `ark-sdk`          | Encoding, querying, transaction workflows, decoding, and formatting; the signup protocol                         | An implementation of economic or market policy                                | Public     | Yes           |
-| `ark-signer`       | Key custody on the device, signing consent, transaction review; later the dapp-to-wallet protocol                | An authority for balances, quotes, or transaction success                     | Public     | Yes           |
+| `ark-signer`       | Key custody on the device, signing consent, transaction review, multisig; later the dapp-to-wallet protocol      | An authority for balances, quotes, or transaction success                     | Public     | Yes           |
 | `ledger-ark`       | Signing on a Ledger device behind the signer interface                                                           | A second signer interface                                                     | Public     | Yes           |
 | `ark-app`          | Signup, the grant view, staking and voting each payment, and what the app later adds                             | A key store outside the signer interface                                      | Public     | Yes           |
 | `ark-registrar`    | The registrar key and the batches it signs                                                                       | A holder of personal data or any other key                                    | Private    | Yes           |
@@ -87,7 +87,8 @@ metadata contracts underneath them.
    registered members or AML is adopted. If counsel requires monitoring from the first tranche, the indexer and
    compliance move into step 3 and become its longest part.
 5. **Widen the app.** Transfers, simulation, market operations, and the contributor interactions in the app's later
-   scope, and external-wallet signers behind the signer interface.
+   scope; external-wallet signers behind the signer interface; and multisignature signing, so a committee signs its
+   acts from the app and a shared account signs the same way, with the relay that carries partial signatures.
 6. **Add the information layer.** Replayable indexing, where step 4 has not built it, and the full explorer on it, once
    the meanings of messages, events, assets, and account activity are stable enough to share.
 7. **Make third-party development routine.** Extend the signer interface into the wallet kit's dapp protocol, and
@@ -184,6 +185,18 @@ keystore answers by default; a Ledger device, through the adapter for `ledger-ar
 already carries stands in behind the same interface. The first tranche needs the device keystore and the Ledger adapter;
 external-wallet adapters follow.
 
+A multisignature account signs through the same interface. The signer builds the transaction for a K-of-N account,
+each member signs it with their own adapter, keystore or Ledger, and partial signatures pass between members until the
+threshold is met and one of them assembles and broadcasts. Three constraints are fixed elsewhere. A committee is a
+legacy amino threshold multisig of at most ten hardware-backed keys, registered on chain before its appointment
+([genesis](../governance/GENESIS.md#committee-appointments)), and the SDK refuses direct signing for a multisig, so its
+members sign in amino JSON or textual mode: the deliberate compatibility decision the
+[signing rule](#one-meaning-per-transaction) asks for. Collection stays private, because a committee's target must not
+be public before broadcast ([committee runbook](../governance/COMMITTEE_RUNBOOK.md#submitting-a-transaction)), so
+partial signatures move through a relay that holds unsigned bytes and signatures and never a key; which repository
+holds the relay is open. A multisig's gas is simulated against its recorded key shape, never a single-key dry run. The
+same flow serves any shared account a member holds, not only a committee.
+
 It is the first form of the wallet kit. When third-party dapps arrive, the same interface extends into a dapp-to-wallet
 protocol, so dapps integrate with a stable Ark wallet interface rather than couple themselves to one browser extension
 or transport mechanism: account discovery, connection state, network switching, transaction requests, event
@@ -218,15 +231,17 @@ the signer interface; the features own everything else a member does:
 - every open proposal put in front of the member;
 - sending paid coins out.
 
-The app pays gas from the tenth the block sends two weeks after registration, so the member never has to fund it. The
-first tranche needs signup, then the grant view, staking, and voting before the first tenth pays.
+The app pays gas from the tenth the block sends two weeks after registration, so the member never has to fund it, and
+speaks the member's language ([languages](#languages)). The first tranche needs signup, then the grant view, staking,
+and voting before the first tenth pays.
 
 Its later scope covers simulation and comprehensible signing review, fee and tax presentation, Ark market operations
 with explicit pricing and slippage, a contributor's few interactions with the Disbursement module such as changing its
-destination or rotating its controller, and account recovery, hardware-wallet use, and multisignature flows where
-supported. The app defines the quality bar for message decoding and user safety, while the signer interface and SDK
-make it possible for other wallets to reach the same level of integration. It is not a key store outside the signer
-interface, and not a second source of chain state.
+destination or rotating its controller, account recovery, external hardware wallets behind the signer interface, and
+multisignature: a committee member reviews and signs the committee's acts from the app, with the same decoded review
+as any other transaction, and a shared account a member holds signs the same way. The app defines the quality bar for
+message decoding and user safety, while the signer interface and SDK make it possible for other wallets to reach the
+same level of integration. It is not a key store outside the signer interface, and not a second source of chain state.
 
 ## Backend
 
@@ -381,6 +396,18 @@ Textual signing can improve legibility, but it needs accurate coin metadata and 
 first-class path, and any legacy signing support is a deliberate compatibility decision rather than the foundation of
 new tooling.
 
+### Languages
+
+The app speaks the languages of the starting assets: for each of the ten currencies
+[registered after launch](../governance/GOVERNANCE_RUNBOOK.md#opening-conversion), the official languages of its
+issuing area. English, French, Spanish, Chinese, Japanese, Korean, Malay, and Tamil follow from AUD, CAD, CNY, GBP, JPY,
+KRW, MXN, SGD, and USD; which of the euro area's official languages count is open, as is whether the first tranche
+ships every language or the ones its members need. Every surface a member reads is in scope: the app, the signer's
+consent and transaction review, the explorer, and the display names the registry carries; the Ledger app's display
+stays English. A translation renders the same decoded fields as every other language, never a different reading of
+the transaction, so the one-meaning rule holds across languages; strings live outside code from the first release, so
+a language is a resource rather than a build; and amounts, dates, and currencies format by the member's locale.
+
 ### Infrastructure reliability
 
 First-party tooling depends on public RPC, gRPC, REST, WebSocket, indexer, and asset-metadata services, which need
@@ -410,6 +437,8 @@ The direction is working when:
   from the node;
 - a member with no technical background can receive, stake, and vote a grant from the app without a key, a CLI, or a
   fee;
+- a member can use the app, and read what they sign, in their own language;
+- a committee signs its acts from the app without a CLI, and nothing it signs is public before broadcast;
 - every grant can be checked against the plan's rules from public interfaces;
 - no single backend service yields both the person ↔ address link and the registrar key, and nothing chain-visible
   names a person;
