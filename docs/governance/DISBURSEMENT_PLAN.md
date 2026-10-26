@@ -165,10 +165,10 @@ targets are the margin (§2), not the distribution.
 
 - The member process: a third-party identity check that returns a uniqueness attestation, plus a vouch from an
   existing member. Still open: which verifier, who runs it, and who holds the committee and registrar keys
-  ([tooling direction §7](../direction/TOOLING_DIRECTION.md#7-run-the-member-backend-without-custody)).
+  ([tooling direction](../direction/TOOLING_DIRECTION.md#backend)).
 - Who vouches for the first members: a vouch comes from an existing member, and the first cohort has none.
 - The Ark app, which holds the wallet and the member features
-  ([tooling direction §6](../direction/TOOLING_DIRECTION.md#6-make-one-first-party-ark-app-the-reference-experience)).
+  ([tooling direction](../direction/TOOLING_DIRECTION.md#ark-app)).
   It is needed for the first member tranche and is not built.
 - An audit of the Disbursement module before launch, since it holds the pools from block 1.
 - Vetting criteria for the founding set.

@@ -3,7 +3,7 @@
 Real transactions, signed through the application's own encoder and run through real blocks, written with their sign
 documents, bytes, results, and events. They are the contract every decoder of Ark transactions is tested against,
 and the bytes every producer must reproduce: the app, the SDK, the explorer, and the compliance service read one
-transaction one way because each passes these files. The [tooling direction](../../docs/direction/TOOLING_DIRECTION.md#8-build-an-explorer-around-ark-semantics)
+transaction one way because each passes these files. The [tooling direction](../../docs/direction/TOOLING_DIRECTION.md#one-meaning-per-transaction)
 is why they exist.
 
 ## Run
