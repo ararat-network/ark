@@ -8,6 +8,7 @@ stay with their packages; protobuf build scripts stay under [proto/](../proto/RE
 | [images/](images/) | Image Makefile, Dockerfile, and process wrapper. |
 | [localnet/](localnet/README.md) | Compose topology, generated homes, ports, and start/stop/state-sync workflow. |
 | [scripts/](scripts/README.md) | Liveness and state-sync probes, and the upgrade rehearsal. |
+| [registry/](registry/README.md) | The network registry generator: chain-derived `chain.json`, `assetlist.json`, and `ark.json` per network. |
 
 From the root, `make -C contrib/images arkd-env` builds `ark/arkd` with static musl `arkd` and `pricefeed` binaries on
 Alpine. [The Dockerfile](images/arkd-env/Dockerfile) and [wrapper](images/arkd-env/wrapper.sh) define its non-root user

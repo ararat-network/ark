@@ -32,6 +32,12 @@ pricefeedLdflags += $(LDFLAGS)
 build:
 	@go build $(BUILD_FLAGS) -o build/arkd ./cmd/arkd
 
+# The network registry's chain-derived half, contrib/registry. REGISTRY_ENDPOINTS
+# merges the registry's hand-kept endpoints; REGISTRY_VERSION names the ark ref.
+REGISTRY_OUT ?= build/registry
+registry:
+	@go run ./contrib/registry --out $(REGISTRY_OUT) $(if $(REGISTRY_ENDPOINTS),--endpoints $(REGISTRY_ENDPOINTS),) $(if $(REGISTRY_VERSION),--version $(REGISTRY_VERSION),)
+
 # The sidecar is pure Go; netgo keeps it free of the host resolver.
 build-pricefeed:
 	@CGO_ENABLED=0 go build -tags netgo -mod=readonly -trimpath \
