@@ -4,7 +4,7 @@ Writes Ark's network registry: for every network, the community chain-registry f
 `assetlist.json`, and `ark.json` for what that schema has no field for. The registry itself lives in
 [ark-registry](https://github.com/ararat-network/ark-registry); this generator is the chain's half of it, so the
 denominations, prefix, coin type, versions, and genesis identity a client reads can never drift from the chain. The
-[tooling direction](../../docs/direction/TOOLING_DIRECTION.md#2-establish-a-canonical-network-registry) is why.
+[tooling direction](../../docs/direction/TOOLING_DIRECTION.md#ark-registry) is why.
 
 ```sh
 make registry                                  # into build/registry
