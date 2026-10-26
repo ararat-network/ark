@@ -39,6 +39,20 @@ chains format, lint, and generation; `make proto-update-deps` refreshes the BSR 
 `make proto-gen` also runs `go mod tidy` on the host, so inspect dependency changes as well as generated files. CI
 runs `make proto-gen` and fails if the tree changes, so commit regenerated output with every schema change.
 
+## Consumers
+
+Every chain tag pushes these schemas to the Buf Schema Registry as
+[`buf.build/ararat-network/ark`](https://buf.build/ararat-network/ark), labelled with the tag, through
+[buf-push.yml](../.github/workflows/buf-push.yml). A client depends on the module at a tag's label, or generates
+straight from the tagged ref with no account:
+
+```sh
+buf generate "https://github.com/ararat-network/ark.git#tag=v0.1.0-alpha.1,subdir=proto"
+```
+
+Either way a client pins one tag and reads the [decoding fixtures](../tests/fixtures/README.md) and the network
+registry at the same tag. The registry copy mirrors the tagged tree and is never the source: the tag is.
+
 Run focused module/transport tests, `git diff --check`, and a build appropriate to the changed surface. Do not run
 generation for Markdown-only edits; regenerate when schema comments change so Go documentation stays in sync. `make proto-check-breaking` compares schemas against the configured main branch and
 requires access to that source. [Pricefeed compatibility](../docs/operations/PRICEFEED_OPERATIONS.md#10-releases-and-compatibility)

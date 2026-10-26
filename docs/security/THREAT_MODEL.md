@@ -330,6 +330,10 @@ administrator account is trusted with `main`.
 - Published releases are immutable: GitHub locks their assets and tag. The sidecar's standalone binaries release from
   their own `pricefeed/v*` tag line, so a chain binary release never carries an unreviewed sidecar change, or the
   reverse.
+- Every chain tag pushes the proto module to the Buf Schema Registry from a job holding only `BUF_TOKEN`, a repository
+  secret scoped to `module.push` on `buf.build/ararat-network/ark` with an expiry. The module is public, so nothing
+  reads with the token, and the push labels the tag's own commit. The registry copy mirrors the tagged tree and is
+  never a source: a consumer verifies against the tag.
 
 **Limits.**
 
@@ -343,6 +347,8 @@ administrator account is trusted with `main`.
   atomic.
 - Consumers verify what they download even after draft review, since a maintainer with access can otherwise change
   assets and tags.
+- A leaked `BUF_TOKEN` can push a label to the proto module until it expires or is revoked. It cannot move the git
+  tag, so a consumer that pins the tag sees the mismatch; a consumer that trusts the registry label alone does not.
 
 **Repository settings.** These live outside Git and are verified separately before publication.
 
@@ -357,7 +363,8 @@ administrator account is trusted with `main`.
   approve pull requests, and every external fork workflow needs approval, given only after its code is reviewed.
 
 **Review questions.** Does every required status check match a job the workflows still run? Does a release run from a
-clean tree at a tag on `HEAD`? Does a new release step pull anything without a pin or checksum?
+clean tree at a tag on `HEAD`? Does a new release step pull anything without a pin or checksum? Does the Buf push run
+only on tags, with a token scoped to the one module?
 
 ### 2.9 Clients to the node: queries
 
