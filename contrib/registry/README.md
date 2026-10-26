@@ -13,7 +13,7 @@ go run ./contrib/registry --out ../ark-registry --endpoints ../ark-registry/endp
 
 | Output | Source |
 | --- | --- |
-| `<network>/chain.json` | Chain ID, prefix, coin type from `app/params`; NOAH as fee and staking token with the treasury's minimum base gas price; SDK, CometBFT, and wasmvm versions from `go.mod`; the genesis URL at `--version`; endpoints and explorers from `--endpoints` |
+| `<network>/chain.json` | Chain ID; prefix and coin type from the SDK config the app seals; NOAH as fee and staking token with the treasury's minimum base gas price; SDK, CometBFT, and wasmvm versions from `go.mod`; the genesis URL at `--version`; endpoints and explorers from `--endpoints` |
 | `<network>/assetlist.json` | NOAH and every registry asset the network's genesis artefact lists as active, each from `pkg/chain`'s Bank metadata |
 | `<network>/ark.json` | The genesis file's SHA-256, feature flags, the reference denomination and feeds, the accepted fee denominations, the fee contract, logos, and indexer endpoints |
 | `images/` | The brand kit's symbol, served by the registry |

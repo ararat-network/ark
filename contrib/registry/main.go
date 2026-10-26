@@ -13,15 +13,20 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 
 	"cosmossdk.io/math"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"github.com/ararat-network/ark/app/params"
+	// The app's init seals the SDK config with the chain's prefix and coin
+	// type; the registry reads them from there, as arkd does.
+	_ "github.com/ararat-network/ark/app"
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
@@ -86,13 +91,16 @@ func generate(o options) error {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return err
 		}
-		files := map[string]any{
-			"chain.json":     chainFile(n, artefact, versions, ep, o.version),
-			"assetlist.json": assetFile(n, artefact),
-			"ark.json":       arkFile(n, artefact, ep, o.version, o.imageBase),
+		files := []struct {
+			name string
+			v    any
+		}{
+			{"chain.json", chainFile(n, artefact, versions, ep, o.version)},
+			{"assetlist.json", assetFile(n, artefact)},
+			{"ark.json", arkFile(n, artefact, ep, o.version, o.imageBase)},
 		}
-		for name, v := range files {
-			if err := writeJSON(filepath.Join(dir, name), v); err != nil {
+		for _, f := range files {
+			if err := writeJSON(filepath.Join(dir, f.name), f.v); err != nil {
 				return err
 			}
 		}
@@ -238,12 +246,8 @@ func readEndpoints(path string) (map[string]networkEndpoints, error) {
 	if err := json.Unmarshal(raw, &out); err != nil {
 		return nil, fmt.Errorf("parsing %s: %w", path, err)
 	}
-	for name := range out {
-		known := false
-		for _, n := range networks {
-			known = known || n.name == name
-		}
-		if !known {
+	for _, name := range slices.Sorted(maps.Keys(out)) {
+		if !slices.ContainsFunc(networks, func(n network) bool { return n.name == name }) {
 			return nil, fmt.Errorf("%s: %s is not a network", path, name)
 		}
 	}
@@ -353,8 +357,8 @@ func chainFile(n network, a artefact, v versions, ep networkEndpoints, version s
 		NetworkType:  n.networkType,
 		PrettyName:   n.prettyName,
 		Website:      "https://ararat.network",
-		Bech32Prefix: params.Bech32PrefixAccAddr,
-		Slip44:       params.CoinType,
+		Bech32Prefix: sdk.GetConfig().GetBech32AccountAddrPrefix(),
+		Slip44:       sdk.GetConfig().GetCoinType(),
 		Fees:         fees{FeeTokens: []feeToken{{Denom: chain.NoahBaseDenom, FixedMinGasPrice: minGas.MustFloat64()}}},
 		Staking:      staking{StakingTokens: []stakingToken{{Denom: chain.NoahBaseDenom}}},
 		Codebase:     cb,
@@ -439,8 +443,8 @@ func arkFile(n network, a artefact, ep networkEndpoints, version, imageBase stri
 	out := arkJSON{
 		ChainID:        n.chainID,
 		ArkVersion:     version,
-		Bech32Prefix:   params.Bech32PrefixAccAddr,
-		Slip44:         params.CoinType,
+		Bech32Prefix:   sdk.GetConfig().GetBech32AccountAddrPrefix(),
+		Slip44:         sdk.GetConfig().GetCoinType(),
 		Features:       features{Cosmwasm: true, VoteExtensions: true, ConversionOpen: len(a.assets) > 0},
 		ReferenceDenom: a.referenceDenom,
 		Feeds:          orEmptyStrings(a.feeds),
