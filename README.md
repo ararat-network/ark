@@ -15,6 +15,12 @@
 Ark is a sovereign Cosmos SDK blockchain that converts its native asset, NOAH, into stablecoins and back at oracle
 prices, with a governed capital structure standing behind the stablecoin liability.
 
+## Papers
+
+- **[Whitepaper](docs/papers/WHITEPAPER.pdf)**, _Money as Shared Infrastructure_: why the design is what it is.
+- **[Manifesto](docs/papers/MANIFESTO.pdf)**, _The Revolution Begins Within_: the founding statement, the purpose that
+  design serves.
+
 ## Why should you be interested in Ark
 
 Ark is built using the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk) and compiled to a binary called `arkd` (Ark
@@ -28,8 +34,6 @@ commit and a committee can deploy under a bounded mandate, and Insurance that pa
 claims. Validators and the oracle are funded from a fixed transfer tax and a genesis-seeded subsidy pool. Governance
 holds every unbounded power; committees hold bounded, time-scoped mandates. To understand how funds and authority
 move, read the [economic design](docs/economics/ECONOMIC_DESIGN.md).
-
-The [manifesto](docs/papers/MANIFESTO.pdf), _The Revolution Begins Within_, sets out the purpose that design serves.
 
 ## Documentation
 
