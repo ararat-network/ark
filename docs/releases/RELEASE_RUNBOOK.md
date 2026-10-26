@@ -49,6 +49,13 @@ Publish through GitHub Releases using your account; that user-generated publicat
 when it is the intended recommended version. Do not replace assets after review; consumers must still verify the files
 they actually download.
 
+Every chain tag also pushes the proto module to the Buf Schema Registry ([consumers](../../proto/README.md#consumers)).
+The downstream pins do not move by themselves: after tagging, open one pull request in
+[ark-registry](https://github.com/ararat-network/ark-registry) moving `ARK_VERSION` to the tag and regenerating, and
+one in [ark-sdk](https://github.com/ararat-network/ark-sdk) moving its proto and fixture pins. Each repository's check
+refuses a pin whose files do not match the tag, and the registry's weekly check fails when a newer tag would change
+its files, so a forgotten bump shows within a week.
+
 ## Images
 
 The [image workflow](../../.github/workflows/docker-push.yml) publishes on every published chain release, nightly when
