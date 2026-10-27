@@ -55,6 +55,17 @@ The state-sync target starts `sync0` using the `statesync` profile and checks RP
 an earliest block above 1 and progress beyond that restored height, not merely a node that caught up by replaying genesis.
 `localnet-stop` also stops this profile.
 
+## Observability
+
+```sh
+make localnet-observability
+```
+
+Starts Prometheus (`localhost:9095`), Alertmanager (`9096`), and Grafana (`3000`) behind the `observability` profile,
+scraping every node and sidecar with [contrib/observability](../observability/README.md)'s rules and the node dashboard
+provisioned. The probe holds Prometheus to the rules loaded and node0 scraped; `localnet-stop` takes the profile down
+with the rest.
+
 The [script guide](../scripts/README.md) covers the probes and the upgrade rehearsal.
 
 [localnet.yml](../../.github/workflows/localnet.yml) defines the automated localnet checks. The liveness probe requires

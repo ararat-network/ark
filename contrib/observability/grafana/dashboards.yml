@@ -1,0 +1,8 @@
+# Provisioned for the localnet profile: every dashboard in the dashboards directory.
+apiVersion: 1
+providers:
+  - name: ark
+    folder: Ark
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

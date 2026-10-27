@@ -209,11 +209,14 @@ nothing on the network requires anyone to move to it.
 
 ## Protocol monitoring tooling
 
-Status: the protocol queries and typed events exist; the dedicated collector, indexer integration, and dashboard are not
-delivered by this repository. Trigger: an operator is deploying protocol-state monitoring and choosing alert thresholds.
+Status: the protocol queries and typed events exist, and the rules and templates live in
+[contrib/observability](../../contrib/observability/README.md), which carries the Disbursement alerts the membership
+service's series answer. The collector that exports the rest, the poller and the event series, is the indexer's job
+([tooling direction](TOOLING_DIRECTION.md#ark-indexer)), after the first tranche. Trigger: the indexer is built, or
+an operator deploys protocol-state monitoring before it and chooses thresholds.
 [Protocol monitoring](../operations/PROTOCOL_MONITORING.md#27-collection-requirements) owns polling cadence, indexed
-events, retained history, panels, and calibration requirements. Implement those requirements without duplicating
-consensus state in keeper metrics. Hosting, on-call ownership, and page thresholds remain operational decisions.
+events, retained history, panels, and calibration requirements; implement them without duplicating consensus state in
+keeper metrics. Hosting, on-call ownership, and page thresholds remain operational decisions.
 
 ## Closed items
 

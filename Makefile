@@ -269,7 +269,7 @@ localnet-start: localnet-check
 # Every profile is named so their services come down too: a service in a
 # profile that is not enabled is not an orphan, and down would skip it.
 localnet-stop:
-	$(localnetCompose) --profile multi --profile statesync down --remove-orphans
+	$(localnetCompose) --profile multi --profile statesync --profile observability down --remove-orphans
 
 # Wait for node0 to pass five blocks and hold an oracle exchange rate.
 localnet-liveness:
@@ -283,6 +283,21 @@ localnet-statesync:
 	$(localnetCompose) --profile statesync up -d sync0
 	@contrib/scripts/localnet-statesync.sh 120 2 http://localhost:26697
 
+# Prometheus, Alertmanager, and Grafana on the localnet's network, then hold
+# Prometheus to the rules loaded and node0 scraped. Prometheus answers on 9095,
+# Alertmanager on 9096, Grafana on 3000.
+localnet-observability:
+	$(localnetCompose) --profile observability up -d prometheus alertmanager grafana
+	@contrib/scripts/localnet-observability.sh 30 2 http://localhost:9095
+
+# promtool and amtool over the templates and the rules, through the images the
+# observability profile runs.
+prometheusImage=prom/prometheus:v2.53.0
+alertmanagerImage=prom/alertmanager:v0.27.0
+observability-check:
+	$(DOCKER) run --rm -v $(CURDIR)/contrib/observability:/obs:ro --entrypoint promtool $(prometheusImage) check config /obs/prometheus.yml /obs/prometheus.localnet.yml
+	$(DOCKER) run --rm -v $(CURDIR)/contrib/observability:/obs:ro --entrypoint amtool $(alertmanagerImage) check-config /obs/alertmanager.yml
+
 # Coordinated upgrade on one host node under cosmovisor; see the script's
 # header for the knobs.
 upgrade-rehearsal:
@@ -292,4 +307,5 @@ upgrade-rehearsal:
 	test-fuzz test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
 	lint lint-fix format vulncheck \
 	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-check-pricefeed proto-update-deps \
-	localnet-check localnet-build-env localnet-init localnet-up localnet-start localnet-stop localnet-liveness localnet-statesync upgrade-rehearsal
+	localnet-check localnet-build-env localnet-init localnet-up localnet-start localnet-stop localnet-liveness localnet-statesync \
+	localnet-observability observability-check upgrade-rehearsal

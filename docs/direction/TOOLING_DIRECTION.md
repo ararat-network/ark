@@ -37,7 +37,7 @@ source and runs the testnet artefact. The rows follow the sections below: by lay
 
 | Repository         | Serves                                                                                                           | Must not become                                                               | Visibility | First tranche |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------- | ------------- |
-| `ark`              | The chain: state, validation, policy, and protocol queries; the protos, decoding fixtures, and local environment | A product-specific UI backend                                                 | Public     | Yes           |
+| `ark`              | The chain: state, validation, policy, and protocol queries; the protos, decoding fixtures, local environment, and monitoring templates | A product-specific UI backend                                                 | Public     | Yes           |
 | `ark-registry`     | Shared network configuration and asset metadata                                                                  | A second source of chain state                                                | Public     | Yes           |
 | `ark-sdk`          | Encoding, querying, transaction workflows, decoding, and formatting; the signup protocol                         | An implementation of economic or market policy                                | Public     | Yes           |
 | `ark-signer`       | Key custody on the device, signing consent, transaction review, multisig; later the dapp-to-wallet protocol      | An authority for balances, quotes, or transaction success                     | Public     | Yes           |
@@ -91,7 +91,7 @@ it does not reimplement policy calculations and present them as authoritative. I
 that is difficult to obtain safely, the answer is a clear query or simulation surface on the chain, not copied business
 logic in every client.
 
-Three more things the tooling consumes live here, since each is the chain's half of a contract:
+Four more things the tooling consumes live here, since each is the chain's half of a contract:
 
 - **The Disbursement module.** The [module](../../x/disbursement/README.md) is the distribution and compensation
   ledger: custody of each tranche, member issuance, and the escrow paid out by the plan's rules, through typed protobuf
@@ -111,6 +111,11 @@ Three more things the tooling consumes live here, since each is the chain's half
   accounts, submits transactions, exercises Ark's modules, and resets or reproduces state, using the same registry and
   SDK conventions as public environments. It is a fixture for wallet, indexer, explorer, contract, and application
   developers and for testing protocol upgrades, never a simulation with materially different protocol behaviour.
+- **The monitoring templates.** [contrib/observability](../../contrib/observability/README.md): the scrape and routing
+  templates, the rules for every alert [process](../operations/PROCESS_MONITORING.md) and
+  [protocol monitoring](../operations/PROTOCOL_MONITORING.md) specify, and the dashboards, taken from the tag of the
+  `arkd` they watch. The protocol rules read series the indexer exports, and the first tranche's Disbursement alerts
+  the membership service's.
 
 The chain is not a product-specific UI backend.
 
@@ -251,10 +256,11 @@ needs a credential for a private repository.
 The membership service runs the member process the [plan](../governance/DISBURSEMENT_PLAN.md#admission) sets: admission
 by a vouch, and by a verified identity once the check is live before the plan's step 2; the vouch graph with each
 member's standing, limits, and liability, which it reads for sybils and keeps private; a daily comparison of the chain's
-registrations against its admission records, inside the two-week hold before anything pays; grant-tranche funding
-requests to governance; and the committee's suspend, which stops a sybil's pay and moves nothing, for governance to
-cancel. A flag suspends the vouchee and the voucher, a finding cancels both, and cancelling a member suspends their
-unverified vouchees until they verify or are vouched for again.
+registrations against its admission records, inside the two-week hold before anything pays, exported with the tranche
+it fills as the series the [Disbursement alerts](../operations/PROTOCOL_MONITORING.md#7-disbursement) read;
+grant-tranche funding requests to governance; and the committee's suspend, which stops a sybil's pay and moves nothing,
+for governance to cancel. A flag suspends the vouchee and the voucher, a finding cancels both, and cancelling a member
+suspends their unverified vouchees until they verify or are vouched for again.
 
 The registrar key is a KMS key on the service's own server: the service signs registration batches of up to a hundred
 addresses with it, the committee appoints and replaces it, and the open member tranche is its only bound. The key never
@@ -295,7 +301,9 @@ inspect chain activity.
 
 A node API serves current state and transaction submission; it is not an ergonomic historical database. Ark will need an
 indexer for account history, transaction search, validator activity, governance history, contract activity, and product
-analytics.
+analytics. It is also the collector
+[protocol monitoring](../operations/PROTOCOL_MONITORING.md#27-collection-requirements) requires: it exports the
+typed-event series and hosts the query poller that the rules in `ark` read.
 
 None of that is needed for the first tranche. What the plan promises anyone can check is served by the Disbursement
 module's own queries, its totals, a grant's paid and remaining principal, a person's figures and live limit, a member's

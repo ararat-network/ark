@@ -39,8 +39,9 @@ never the endpoint or the OpenTelemetry SDK.
 
 Both processes already serve everything §3 reads, so monitoring is configuration on the operator's side: turn on the
 endpoints, scrape them with Prometheus, load a rule for each alert, route the alerts with Alertmanager, and graph them
-in Grafana. The scraper, rules, and dashboards are operator tooling kept outside this repository; this section is what
-they connect to.
+in Grafana. The scrape and routing templates, the rules, and the dashboards are in
+[contrib/observability](../../contrib/observability/README.md), taken from the tag of the `arkd` they watch; routing
+destinations and the thresholds §3.4 sets stay with the operator. This section is what the files connect to.
 
 ### 2.1 Turn on the endpoints
 
@@ -84,7 +85,8 @@ The node's `target_info` carries `service_name="arkd"`, its build as `service_ve
 
 ### 2.2 Scrape
 
-One job per endpoint kind, with a `node` label on every target so a node's three endpoints read together:
+One job per endpoint kind, with a `node` label on every target so a node's three endpoints read together.
+[prometheus.yml](../../contrib/observability/prometheus.yml) is the whole file; its shape:
 
 ```yaml
 global:
@@ -124,8 +126,9 @@ history (`--storage.tsdb.retention.time=30d`): §3.4 sets the thresholds from th
 
 ### 2.3 Alert rules
 
-Each §3 alert becomes one rule. Carry its severity from the heading into a `severity` label and its ID into `ark_alert`,
-so routing and dashboards can cite it. N2, on the node, and S6, on the sidecar:
+Each §3 alert becomes one rule in [rules/ark.yml](../../contrib/observability/rules/ark.yml). Carry its severity from
+the heading into a `severity` label and its ID into `ark_alert`, so routing and dashboards can cite it. N2, on the
+node, and S6, on the sidecar:
 
 ```yaml
 groups:
@@ -159,12 +162,14 @@ The rest follow the same pattern from their conditions; the `for:` durations and
 
 The validator-signing rule ignores `validator_address`, the one label the last-signed series carries that the height
 does not. `cometbft_p2p_peers` exists only once a node has had a peer, which the never-peered rule covers; the `role`
-label comes from the scrape configuration in §2.2. Check the file with `promtool check rules rules/ark.yml` before
-loading it.
+label comes from the scrape configuration in §2.2. `make observability-check` runs `promtool` and `amtool` over the
+templates and the rules through the Prometheus and Alertmanager images, and `TestAlertRulesReadPinnedSeries` holds
+every series a rule reads to the exported-series fixtures (§4) and every `ark_alert` to a condition in the guides.
 
 ### 2.4 Route and graph
 
-Route on `severity`: `page` to whoever is on call, `warn` to a channel. A minimal Alertmanager route:
+Route on `severity`: `page` to whoever is on call, `warn` and `notify` to a channel. The route in
+[alertmanager.yml](../../contrib/observability/alertmanager.yml):
 
 ```yaml
 route:
@@ -180,20 +185,26 @@ receivers:
     # chat integration
 ```
 
-In Grafana, add the Prometheus server as a data source and build one row per node: block height and interval, peers,
-and last signed height (CometBFT); ExtendVote status, vote targets by status, snapshot age, and participating power
-share (N1–N4); mempool by lane (N6); and for its sidecar, ticks, missing prices, pair sample counts, and provider
-last success (S2–S6).
+[dashboards/node.json](../../contrib/observability/dashboards/node.json) is the Grafana page, one row per node: block
+height and interval, peers, and last signed height (CometBFT); ExtendVote status, vote targets by status, snapshot age,
+and participating power share (N1–N4); mempool by lane (N6); and for its sidecar, ticks, missing prices, pair sample
+counts, and provider last success (S2–S6). It reads the data source whose uid is `prometheus`; the localnet profile
+provisions one, and an import elsewhere re-points it.
 
 ### 2.5 Local example
 
 [Localnet topology and ports](../../contrib/localnet/README.md#topology-and-ports) lists each validator's scrape endpoints
 and generated settings. Use the application endpoint for node metrics and the instrumentation endpoint for consensus.
 
+`make localnet-observability` runs Prometheus, Alertmanager, and Grafana on the localnet's network behind the
+`observability` profile, scraping every node and sidecar with the repository's rules: Prometheus on `localhost:9095`,
+Alertmanager on `9096`, Grafana on `3000` with the node dashboard provisioned.
+
 ## 3. What to watch
 
-Conditions only; §2.3 shows how one becomes a rule. The full rule set, the thresholds, and who gets paged live with the
-dashboards outside this repository and cite these IDs. [Protocol monitoring](PROTOCOL_MONITORING.md) watches
+Conditions only; §2.3 shows how one becomes a rule, and [rules/ark.yml](../../contrib/observability/rules/ark.yml)
+holds them all, each citing its ID in `ark_alert`. The thresholds are its placeholders until §3.4 sets them, and who
+gets paged is routing kept with the operator. [Protocol monitoring](PROTOCOL_MONITORING.md) watches
 protocol state through queries and events; this section watches the node and its sidecar as processes, through the
 exported-series contract §4 inventories. Names below are the exported form.
 

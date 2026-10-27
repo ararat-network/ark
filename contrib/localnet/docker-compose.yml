@@ -45,25 +45,25 @@ services:
   pricefeed0:
     <<: *pricefeed
     container_name: ark-pricefeed0
-    command: ["start", "--config", "/data/node0/pricefeed/pricefeed.toml", "--address", "0.0.0.0:8080", "--tls-mode", "plaintext"]
+    command: ["start", "--config", "/data/node0/pricefeed/pricefeed.toml", "--address", "0.0.0.0:8080", "--tls-mode", "plaintext", "--metrics", "--metrics-address", "0.0.0.0:9091"]
     networks: {localnet: {ipv4_address: 192.168.10.12}}
   pricefeed1:
     <<: *pricefeed
     container_name: ark-pricefeed1
     profiles: [multi]
-    command: ["start", "--config", "/data/node1/pricefeed/pricefeed.toml", "--address", "0.0.0.0:8080", "--tls-mode", "plaintext"]
+    command: ["start", "--config", "/data/node1/pricefeed/pricefeed.toml", "--address", "0.0.0.0:8080", "--tls-mode", "plaintext", "--metrics", "--metrics-address", "0.0.0.0:9091"]
     networks: {localnet: {ipv4_address: 192.168.10.13}}
   pricefeed2:
     <<: *pricefeed
     container_name: ark-pricefeed2
     profiles: [multi]
-    command: ["start", "--config", "/data/node2/pricefeed/pricefeed.toml", "--address", "0.0.0.0:8080", "--tls-mode", "plaintext"]
+    command: ["start", "--config", "/data/node2/pricefeed/pricefeed.toml", "--address", "0.0.0.0:8080", "--tls-mode", "plaintext", "--metrics", "--metrics-address", "0.0.0.0:9091"]
     networks: {localnet: {ipv4_address: 192.168.10.14}}
   pricefeed3:
     <<: *pricefeed
     container_name: ark-pricefeed3
     profiles: [multi]
-    command: ["start", "--config", "/data/node3/pricefeed/pricefeed.toml", "--address", "0.0.0.0:8080", "--tls-mode", "plaintext"]
+    command: ["start", "--config", "/data/node3/pricefeed/pricefeed.toml", "--address", "0.0.0.0:8080", "--tls-mode", "plaintext", "--metrics", "--metrics-address", "0.0.0.0:9091"]
     networks: {localnet: {ipv4_address: 192.168.10.15}}
 
   # State-sync client behind the "statesync" profile: a non-validator that
@@ -81,6 +81,40 @@ services:
       - ./statesync.sh:/statesync.sh:ro
     ports: ["26696-26697:26656-26657"]
     networks: {localnet: {ipv4_address: 192.168.10.22}}
+
+  # Prometheus, Alertmanager, and Grafana behind the "observability" profile,
+  # scraping every node and sidecar with contrib/observability's rules. Host
+  # ports sit clear of the nodes' gRPC range. Grafana is anonymous read-only;
+  # admin/localnet edits.
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: ark-prometheus
+    profiles: [observability]
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=30d"]
+    volumes:
+      - ../observability/prometheus.localnet.yml:/etc/prometheus/prometheus.yml:ro
+      - ../observability/rules:/etc/prometheus/rules:ro
+    ports: ["9095:9090"]
+    networks: {localnet: {ipv4_address: 192.168.10.32}}
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: ark-alertmanager
+    profiles: [observability]
+    volumes:
+      - ../observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports: ["9096:9093"]
+    networks: {localnet: {ipv4_address: 192.168.10.33}}
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: ark-grafana
+    profiles: [observability]
+    environment: [GF_AUTH_ANONYMOUS_ENABLED=true, GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer, GF_SECURITY_ADMIN_PASSWORD=localnet]
+    volumes:
+      - ../observability/grafana/datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+      - ../observability/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/ark.yml:ro
+      - ../observability/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3000:3000"]
+    networks: {localnet: {ipv4_address: 192.168.10.34}}
 
 networks:
   localnet:
