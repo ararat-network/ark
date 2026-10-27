@@ -61,7 +61,8 @@ presentation only) and the reference row in its own `reference_gas_price` field.
 
 - `denom`
 - `gas_price` — a `LegacyDec` of **denom base units per gas unit**, with the denomination's conversion factor
-  already applied. Multiply by your gas limit and ceil; no further conversion.
+  already applied and the product rounded up, so `ceil(gas_price × gas_limit)` never falls below the figure the
+  ante computes from the base price and the factor. Multiply by your gas limit and ceil; no further conversion.
 - `derived_height` — the block whose rates produced the conversion factor, so staleness is observable. Zero for
   the reference denomination, whose cross is the identity.
 

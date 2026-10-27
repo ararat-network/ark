@@ -21,6 +21,7 @@ var checkedOps = []struct {
 	{name: "Add", checked: decimal.Add, stock: math.LegacyDec.Add},
 	{name: "Sub", checked: decimal.Sub, stock: math.LegacyDec.Sub},
 	{name: "Mul", checked: decimal.Mul, stock: math.LegacyDec.Mul},
+	{name: "MulRoundUp", checked: decimal.MulRoundUp, stock: math.LegacyDec.MulRoundUp},
 	{name: "Quo", checked: decimal.Quo, stock: math.LegacyDec.Quo},
 }
 

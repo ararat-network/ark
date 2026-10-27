@@ -92,6 +92,27 @@ func Mul(a, b math.LegacyDec) (math.LegacyDec, error) {
 	return fromRaw(roundByPrecision(product))
 }
 
+// MulRoundUp returns a*b rounded up at the 18th place, as LegacyDec.MulRoundUp
+// does, when both operands and the result are representable: the product for
+// a figure that sizes a requirement. Rounding up adds at most one unit at the
+// 18th place, which the direct bound's headroom absorbs.
+func MulRoundUp(a, b math.LegacyDec) (math.LegacyDec, error) {
+	if err := validate(a); err != nil {
+		return math.LegacyDec{}, err
+	}
+	if err := validate(b); err != nil {
+		return math.LegacyDec{}, err
+	}
+	aRaw := a.BigIntMut()
+	bRaw := b.BigIntMut()
+	if aRaw.BitLen()+bRaw.BitLen() <= maxDirectMulOperandBitLenSum {
+		return a.MulRoundUp(b), nil
+	}
+
+	product := new(big.Int).Mul(aRaw, bRaw)
+	return fromRaw(roundUpByPrecision(product))
+}
+
 // Quo returns a/b with LegacyDec's existing bankers-rounding semantics when
 // both operands and the result are representable.
 func Quo(a, b math.LegacyDec) (math.LegacyDec, error) {
@@ -137,6 +158,18 @@ func fromRaw(value *big.Int) (math.LegacyDec, error) {
 		return math.LegacyDec{}, ErrOutOfRange
 	}
 	return result, nil
+}
+
+// roundUpByPrecision removes one LegacyDec precision factor rounding toward
+// positive infinity, as cosmossdk.io/math's chopPrecisionAndRoundUp: a
+// positive remainder rounds up, a negative value truncates toward zero.
+func roundUpByPrecision(value *big.Int) *big.Int {
+	quotient, remainder := new(big.Int), new(big.Int)
+	quotient.QuoRem(value, precision, remainder)
+	if remainder.Sign() > 0 {
+		quotient.Add(quotient, big.NewInt(1))
+	}
+	return quotient
 }
 
 // roundByPrecision removes one LegacyDec precision factor using the same
