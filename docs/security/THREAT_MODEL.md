@@ -25,7 +25,6 @@ links to explains the mechanism. It is not a claim of completeness: §3 lists wh
 | Committee accounts | off chain, usually multisigs | one bounded, expiring mandate per module, appointed by governance |
 | Registrar key | a KMS key on the membership service's server, which that service alone signs with | registering members within the open tranche; appointed and rotated by the grants committee without a vote |
 | Membership service | off chain, behind the Ark app | admission records, the vouch graph, and the uniqueness store: the verifier's attestations and dedup tokens beside members' addresses |
-| Identity vault | off chain, a service of its own in the member backend, once insurance coverage or AML needs it | personal data and the person ↔ address links; every other service sees an opaque person ID |
 | Governance | on chain | every unbounded power, including appointing committees |
 | Release pipeline | GitHub Actions; a maintainer reviews and publishes | the binaries and images validators run |
 
@@ -280,8 +279,7 @@ advances the term, so transactions prepared under the old key expire. The linked
   a uniqueness attestation and a dedup token, which the membership service keeps beside the admission record, or a
   verified member signs for the person and is cancelled with them if they are found a fake
   ([admission](../governance/DISBURSEMENT_PLAN.md#admission)); nothing it keeps names a person. The chain never sees the
-  verifier. The uniqueness store, which the verifier can map back to people, ranks with the committee and registrar
-  keys, and so does the identity vault once it holds personal data and the person ↔ address link
+  verifier. The uniqueness store, which the verifier can map back to people, ranks with the committee and registrar keys
   ([member backend](../direction/TOOLING_DIRECTION.md#backend)). Public references, registration batches and claim
   references included, carry no personal data.
 - A Reserve holding not re-attested within its entry's window earns nothing, which catches a custodian that

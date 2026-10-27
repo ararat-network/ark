@@ -234,5 +234,4 @@ targets are the margin (§2), not the distribution.
 - Counsel on how a member grant is characterised; for step 1, on whether the vouch graph and the app's sign-in
   identifiers beside addresses are personal data; before step 2, on whether matching a face against every enrolment is
   permissible where members live, which decides whether the identity check can be a basis there, and on what the
-  uniqueness attestations and dedup tokens oblige the membership service to protect; and, before the identity vault is
-  built, on what holding identity data obliges the backend to protect, retain, and report.
+  uniqueness attestations and dedup tokens oblige the membership service to protect.
