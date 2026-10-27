@@ -43,38 +43,28 @@ source and runs the testnet artefact. The rows follow the sections below: by lay
 | `ark-signer`       | Key custody on the device, signing consent, transaction review, multisig; later the dapp-to-wallet protocol      | An authority for balances, quotes, or transaction success                     | Public     | Yes           |
 | `ledger-ark`       | Signing on a Ledger device behind the signer interface                                                           | A second signer interface                                                     | Public     | Yes           |
 | `ark-app`          | Signup, the grant view, staking and voting each payment, and what the app later adds                             | A key store outside the signer interface                                      | Public     | Yes           |
-| `ark-registrar`    | The registrar key and the batches it signs                                                                       | A holder of personal data or any other key                                    | Private    | Yes           |
-| `ark-platform`     | Admission by identity and vouch, the uniqueness store, the vouch graph, funding requests, suspend                | A custodian, a delegator, a vote, or a holder of anything that names a person | Private    | Yes           |
-| `ark-identity`     | Personal data, the verifier's references, and person ↔ address links                                             | The source of any chain-visible reference                                     | Private    | Later         |
-| `ark-claims-cases` | The case records claim references name, and the coverage rule                                                    | A reason to put personal data in a reference                                  | Private    | Later         |
-| `ark-compliance`   | Screening, monitoring, alerts, and cases                                                                         | A way to move or freeze coins                                                 | Private    | Later         |
+| `ark-membership`   | Admission by vouch or identity, the vouch graph and uniqueness store, the registrar key in a KMS, funding requests, suspend | A custodian, a delegator, a vote, or a holder of anything that names a person | Private    | Yes           |
 | `ark-explorer`     | Human-readable verification and network visibility                                                               | The only way to inspect chain activity                                        | Public     | Thin view     |
 | `ark-indexer`      | Replayable historical and searchable derived data                                                                | Consensus state or an irreplaceable ledger                                    | Public     | Later         |
 
 ## Build order
 
-This is a dependency order, not a schedule. Steps 0 to 3 put the app with member registration in front of the first
+This is a dependency order, not a schedule. Steps 1 to 3 put the app with member registration in front of the first
 member tranche, and nothing after them is needed for it. Later layers should not compensate for unresolved protocol or
 metadata contracts underneath them.
 
 ### First member tranche
 
-0. **Settle what blocks code.** The identity verifier, chosen for a uniqueness attestation, a stable dedup token, and a
-   verification retrievable by reference; counsel on what those oblige the platform to protect; who vouches for the
-   first members, who have no member to vouch for them; and who runs the backend and holds the committee and registrar
-   keys. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md#6-open-items) holds each as an open item.
-1. **Fix the contracts.** The signup protocol in [`ark-sdk`](#ark-sdk); the registrar's API, defined in
-   [`ark-registrar`](#ark-registrar) for the platform to import; a minimal network registry in
-   [`ark-registry`](#ark-registry) for the local environment and testnet; and the local environment in [`ark`](#ark),
-   which sets the grants mandate, opens a member tranche, and appoints a registrar, as the e2e tier already does, so
-   both tracks below register against a real chain. Protocol schemas, signing modes, decoding, and public endpoints
+1. **Seed the local environment.** In [`ark`](#ark): set the grants mandate, open a member tranche, and appoint a
+   registrar, as the e2e tier already does, so both tracks below register against a real chain. It waits on the app,
+   since the e2e harness serves the tests until then. Protocol schemas, signing modes, decoding, and public endpoints
    are treated as one surface from here on.
-2. **Build two tracks in parallel.** The backend: `ark-registrar` first, the smallest part and the only one that writes
-   to the chain, then [`ark-platform`](#ark-platform) with its uniqueness store. The client: `ark-sdk` with the
-   queries, transactions, ADR-036 signature, and decoding the app needs, then [`ark-signer`](#ark-signer) with the
-   device keystore and the adapter for [`ledger-ark`](#ledger-ark), then the signup flow in [`ark-app`](#ark-app). The
-   tracks meet when the app's signup registers a member through the platform on the local environment, from a device
-   key and from a Ledger.
+2. **Build two tracks in parallel.** The backend: [`ark-membership`](#ark-membership), its registrar signer first, the
+   one part that writes to the chain, then admissions and the vouch graph, the uniqueness store following with the
+   identity check. The client: `ark-sdk` with the queries, transactions, ADR-036 signature, and decoding the app needs,
+   then [`ark-signer`](#ark-signer) with the device keystore and the adapter for [`ledger-ark`](#ledger-ark), then the
+   signup flow in [`ark-app`](#ark-app). The tracks meet when the app's signup registers a member through the membership
+   service on the local environment, from a device key and from a Ledger.
 3. **Finish what a member needs before the first payment.** The grant view, staking, and voting in the app, since the
    first tenth pays two weeks after registration; the thin distribution view on node queries, the first release of
    [`ark-explorer`](#ark-explorer); the Disbursement module's audit, which sits before the first tranche, not before
@@ -82,15 +72,14 @@ metadata contracts underneath them.
 
 ### After the first tranche
 
-4. **Add identity where a use needs it.** [`ark-identity`](#ark-identity), [`ark-claims-cases`](#ark-claims-cases),
-   and [`ark-compliance`](#ark-compliance) with [`ark-indexer`](#ark-indexer) under it, when insurance coverage of
-   registered members or AML is adopted. If counsel requires monitoring from the first tranche, the indexer and
-   compliance move into step 3 and become its longest part.
+4. **Add the identity check before the plan's step 2.** Before conversion opens: counsel on face matching, the verifier
+   pilot, the membership service's verifier adapter and uniqueness store, and the return of verified-only vouching,
+   which step-1 members pass to keep vouching ([admission](../governance/DISBURSEMENT_PLAN.md#admission)).
 5. **Widen the app.** Transfers, simulation, market operations, and the contributor interactions in the app's later
    scope; external-wallet signers behind the signer interface; and multisignature signing, so a committee signs its
    acts from the app and a shared account signs the same way, with the relay that carries partial signatures.
-6. **Add the information layer.** Replayable indexing, where step 4 has not built it, and the full explorer on it, once
-   the meanings of messages, events, assets, and account activity are stable enough to share.
+6. **Add the information layer.** Replayable indexing and the full explorer on it, once the meanings of messages,
+   events, assets, and account activity are stable enough to share.
 7. **Make third-party development routine.** Extend the signer interface into the wallet kit's dapp protocol, and
    provide the documented interfaces, fixtures, and compatibility guidance needed to build without private knowledge.
 8. **Expand execution environments deliberately.** CosmWasm is on; a general contract product or an EVM-facing one is
@@ -121,9 +110,8 @@ Three more things the tooling consumes live here, since each is the chain's half
   contract deployment; CosmWasm upload and instantiation remain permissionless from launch
   ([genesis §12](../governance/GENESIS.md#12-cosmwasm)), and general contract tooling is a separate product decision.
 - **The decoding fixtures.** Real transactions through the application's own encoder and real blocks, in
-  [tests/fixtures](../../tests/fixtures/README.md): the contract every decoder, in TypeScript or Go, is tested
-  against, so that the app, the SDK, the explorer, and the compliance service give each transaction
-  [one meaning](#one-meaning-per-transaction).
+  [tests/fixtures](../../tests/fixtures/README.md): the contract every decoder, in TypeScript or Go, is tested against,
+  so that the app, the SDK, and the explorer give each transaction [one meaning](#one-meaning-per-transaction).
 - **The local environment.** A LocalArk-style environment that starts a known network, funds deterministic development
   accounts, submits transactions, exercises Ark's modules, and resets or reproduces state, using the same registry and
   SDK conventions as public environments. For the first tranche it sets the grants mandate, opens a member tranche, and
@@ -143,8 +131,8 @@ it is copied into each wallet and dapp, so testnet, mainnet, and local developme
 
 The chain-derived half, denominations, prefix, coin type, versions, and genesis identity, is generated by
 [contrib/registry](../../contrib/registry/README.md) in the community chain-registry's schema, so it cannot drift from
-the chain; the registry keeps endpoints and explorers by hand and checks the rest against a pinned `ark` tag. The first
-tranche needs a minimal registry for the local environment and the testnet. It is not a second source of chain state.
+the chain; the registry keeps endpoints and explorers by hand and checks the rest against a pinned `ark` tag. It is not
+a second source of chain state.
 
 ### `ark-sdk`
 
@@ -165,11 +153,11 @@ slippage, tax, oracle freshness, or transaction finality would make the tooling 
 independent implementation of economic or market policy.
 
 Two contracts are published here beside the code. The
-[signup protocol](https://github.com/ararat-network/ark-sdk/blob/main/docs/SIGNUP_PROTOCOL.md), address, proof of
-possession, vouch, and identity attestation to the backend, is specified with its test vectors so that a member signing
-with an external wallet can complete it: proof of possession is an ADR-036 off-chain signature over a challenge the
-backend issues, which common Cosmos wallets already produce, and a vouch is the voucher's signature over a document
-naming the admission; neither signs a transaction or adds a legacy sign mode to transaction signing. The platform's
+[signup protocol](https://github.com/ararat-network/ark-sdk/blob/main/docs/SIGNUP_PROTOCOL.md), address, proof of possession,
+vouch, and identity attestation to the backend, is specified with its test vectors so that a member signing with an
+external wallet can complete it: proof of possession is an ADR-036 off-chain signature over a challenge the backend
+issues, which common Cosmos wallets already produce, and a vouch is the voucher's signature over a document naming the
+admission; neither signs a transaction or adds a legacy sign mode to transaction signing. The membership service's
 app-facing API sits beside it, since the app's code and the browser show a request's shape in any case and nothing
 sensitive is in the shape. The first tranche needs the queries, transactions, ADR-036 signature, and decoding the app
 needs.
@@ -222,8 +210,9 @@ everything a member does, and grows past both. Its first user is fixed by the di
 grant the module pays out over a year, has never seen a key, and must be able to stake and vote it. Custody sits behind
 the signer interface; the features own everything else a member does:
 
-- signup with the member process in front of it, the identity check and the vouch, submitting the address with a proof
-  of possession;
+- signup with the member process in front of it, the vouch or the identity check, with the signals the vouch path leans
+  on, one Apple or Google account, device attestation, and a phone number, submitting the address with a proof of
+  possession;
 - the grant as the member sees it, what has been paid and what waits, the schedule and the next payment, and the
   member's status read from the Disbursement module;
 - the delegation of each payment that arrived, and the validator picker that shows how close each validator is to a
@@ -245,71 +234,49 @@ same level of integration. It is not a key store outside the signer interface, a
 
 ## Backend
 
-The backend behind the app is split by what a breach of each part would expose, and the plan bounds it with rules
-rather than norms. On a public chain a leaked link between a person and an address exposes that person's whole history,
-past and future, so the link has one home. The first member tranche needs two parts, the registrar signer and the
-member platform; the others arrive with the uses that need them.
+The backend behind the app is the membership service with its registrar signer, and the plan bounds it with rules rather
+than norms. On a public chain a leaked link between a person and an address exposes that person's whole history, past
+and future, so nothing the backend holds names a person ([identity data](#identity-data)). Services that manage
+identities for claims coverage are intended later and not designed here.
 
 The backend holds no member coins and no authorisation over any member account, and it is not a vote. The committee's
 signature and the registrar key are security components on a par with the app's key custody: through its registrar the
 committee can commit the open tranche, which pays nothing for the two-week hold, pause every member's pay, and commit
 its term's allowance into awards that pay nothing for a period, and an expedited governance vote revokes it, reinstates
-the members it wrongly suspended, and cancels its awards and registrations. The platform's uniqueness store ranks with
-them, and so does the identity vault once it holds the link. Where members delegate is their own choice, steered only
-by the app's defaults. Registration callers pay normal transaction gas; payments arrive without one. Disbursement
-custody reserves award principal and provides no fee allowance; members pay their own gas from the first payment, the
-tenth the block sends once the two-week hold ends.
+the members it wrongly suspended, and cancels its awards and registrations. The membership service's uniqueness store
+ranks with them. Where members delegate is their own choice, steered only by the app's defaults. Registration callers
+pay normal transaction gas; payments arrive without one. Disbursement custody reserves award principal and provides no
+fee allowance; members pay their own gas from the first payment, the tenth the block sends once the two-week hold ends.
 
-The backend repositories are private: published monitoring rules are a guide to evading them, and the identity vault's
-code has the shortest access list in the organisation. A service defines the API it serves beside its code and its
-callers import the generated client; nothing outside the backend calls these APIs. A service whose code must be read by
-fewer people than call it, the vault, publishes its API as a versioned artifact its callers build against without
-reading the code, as `ark` publishes its protos. The platform's app-facing API is the exception, published in `ark-sdk`
-beside the signup protocol.
+The backend repository is private, since published monitoring rules are a guide to evading them; its app-facing API is
+the exception, published in `ark-sdk` beside the signup protocol.
 
-### `ark-registrar`
+### `ark-membership`
 
-The registrar signer holds the registrar key, a single key the grants committee appoints, bounded by the open member
-tranche alone, that registers batches of up to a hundred addresses with the Disbursement module. It signs the batches
-the platform proposes and holds nothing else, so no one breach yields both the key and the link between people and
-addresses. Its API is defined here for the platform to import. It is the smallest part of the backend and the only one
-that writes to the chain, so it is built first. It is not a holder of personal data or of any other key.
+The membership service runs the member process the [plan](../governance/DISBURSEMENT_PLAN.md#admission) sets: admission
+by a vouch, and by a verified identity once the check is live before the plan's step 2; the vouch graph with each
+member's standing, limits, and liability, which it reads for sybils and keeps private; a daily comparison of the chain's
+registrations against its admission records, inside the two-week hold before anything pays; grant-tranche funding
+requests to governance; and the committee's suspend, which stops a sybil's pay and moves nothing, for governance to
+cancel. A flag suspends the vouchee and the voucher, a finding cancels both, and cancelling a member suspends their
+unverified vouchees until they verify or are vouched for again.
 
-### `ark-platform`
-
-The member platform runs the member process: admission by a verified identity and a vouch together, and the admission
-records and the vouch graph it reads for sybils; a daily comparison of the chain's registrations against its admission
-records, inside the two-week hold before anything pays; grant-tranche funding requests to governance; and the
-committee's suspend, which stops a sybil's pay and moves nothing, for governance to cancel, and reaches a voucher whose
-vouchees are cancelled.
+The registrar key is a KMS key on the service's own server: the service signs registration batches of up to a hundred
+addresses with it, the committee appoints and replaces it, and the open member tranche is its only bound. The key never
+leaves the KMS, so a breach of the service can sign only while it lasts and only within the tranche, and the committee
+ends it by replacing the registrar. Two controls hold that bound: a key policy under which only the service's cloud role
+can sign, and the KMS audit log shipped where the service cannot alter it, so a committee member can compare the
+signatures against admissions inside the hold. The committee may name itself registrar and register the first cohort
+before the service exists.
 
 Registration needs uniqueness, one grant per person, not identity: the identity verifier, a third party that checks
 liveness and a document, returns a uniqueness attestation and the earlier enrolments whose face matches this one. The
-platform derives the dedup token from that: a match above its threshold takes the earlier enrolment's token, so the
-same person always resolves to one token however many times they verify. It keeps the attestation, the token, and the
-verifier's reference beside the admission record; nothing it keeps names a person. It is not a custodian, a delegator,
-a vote, or a holder of anything that names a person.
-
-### `ark-identity`
-
-The identity vault arrives with insurance coverage or AML. It holds person records, the verified attributes the other
-services need, the verifier's references, and the person ↔ address links, which it takes over from the platform. It is
-then the only service that holds personal data: every other service sees an opaque person ID, and the vault logs every
-resolution of one. Existing members are linked by retrieving their verification from the verifier by reference, with
-their consent, rather than verifying again. Documents stay with the verifier unless counsel requires otherwise. It is
-not the source of any chain-visible reference, and never readable without a logged request.
-
-### `ark-claims-cases`
-
-The claims case service arrives with insurance coverage of registered members. It holds the off-chain case records a
-claim's `reference` names. Coverage is a rule of the Claims committee's case process; the chain sees a recipient, an
-amount, and a reference that carries no personal data. It is never a reason to put personal data in a reference.
-
-### `ark-compliance`
-
-Risk and compliance arrives with AML, or with the first tranche if counsel requires monitoring from it: screening and
-transaction monitoring over the indexer's history, resolving addresses through the vault. It acts through admission,
-the committee's suspend, and the committee's choice not to submit a claim; nothing in it moves or freezes coins.
+service derives the dedup token from that: a match above its threshold takes the earlier enrolment's token, so the same
+person always resolves to one token however many times they verify. It keeps the attestation, the token, and the
+verifier's reference beside the admission record; nothing it keeps names a person. A vouched-only member has no
+attestation and no token: their uniqueness rests on the voucher's liability, and, once a verifier exists, the check is
+what they pass to vouch themselves. It is not a custodian, a delegator, a vote, a holder of any key but the registrar's,
+or a holder of anything that names a person.
 
 ## Information layer
 
@@ -331,15 +298,14 @@ inspect chain activity.
 
 ### `ark-indexer`
 
-A node API serves current state and transaction submission; it is not an ergonomic historical database. Ark will need
-an indexer for account history, transaction search, validator activity, governance history, contract activity,
-compliance monitoring, and product analytics.
+A node API serves current state and transaction submission; it is not an ergonomic historical database. Ark will need an
+indexer for account history, transaction search, validator activity, governance history, contract activity, and product
+analytics.
 
 None of that is needed for the first tranche. What the plan promises anyone can check is served by the Disbursement
 module's own queries, its totals, a grant's paid and remaining principal, a person's figures and live limit, a member's
 status, each account's balance and reservation, and the open member tranche, together with the staking pool and the
-governance proposals, all read from a node at a height. The indexer comes after, unless counsel requires transaction
-monitoring from the first tranche: risk and compliance follows funds across addresses, which node queries do not serve.
+governance proposals, all read from a node at a height. The indexer comes after.
 
 The indexer is replayable from canonical chain data and records the block height from which every result is derived.
 It tolerates restarts, delayed blocks, transaction failures, software upgrades, and schema evolution, and an indexed
@@ -362,13 +328,11 @@ reassuring generic label.
 
 ### Identity data
 
-Until the identity vault arrives nothing the backend holds names a person: the uniqueness store links a dedup token,
-which only the verifier can map to a person, to an address, and whether that is personal data in law is counsel's
-question. The vault makes the backend a holder of personal data, with the duties counsel sets for protecting, retaining,
-and reporting it. Nothing chain-visible carries either: registration batches, claim references, and grant records name
-admission and case records, never people. A breach of the vault would tie known people to public addresses permanently,
-which is why it is the only service holding the link and why no other service resolves a person ID without a logged
-request.
+Nothing the backend holds names a person: the uniqueness store links a dedup token, which only the verifier can map to a
+person, to an address, the vouch graph links addresses to each other, and whether either is personal data in law is
+counsel's question. Nothing chain-visible carries either: registration batches, claim references, and grant records name
+records kept off chain, never people. A service that held the link between people and addresses would be the one place a
+breach ties known people to public addresses permanently, so none holds it until a use needs it, and then one alone.
 
 ### Fees, taxes, quotes, and simulation
 
@@ -386,8 +350,8 @@ adjustment and denomination preference are not protocol requirements; they are d
 ### One meaning per transaction
 
 Protobuf schemas, type URLs, events, and error semantics are a public integration contract even when they are not
-marketed as one, so tooling is considered when these surfaces change. The SDK, app, indexer, explorer, and compliance
-service give each transaction one meaning: what they share is the proto schemas and typed events, with the
+marketed as one, so tooling is considered when these surfaces change. The SDK, app, indexer, and explorer give each
+transaction one meaning: what they share is the proto schemas and typed events, with the
 [decoding fixtures](../../tests/fixtures/README.md) kept in `ark` that every decoder, in TypeScript or Go, must read the
 same way. Stable decoders and compatibility tests are worth more than multiple clients each guessing how to interpret
 loosely structured events.
@@ -440,9 +404,8 @@ The direction is working when:
 - a member can use the app, and read what they sign, in their own language;
 - a committee signs its acts from the app without a CLI, and nothing it signs is public before broadcast;
 - every grant can be checked against the plan's rules from public interfaces;
-- no single backend service yields both the person ↔ address link and the registrar key, and nothing chain-visible
-  names a person;
-- the same transaction is decoded consistently by the app, explorer, SDK, and compliance service;
+- nothing the backend holds or the chain shows names a person;
+- the same transaction is decoded consistently by the app, explorer, and SDK;
 - a user can understand the assets, fees, taxes, quotes, permissions, and likely outcome before signing;
 - historical views can be rebuilt from chain data and expose their synchronization height;
 - a developer can reproduce core workflows locally using the same conventions as a public network;

@@ -23,9 +23,8 @@ links to explains the mechanism. It is not a claim of completeness: §3 lists wh
 | Price providers | the internet | nothing; every one is an untrusted input |
 | Contracts | on chain, uploaded by anyone | nothing; untrusted code bounded by the policy router and its query surface |
 | Committee accounts | off chain, usually multisigs | one bounded, expiring mandate per module, appointed by governance |
-| Registrar key | the registrar signer, a service of its own | registering members within the open tranche; appointed and rotated by the grants committee without a vote |
-| Member platform | off chain, behind the Ark app | admission records, the vouch graph, and the uniqueness store: the verifier's attestations and dedup tokens beside members' addresses |
-| Identity vault | off chain, a service of its own in the member backend, once insurance coverage or AML needs it | personal data and the person ↔ address links; every other service sees an opaque person ID |
+| Registrar key | a KMS key on the membership service's server, which that service alone signs with | registering members within the open tranche; appointed and rotated by the grants committee without a vote |
+| Membership service | off chain, behind the Ark app | admission records, the vouch graph, and the uniqueness store: the verifier's attestations and dedup tokens beside members' addresses |
 | Governance | on chain | every unbounded power, including appointing committees |
 | Release pipeline | GitHub Actions; a maintainer reviews and publishes | the binaries and images validators run |
 
@@ -272,14 +271,17 @@ advances the term, so transactions prepared under the old key expire. The linked
 
 **Limits.**
 
-- The registrar hold protects only if someone compares the chain's registrations with the platform's admission records
-  inside it ([grants](../governance/COMMITTEE_RUNBOOK.md#8-grants)).
-- Member admission runs off chain: a third-party identity verifier checks the person and returns a uniqueness
-  attestation and a dedup token, which the member platform keeps beside the admission record; nothing it keeps names a
-  person. The chain never sees the verifier. The uniqueness store, which the verifier can map back to people, ranks with
-  the committee and registrar keys, and so does the identity vault once it holds personal data and the person ↔ address
-  link ([member backend](../direction/TOOLING_DIRECTION.md#backend)). Public
-  references, registration batches and claim references included, carry no personal data.
+- The registrar hold protects only if someone compares the chain's registrations with the membership service's admission
+  records inside it ([grants](../governance/COMMITTEE_RUNBOOK.md#8-grants)). The registrar key is a KMS key the
+  membership service signs with, so a breach of the service signs within the tranche until the committee replaces the
+  registrar, and the KMS audit log, shipped where the service cannot alter it, is the record that comparison reads.
+- Member admission runs off chain, on an identity check or a vouch: a third-party verifier checks the person and returns
+  a uniqueness attestation and a dedup token, which the membership service keeps beside the admission record, or a
+  verified member signs for the person and is cancelled with them if they are found a fake
+  ([admission](../governance/DISBURSEMENT_PLAN.md#admission)); nothing it keeps names a person. The chain never sees the
+  verifier. The uniqueness store, which the verifier can map back to people, ranks with the committee and registrar keys
+  ([member backend](../direction/TOOLING_DIRECTION.md#backend)). Public references, registration batches and claim
+  references included, carry no personal data.
 - A Reserve holding not re-attested within its entry's window earns nothing, which catches a custodian that
   fails while the committee stops attesting; a key that keeps re-attesting falsely is answered only by the evidence
   its references cite.

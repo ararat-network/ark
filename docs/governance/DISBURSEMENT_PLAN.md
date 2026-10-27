@@ -104,18 +104,22 @@ All figures except the member amount are cumulative.
   contributor budget spent. A step opens with a proposal that pairs `MsgOpenTranche` with the step's `member_amount`,
   proposed as the open tranche nears exhaustion; anything still open is consumed at the new amount. A member keeps the
   amount and schedule they registered under.
-- **Pace is admissions.** The registrar registers as fast as verified admissions clear, and opening moves no coins, so
-  an open tranche nobody fills costs nothing and a step that fills in a month opens the next in a month. The plan sets
-  no maximum pace.
+- **Pace is admissions.** The registrar registers as fast as admissions clear, and opening moves no coins, so an
+  open tranche nobody fills costs nothing and a step that fills in a month opens the next in a month. The plan sets no
+  maximum pace.
 - **The amount is the vote's.** Each step's first proposal sets the amount by one rule: the whole above the cost of
-  joining, an identity check, a voucher, and a wallet, under which it reads as an airdrop; and the tenth, the part no
-  finding after the hold recovers, under the price of a bought identity at the oracle's NOAH rate. Step 1 runs at the
-  artefact's 20,000 with nothing priced and a founder-vouched cohort. Step 2 waits for the oracle to read a live NOAH
-  price, the reading that also opens conversion, since its amount cannot be checked without one. The amounts in the
-  table are the plan's expectation; each vote applies the rule.
+  joining, an identity check or a voucher, and a wallet, under which it reads as an airdrop; and the tenth, the part no
+  finding after the hold recovers, under the price of a bought identity at the oracle's NOAH rate, while a bought vouch
+  costs the voucher's unpaid grant, which the admission rules keep above the tenth. Step 1 runs at the artefact's 20,000
+  with nothing priced, on vouches alone from the committee's list. Step 2 waits for the oracle to read a live NOAH
+  price, the reading that also opens conversion, since its amount cannot be checked without one, and for the identity
+  check, since conversion is what makes a fake's grant worth taking. The amounts in the table are the plan's
+  expectation; each vote applies the rule.
 - **The fake rate is the step's check.** Each step's first proposal states the previous step's registrations,
   suspensions, and cancellations from the journal, and what admissions changed if the rate warrants it. A step whose
-  predecessor's fakes have no answer waits for the admissions fix. This is the one condition that holds a step.
+  predecessor's fakes have no answer waits for the admissions fix. This is the one condition that holds a step. Step 1
+  has no instrument for its rate, so step 2's answer is the admissions fix itself: the identity check live and
+  verified-only vouching in force before conversion opens.
 - **The tranche is the exposure.** The open tranche is all a stolen registrar key commits, and a fake found within the
   two-week hold costs nothing, so a tranche is sized to the loss governance accepts should a stolen key go unnoticed
   through a hold. The launch default opens each step's member budget in quarters, 7.5M at step 1, so twenty votes cover
@@ -125,6 +129,60 @@ All figures except the member amount are cumulative.
   over if its proposal says why, and need not be spent before the next step opens. The founder's 25M is charged to
   step 1's 20M contributor budget, the overrun the guideline allows. Anything either pool doesn't allocate rolls into
   the next step. The 60/40 split holds over the whole distribution.
+
+### Admission
+
+The membership service admits a person on one of two bases and the registrar registers the address the person proves
+they hold ([signup protocol](https://github.com/ararat-network/ark-sdk/blob/main/docs/SIGNUP_PROTOCOL.md)). An identity
+check: a third-party verifier checks liveness and a document and returns a uniqueness attestation with the earlier
+enrolments whose face matches, from which the service derives one dedup token per person; it is the only thing that
+finds a duplicate. Or a vouch: an existing member signs a document naming the admission, staking their own membership
+that this is a real person who is not already a member; a vouched person has no face on file, so nothing links a second
+membership of theirs to a first, and the rules below bound what that can cost.
+
+| Standing                      | Vouches                 | Why                                                                        |
+| ----------------------------- | ----------------------- | -------------------------------------------------------------------------- |
+| Verified and vouched          | Up to the higher limit  | A known identity with a sponsor liable for them                            |
+| Verified only                 | Up to the lower limit   | A known identity, nobody liable for them                                   |
+| Vouched only                  | None, until they verify | No identity on file, so no dedup                                           |
+| Any member, before a verifier | Up to the lower limit   | Nothing is priced and conversion is closed, so the check is not yet needed |
+
+- **Only verified members vouch, once a verifier exists.** Every member is then at most one vouch from a verified
+  person, the grants one identity can conjure are bounded by its vouch limit, and the way to vouch runs through the
+  check that finds duplicates, so a fake stays unfound only by staying vouched-only and never vouching. The limits are
+  the admissions knob each step's first proposal reads the fake rate against; they open at two and five.
+- **A vouch is backed.** A member vouches only while their unpaid grant exceeds the tenth, so every live vouch is
+  worth more to its voucher than a fake's first payment. Cancellation forfeits unpaid grant and nothing the chain can
+  reach beyond it; the membership itself is the rest of the stake, and grows as membership carries more.
+- **Liability is strict.** A finding against a vouchee cancels the voucher, every time and with no discretion, since a
+  voucher who could expect leniency for one mistake would sell exactly one vouch. The process decides the fact, not
+  the penalty: a flag suspends the vouchee and the voucher, which stops pay and moves nothing, and freezes the
+  voucher's vouching; a finding cancels both in one proposal; a flag that fails reinstates both, and the lifting block
+  pays their arrears. Liability runs for the vouchee's schedule, after which nothing is left to stop.
+- **One cascade rule.** Cancelling a member suspends everyone that member vouched for who has not verified, since
+  their only basis was a judgement just shown wrong or for sale. Each clears by verifying, which finds a duplicate and
+  defeats a fabricated person, or by a fresh vouch from a member willing to stake their membership on them, and
+  whoever is still suspended at the step review is cancelled there. Verified vouchees have their own basis and are
+  untouched. Liability never travels up past the voucher, whose own voucher attested something that stays true, and
+  suspension never cascades, so one finding reaches two cancelled members and the unverified people each vouched for.
+- **The first cohort.** Before any member exists the committee's list is the vouch: the launch validators' operators,
+  one membership each, and the early contributors it names. They vouch at the lower limit, as every step-1 member does,
+  and verify to move up once a verifier is live. The list is the committee's first recorded act and the registrar
+  executes it.
+- **Step 1 runs on vouches alone.** Nothing is priced and conversion is closed until step 2, so a step-1 grant is NOAH
+  with no exit, and the check that protects money is not needed before the money is. Until a verifier exists every
+  member vouches, at the lower limit, and the membership grows as a tree from the committee's list rather than one hop
+  from it. Two things carry what the check would. The quarter tranche is the loss bound: governance cancels the unpaid
+  remainder of what the step review finds fake, so a bad quarter leaks its tenths and a month or two of payments in a
+  token nobody can convert. The app's cheap signals are the floor: one Apple or Google account, device attestation, and
+  a phone number, which price a fake in effort and name nobody. The identity check is live before step 2 opens
+  conversion and the verified-only rule returns with it: a step-1 member verifies to keep vouching, duplicates surface
+  then, and the cascade and the voucher's liability reach back through the tree however old it is. Step 2's proposal
+  says that verification is coming and what it unlocks, which is what makes that liability bite.
+- **The graph is the membership service's.** The vouch graph, standings, limits, flags, liability, and admission records
+  are its state and stay private, since the graph maps who knows whom between addresses; the committee and governance
+  read it for a finding and the step review publishes counts. The chain sees only the registrar's registrations, the
+  committee's suspensions, and governance's cancellations.
 
 ### Contributor proposals
 
@@ -163,15 +221,17 @@ targets are the margin (§2), not the distribution.
 
 ## 6. Open items
 
-- The member process: a third-party identity check that returns a uniqueness attestation, plus a vouch from an
-  existing member. Still open: which verifier, who runs it, and who holds the committee and registrar keys
+- The identity verifier: which one, chosen on a pilot once counsel has answered on face matching, when the membership
+  service is built. Nothing in step 1 waits on it, since step 1 runs on vouches alone; step 2 does, since the check is
+  live before conversion opens ([tooling direction](../direction/TOOLING_DIRECTION.md#after-the-first-tranche)).
+- The grants committee's members and the backend's operator, the same few people, named at go-live: the appointment is
+  the first proposal after launch, and the registrar key is a KMS key the membership service signs with
   ([tooling direction](../direction/TOOLING_DIRECTION.md#backend)).
-- Who vouches for the first members: a vouch comes from an existing member, and the first cohort has none.
 - The Ark app, which holds the wallet and the member features
   ([tooling direction](../direction/TOOLING_DIRECTION.md#ark-app)).
   It is needed for the first member tranche and is not built.
 - An audit of the Disbursement module before launch, since it holds the pools from block 1.
-- Vetting criteria for the founding set.
-- Counsel on how a member grant is characterised; on what the uniqueness attestations and dedup tokens oblige the
-  platform to protect; and, before the identity vault is built, on what holding identity data obliges the backend to
-  protect, retain, and report.
+- Counsel on how a member grant is characterised; for step 1, on whether the vouch graph and the app's sign-in
+  identifiers beside addresses are personal data; before step 2, on whether matching a face against every enrolment is
+  permissible where members live, which decides whether the identity check can be a basis there, and on what the
+  uniqueness attestations and dedup tokens oblige the membership service to protect.
