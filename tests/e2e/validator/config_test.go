@@ -122,9 +122,12 @@ func (s *ConfigSuite) TestNodeMinGasPricesIgnored() {
 // validator 0 holds exactly its cap of two.
 func (s *ConfigSuite) TestPeerLimit() {
 	s.Require().NoError(s.enablePrometheus())
-	count, err := s.peerCount(0)
-	s.Require().NoError(err)
-	s.Require().Equal(float64(3), count)
+	// The restart leaves the validators reconnecting.
+	s.Require().EventuallyWithT(func(c *assert.CollectT) {
+		count, err := s.peerCount(0)
+		assert.NoError(c, err)
+		assert.Equal(c, float64(3), count)
+	}, time.Minute, 2*time.Second)
 
 	peers := s.Chain.Nodes().PeerString(s.GetContext())
 	peerList := strings.Split(peers, ",")
