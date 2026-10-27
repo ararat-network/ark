@@ -56,6 +56,12 @@ func TestFastPathBoundsStayWithinLegacyDecRange(t *testing.T) {
 			operation: math.LegacyDec.Mul,
 		},
 		{
+			name:      "multiply rounding up bound",
+			a:         widestMulOperand,
+			b:         widestMulMultiplier,
+			operation: math.LegacyDec.MulRoundUp,
+		},
+		{
 			name:      "divide bound",
 			a:         widestQuoNumerator,
 			b:         smallestQuoDivisor,

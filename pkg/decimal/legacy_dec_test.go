@@ -142,6 +142,49 @@ func TestCheckedArithmeticMatchesLegacyDec(t *testing.T) {
 			b:       math.LegacyMustNewDecFromStr("0.789"),
 		},
 		{
+			name:    "multiply rounding up",
+			checked: decimal.MulRoundUp,
+			legacy:  math.LegacyDec.MulRoundUp,
+			a:       math.LegacyMustNewDecFromStr("123.456"),
+			b:       math.LegacyMustNewDecFromStr("0.789"),
+		},
+		{
+			// Half a unit at the 18th place: bankers rounding drops it, rounding up keeps it.
+			name:    "multiply rounding up carries a remainder",
+			checked: decimal.MulRoundUp,
+			legacy:  math.LegacyDec.MulRoundUp,
+			a:       math.LegacySmallestDec(),
+			b:       half,
+		},
+		{
+			name:    "multiply rounding up truncates a negative toward zero",
+			checked: decimal.MulRoundUp,
+			legacy:  math.LegacyDec.MulRoundUp,
+			a:       math.LegacySmallestDec().Neg(),
+			b:       half,
+		},
+		{
+			name:    "multiply rounding up outside direct bound",
+			checked: decimal.MulRoundUp,
+			legacy:  math.LegacyDec.MulRoundUp,
+			a:       wideTieOperand,
+			b:       half,
+		},
+		{
+			name:    "multiply rounding up outside direct bound on negatives",
+			checked: decimal.MulRoundUp,
+			legacy:  math.LegacyDec.MulRoundUp,
+			a:       wideTieOperand.Neg(),
+			b:       half,
+		},
+		{
+			name:    "multiply rounding up representable result outside direct bound",
+			checked: decimal.MulRoundUp,
+			legacy:  math.LegacyDec.MulRoundUp,
+			a:       outsideDirectBound,
+			b:       math.LegacyOneDec(),
+		},
+		{
 			name:    "divide",
 			checked: decimal.Quo,
 			legacy:  math.LegacyDec.Quo,
@@ -258,6 +301,14 @@ func TestCheckedArithmeticReturnsErrors(t *testing.T) {
 			expectErr: decimal.ErrOutOfRange,
 		},
 		{
+			name: "multiply rounding up overflow",
+			operation: func() error {
+				_, err := decimal.MulRoundUp(max, math.LegacyNewDec(2))
+				return err
+			},
+			expectErr: decimal.ErrOutOfRange,
+		},
+		{
 			name: "divide overflow",
 			operation: func() error {
 				_, err := decimal.Quo(max, math.LegacySmallestDec())
@@ -295,10 +346,11 @@ func TestCheckedArithmeticValidatesBothOperands(t *testing.T) {
 	two := math.LegacyNewDec(2)
 	smallest := math.LegacySmallestDec()
 	ops := map[string]func(math.LegacyDec, math.LegacyDec) (math.LegacyDec, error){
-		"Add": decimal.Add,
-		"Sub": decimal.Sub,
-		"Mul": decimal.Mul,
-		"Quo": decimal.Quo,
+		"Add":        decimal.Add,
+		"Sub":        decimal.Sub,
+		"Mul":        decimal.Mul,
+		"MulRoundUp": decimal.MulRoundUp,
+		"Quo":        decimal.Quo,
 	}
 	tests := []struct {
 		name    string
@@ -318,6 +370,10 @@ func TestCheckedArithmeticValidatesBothOperands(t *testing.T) {
 		{name: "Mul nil second", op: "Mul", a: one, b: math.LegacyDec{}, wantErr: decimal.ErrNil},
 		{name: "Mul out of range first", op: "Mul", a: wide, b: smallest, wantErr: decimal.ErrOutOfRange},
 		{name: "Mul out of range second", op: "Mul", a: smallest, b: wide, wantErr: decimal.ErrOutOfRange},
+		{name: "MulRoundUp nil first", op: "MulRoundUp", a: math.LegacyDec{}, b: one, wantErr: decimal.ErrNil},
+		{name: "MulRoundUp nil second", op: "MulRoundUp", a: one, b: math.LegacyDec{}, wantErr: decimal.ErrNil},
+		{name: "MulRoundUp out of range first", op: "MulRoundUp", a: wide, b: smallest, wantErr: decimal.ErrOutOfRange},
+		{name: "MulRoundUp out of range second", op: "MulRoundUp", a: smallest, b: wide, wantErr: decimal.ErrOutOfRange},
 		{name: "Quo nil first", op: "Quo", a: math.LegacyDec{}, b: one, wantErr: decimal.ErrNil},
 		{name: "Quo nil second", op: "Quo", a: one, b: math.LegacyDec{}, wantErr: decimal.ErrNil},
 		{name: "Quo out of range first", op: "Quo", a: wide, b: two, wantErr: decimal.ErrOutOfRange},
