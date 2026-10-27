@@ -404,7 +404,8 @@ and `EventPaymentDeferred` every refused payment.
 
 #### D1 — Registrations unreconciled · page the grants committee
 
-**Condition:** a grant created by the registrar that the member platform's admission records do not match within a day.
+**Condition:** a grant created by the registrar that the membership service's admission records do not match within a
+day.
 
 **Why:** a stolen registrar key can commit the whole open tranche, and the two-week hold before any member pays is
 the only window to suspend fakes for nothing. This alert is a join against off-chain records: the chain cannot know
@@ -473,7 +474,7 @@ field.
 
 - **Events** are typed: each block's results carry them with the source's full name as the event type, so a generic
   ABCI event indexer suffices.
-- **Off-chain join:** D1 also needs the member platform's admission records beside the registrar's grants.
+- **Off-chain join:** D1 also needs the membership service's admission records beside the registrar's grants.
 - **Retention:** at least 30 days, for the "N consecutive" and "held" conditions and for setting thresholds.
 - **Thresholds:** every "suggest" above is a placeholder, set with the operators, committees, and governance that
   receive the alert.

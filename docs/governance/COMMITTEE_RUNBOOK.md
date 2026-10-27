@@ -337,12 +337,13 @@ hold is the time to suspend it, so a tranche is the exposure governance accepts;
 
 **The registrar.** The grants committee names the Disbursement registrar under its own term with
 `MsgCommitteeRegistrar`, for a window of block time inside its own. The registrar is an operational key, a KMS key on
-the member platform's server that the platform signs batches with as admissions clear; the committee may name itself,
+the membership service's server that the service signs batches with as admissions clear; the committee may name itself,
 and does for the first cohort. The open tranche is its only bound, and nothing it registers pays before the two-week
-hold ends: compare the chain's registrations against the platform's admission records daily, and the moment the key is
-suspect rotate it by reappointment, which advances the registrar term without a vote, and suspend what it registered
-before the hold ends. Every committee appointment clears the registrar, so a replaced or reappointed committee names its
-registrar again in its first transaction; governance reaches the registrar only through the committee.
+hold ends: compare the chain's registrations against the membership service's admission records daily, and the moment
+the key is suspect rotate it by reappointment, which advances the registrar term without a vote, and suspend what it
+registered before the hold ends. Every committee appointment clears the registrar, so a replaced or reappointed
+committee names its registrar again in its first transaction; governance reaches the registrar only through the
+committee.
 
 The committee appoints the registrar with
 `arkd tx disbursement committee-registrar --expected-term TERM --registrar REGISTRAR --activation-time ACTIVATION --expiry-time EXPIRY --from COMMITTEE`;

@@ -132,13 +132,13 @@ All figures except the member amount are cumulative.
 
 ### Admission
 
-The member platform admits a person on one of two bases and the registrar registers the address the person proves
-they hold ([signup protocol](https://github.com/ararat-network/ark-sdk/blob/main/docs/SIGNUP_PROTOCOL.md)). An
-identity check: a third-party verifier checks liveness and a document and returns a uniqueness attestation with the
-earlier enrolments whose face matches, from which the platform derives one dedup token per person; it is the only
-thing that finds a duplicate. Or a vouch: an existing member signs a document naming the admission, staking their own
-membership that this is a real person who is not already a member; a vouched person has no face on file, so nothing
-links a second membership of theirs to a first, and the rules below bound what that can cost.
+The membership service admits a person on one of two bases and the registrar registers the address the person proves
+they hold ([signup protocol](https://github.com/ararat-network/ark-sdk/blob/main/docs/SIGNUP_PROTOCOL.md)). An identity
+check: a third-party verifier checks liveness and a document and returns a uniqueness attestation with the earlier
+enrolments whose face matches, from which the service derives one dedup token per person; it is the only thing that
+finds a duplicate. Or a vouch: an existing member signs a document naming the admission, staking their own membership
+that this is a real person who is not already a member; a vouched person has no face on file, so nothing links a second
+membership of theirs to a first, and the rules below bound what that can cost.
 
 | Standing                      | Vouches                 | Why                                                                        |
 | ----------------------------- | ----------------------- | -------------------------------------------------------------------------- |
@@ -179,10 +179,10 @@ links a second membership of theirs to a first, and the rules below bound what t
   conversion and the verified-only rule returns with it: a step-1 member verifies to keep vouching, duplicates surface
   then, and the cascade and the voucher's liability reach back through the tree however old it is. Step 2's proposal
   says that verification is coming and what it unlocks, which is what makes that liability bite.
-- **The graph is the platform's.** The vouch graph, standings, limits, flags, liability, and admission records are
-  platform state and stay private, since the graph maps who knows whom between addresses; the committee and
-  governance read it for a finding and the step review publishes counts. The chain sees only the registrar's
-  registrations, the committee's suspensions, and governance's cancellations.
+- **The graph is the membership service's.** The vouch graph, standings, limits, flags, liability, and admission records
+  are its state and stay private, since the graph maps who knows whom between addresses; the committee and governance
+  read it for a finding and the step review publishes counts. The chain sees only the registrar's registrations, the
+  committee's suspensions, and governance's cancellations.
 
 ### Contributor proposals
 
@@ -221,11 +221,11 @@ targets are the margin (§2), not the distribution.
 
 ## 6. Open items
 
-- The identity verifier: which one, chosen on a pilot once counsel has answered on face matching, when the platform is
-  built. Nothing in step 1 waits on it, since step 1 runs on vouches alone; step 2 does, since the check is live before
-  conversion opens ([tooling direction](../direction/TOOLING_DIRECTION.md#after-the-first-tranche)).
+- The identity verifier: which one, chosen on a pilot once counsel has answered on face matching, when the membership
+  service is built. Nothing in step 1 waits on it, since step 1 runs on vouches alone; step 2 does, since the check is
+  live before conversion opens ([tooling direction](../direction/TOOLING_DIRECTION.md#after-the-first-tranche)).
 - The grants committee's members and the backend's operator, the same few people, named at go-live: the appointment is
-  the first proposal after launch, and the registrar key is a KMS key the platform signs with
+  the first proposal after launch, and the registrar key is a KMS key the membership service signs with
   ([tooling direction](../direction/TOOLING_DIRECTION.md#backend)).
 - The Ark app, which holds the wallet and the member features
   ([tooling direction](../direction/TOOLING_DIRECTION.md#ark-app)).
@@ -234,5 +234,5 @@ targets are the margin (§2), not the distribution.
 - Counsel on how a member grant is characterised; for step 1, on whether the vouch graph and the app's sign-in
   identifiers beside addresses are personal data; before step 2, on whether matching a face against every enrolment is
   permissible where members live, which decides whether the identity check can be a basis there, and on what the
-  uniqueness attestations and dedup tokens oblige the platform to protect; and, before the identity vault is built, on
-  what holding identity data obliges the backend to protect, retain, and report.
+  uniqueness attestations and dedup tokens oblige the membership service to protect; and, before the identity vault is
+  built, on what holding identity data obliges the backend to protect, retain, and report.
