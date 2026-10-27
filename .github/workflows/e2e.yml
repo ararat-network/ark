@@ -1,5 +1,5 @@
-# Run real-network e2e packages from their separate Go module. Pull requests test the working image;
-# nightly runs upgrade from the latest release first. See tests/e2e/README.md.
+# Run real-network e2e packages from their separate Go module. Every run but a manual one upgrades from
+# the latest stable release first, once there is one; nightly runs reach the live venues. See tests/e2e/README.md.
 name: E2E
 
 on:
@@ -76,24 +76,27 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # The old image is the last release, pulled from ghcr and retagged
+      # The old image is the last stable release, pulled from ghcr and retagged
       # beside the local build so one repository name serves both versions.
       # The plan is named for its app/upgrade/v<N> package, the convention
       # app/upgrade/README.md states and the upgrade rehearsal relies on too.
       - name: Old image and plan
         id: old
         env:
+          GH_TOKEN: ${{ github.token }}
           REPOSITORY: ghcr.io/${{ github.repository }}
           INPUT_OLD_VERSION: ${{ inputs.old_version }}
           INPUT_UPGRADE_NAME: ${{ inputs.upgrade_name }}
         run: |
           old="$INPUT_OLD_VERSION"
           plan="$INPUT_UPGRADE_NAME"
-          if [ "${{ github.event_name }}" = "schedule" ]; then
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
             plan=$(ls -d app/upgrade/v* 2>/dev/null | sed 's|.*/||' | sort -V | tail -1)
-            # The newest release without the plan; one carrying it halts once the plan is stored.
+            # The newest stable release without the plan; one carrying it halts once the plan is stored.
+            # Bare tags have no image and no network runs a prerelease.
             old=""
             for tag in $(git tag --merged HEAD --list 'v[0-9]*' --sort=-creatordate); do
+              [ "$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease --jq '.isDraft or .isPrerelease' 2>/dev/null)" = false ] || continue
               if [ -z "$plan" ] || ! git cat-file -e "$tag:app/upgrade/$plan" 2>/dev/null; then old=$tag; break; fi
             done
           fi
