@@ -44,7 +44,7 @@ source and runs the testnet artefact. The rows follow the sections below: by lay
 | `ledger-ark`       | Signing on a Ledger device behind the signer interface                                                           | A second signer interface                                                     | Public     | Yes           |
 | `ark-app`          | Signup, the grant view, staking and voting each payment, and what the app later adds                             | A key store outside the signer interface                                      | Public     | Yes           |
 | `ark-membership`   | Admission by vouch or identity, the vouch graph and uniqueness store, the registrar key in a KMS, funding requests, suspend | A custodian, a delegator, a vote, or a holder of anything that names a person | Private    | Yes           |
-| `ark-explorer`     | Human-readable verification and network visibility                                                               | The only way to inspect chain activity                                        | Public     | Thin view     |
+| `ark-explorer`     | Human-readable verification and network visibility                                                               | The only way to inspect chain activity                                        | Public     | Later         |
 | `ark-indexer`      | Replayable historical and searchable derived data                                                                | Consensus state or an irreplaceable ledger                                    | Public     | Later         |
 
 ## Build order
@@ -62,8 +62,8 @@ metadata contracts underneath them.
    signup flow in [`ark-app`](#ark-app). The tracks meet when the app's signup registers a member through the membership
    service, from a device key and from a Ledger.
 2. **Finish what a member needs before the first payment.** The grant view, staking, and voting in the app, since the
-   first tenth pays two weeks after registration; the thin distribution view on node queries, the first release of
-   [`ark-explorer`](#ark-explorer); and a testnet rehearsal of the whole flow with the daily comparison running.
+   first tenth pays two weeks after registration; the app's distribution screen, readable before signup; and a testnet
+   rehearsal of the whole flow with the daily comparison running.
 
 ### After the first tranche
 
@@ -76,9 +76,9 @@ metadata contracts underneath them.
 5. **Add the information layer.** Replayable indexing and the full explorer on it, once the meanings of messages,
    events, assets, and account activity are stable enough to share.
 6. **Make third-party development routine.** Extend the signer interface into the wallet kit's dapp protocol, and
-   provide the documented interfaces, fixtures, and compatibility guidance needed to build without private knowledge.
-7. **Expand execution environments deliberately.** CosmWasm is on; a general contract product or an EVM-facing one is
-   added when application demand and operational costs justify it.
+   provide the documented interfaces and compatibility guidance needed to build without private knowledge.
+7. **Expand execution environments deliberately.** A general contract product or an EVM-facing one is added when
+   application demand and operational costs justify it.
 
 ## Chain and shared contracts
 
@@ -107,10 +107,10 @@ Four more things the tooling consumes live here, since each is the chain's half 
 - **The decoding fixtures.** Real transactions through the application's own encoder and real blocks, in
   [tests/fixtures](../../tests/fixtures/README.md): the contract every decoder, in TypeScript or Go, is tested against,
   so that the app, the SDK, and the explorer give each transaction [one meaning](#one-meaning-per-transaction).
-- **The local environment.** A LocalArk-style environment that starts a known network, funds deterministic development
-  accounts, submits transactions, exercises Ark's modules, and resets or reproduces state, using the same registry and
-  SDK conventions as public environments. It is a fixture for wallet, indexer, explorer, contract, and application
-  developers and for testing protocol upgrades, never a simulation with materially different protocol behaviour.
+- **The local environment.** The [Docker localnet](../../contrib/localnet/README.md): one or four validators with
+  their sidecars on the testnet artefact, from generated development keys, with its own registry entry, reset on every
+  start. It is a fixture for wallet, indexer, explorer, contract, and application developers and for testing protocol
+  upgrades, never a simulation with materially different protocol behaviour.
 - **The monitoring templates.** [contrib/observability](../../contrib/observability/README.md): the scrape and routing
   templates, the rules for every alert [process](../operations/PROCESS_MONITORING.md) and
   [protocol monitoring](../operations/PROTOCOL_MONITORING.md) specify, and the dashboards, taken from the tag of the
@@ -214,14 +214,16 @@ the signer interface; the features own everything else a member does:
   possession;
 - the grant as the member sees it, what has been paid and what waits, the schedule and the next payment, and the
   member's status read from the Disbursement module;
+- the distribution as anyone may check it, readable before signup: the open tranche, the member count against the
+  step, and the figures the step review publishes, each at the height it was read;
 - the delegation of each payment that arrived, and the validator picker that shows how close each validator is to a
   third and defaults away from the founding set;
 - every open proposal put in front of the member;
 - sending paid coins out.
 
 The app pays gas from the tenth the block sends two weeks after registration, so the member never has to fund it, and
-speaks the member's language ([languages](#languages)). The first tranche needs signup, then the grant view, staking,
-and voting before the first tenth pays.
+speaks the member's language ([languages](#languages)). The first tranche needs signup, then the grant view, the
+distribution screen, staking, and voting before the first tenth pays.
 
 Its later scope covers simulation and comprehensible signing review, fee and tax presentation, Ark market operations
 with explicit pricing and slippage, a contributor's few interactions with the Disbursement module such as changing its
@@ -290,8 +292,8 @@ messages, emitted events, balance changes, fees, taxes, and final result.
 The distribution is its first job. It decodes the Disbursement module's typed events, messages, and permanent journal,
 shows each grant's original clock, accrued unpaid entitlement, next due payment and payee, and presents the plan's
 numbers with the height they were read at: public bonded stake, the cap a grant was checked against, each step's
-headcount and fake rate, and the handover lines. A thin page on node queries meets the first tranche; the full explorer
-follows the indexer.
+headcount and fake rate, and the handover lines. The app's distribution screen meets the first tranche, since every
+member has the app and the node's public queries serve anyone else; the explorer follows the indexer.
 
 It is also an operational tool: block production, validator status, governance, oracle activity, upgrades, and network
 health, visible without pretending that every off-chain observation is consensus state. It is not the only way to
