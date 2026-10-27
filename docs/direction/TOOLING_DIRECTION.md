@@ -31,7 +31,7 @@ tranche needs from it.
 ## The stack
 
 Each component is its own repository under `ararat-network`, so each has its own access list, release cadence, and CI.
-Two live inside another repository: the TypeScript decoder belongs in `ark-sdk`, since the contract it shares with Go
+Two live inside another repository: the TypeScript decoder ships in `ark-sdk`, since the contract it shares with Go
 consumers is the schemas and fixtures in `ark`, and the local environment stays in `ark`, since it builds `arkd` from
 source and runs the testnet artefact. The rows follow the sections below: by layer, and by build order within a layer.
 
@@ -46,10 +46,6 @@ source and runs the testnet artefact. The rows follow the sections below: by lay
 | `ark-membership`   | Admission by vouch or identity, the vouch graph and uniqueness store, the registrar key in a KMS, funding requests, suspend | A custodian, a delegator, a vote, or a holder of anything that names a person | Private    | Yes           |
 | `ark-explorer`     | Human-readable verification and network visibility                                                               | The only way to inspect chain activity                                        | Public     | Later         |
 | `ark-indexer`      | Replayable historical and searchable derived data                                                                | Consensus state or an irreplaceable ledger                                    | Public     | Later         |
-
-Where it stands: `ark`, `ark-registry`, `ark-sdk`, and `ledger-ark` exist. The SDK holds the generated types and the
-signup protocol with its vectors; the Ledger app has sideload releases. `ark-membership`, `ark-signer`, `ark-app`,
-`ark-explorer`, and `ark-indexer` are not started.
 
 ## Build order
 
@@ -99,7 +95,7 @@ Three more things the tooling consumes live here, since each is the chain's half
 
 - **The Disbursement module.** The [module](../../x/disbursement/README.md) is the distribution and compensation
   ledger: custody of each tranche, member issuance, and the escrow paid out by the plan's rules, through typed protobuf
-  messages, gRPC/REST queries, AutoCLI, and a permanent journal. SDK, app, and explorer integrations are to share those
+  messages, gRPC/REST queries, AutoCLI, and a permanent journal. SDK, app, and explorer integrations share those
   schemas and decode typed events. Contributor interfaces need the original agreement, current payee, paid and
   remaining principal, the record's room under the ownership cap, and cancellation history; stablecoin compensation
   uses the same API. The e2e tier opens member tranches through governance, registers members, and sees their tenths
@@ -111,10 +107,10 @@ Three more things the tooling consumes live here, since each is the chain's half
 - **The decoding fixtures.** Real transactions through the application's own encoder and real blocks, in
   [tests/fixtures](../../tests/fixtures/README.md): the contract every decoder, in TypeScript or Go, is tested against,
   so that the app, the SDK, and the explorer give each transaction [one meaning](#one-meaning-per-transaction).
-- **The local environment.** The [Docker localnet](../../contrib/localnet/README.md): one or four validators with
-  their sidecars on the testnet artefact, from generated development keys, with its own registry entry, reset on every
-  start. It is a fixture for wallet, indexer, explorer, contract, and application developers and for testing protocol
-  upgrades, never a simulation with materially different protocol behaviour.
+- **The local environment.** A LocalArk-style environment that starts a known network, funds deterministic development
+  accounts, submits transactions, exercises Ark's modules, and resets or reproduces state, using the same registry and
+  SDK conventions as public environments. It is a fixture for wallet, indexer, explorer, contract, and application
+  developers and for testing protocol upgrades, never a simulation with materially different protocol behaviour.
 
 The chain is not a product-specific UI backend.
 
@@ -134,8 +130,8 @@ a second source of chain state.
 ### `ark-sdk`
 
 The TypeScript SDK is the primary integration surface for web applications and, where practical, other TypeScript
-consumers. It builds on generated protobuf types and modern Cosmos transaction signing, not legacy LCD assumptions.
-Today it holds the generated types and the signup protocol with its vectors; its scope is:
+consumers. It builds on generated protobuf types and modern Cosmos transaction signing, not legacy LCD assumptions, and
+covers:
 
 - typed queries and messages for both standard Cosmos modules and Ark modules;
 - transaction construction, simulation, fee selection, signing requests, and broadcast;
@@ -161,7 +157,7 @@ needs the queries, transactions, ADR-036 signature, and decoding the app needs.
 
 ### `ark-signer`
 
-The signer interface is the slow-moving part of the app, and it owns nothing about membership: key generation
+The signer interface is the audited, slow-moving part of the app, and it owns nothing about membership: key generation
 on the device with backup and recovery, signing consent, transaction review built from decoded messages, fee selection,
 broadcast, and reading the chain from any node. Every feature asks it for a signature and never sees a key. The device
 keystore answers by default; a Ledger device, through the adapter for `ledger-ark`, or a wallet a crypto-native member
@@ -248,8 +244,8 @@ ranks with them. Where members delegate is their own choice, steered only by the
 pay normal transaction gas; payments arrive without one. Disbursement custody reserves award principal and provides no
 fee allowance; members pay their own gas from the first payment, the tenth the block sends once the two-week hold ends.
 
-The backend repository is private, since published monitoring rules are a guide to evading them. Its app-facing API goes
-beside its code; the app's builders read the repository and commit the generated client, so no public build
+The backend repository is private, since published monitoring rules are a guide to evading them. Its app-facing API is
+defined beside its code; the app's builders read the repository and commit the generated client, so no public build
 needs a credential for a private repository.
 
 ### `ark-membership`
@@ -390,9 +386,9 @@ against captured or replayed chain data before activation.
 ### Ecosystem participation
 
 First-party products establish defaults without making the ecosystem permissioned. Public schemas, generated clients,
-message decoders, network metadata, wallet interfaces, and local fixtures serve third-party wallets, explorers,
-exchanges, and dapps as much as Ark's own products. The strongest identity comes from a recognisable Ark experience
-combined with open integration boundaries, not from requiring every user to depend on a single frontend.
+message decoders, network metadata, wallet interfaces, and local fixtures are reusable by third-party wallets,
+explorers, exchanges, and dapps. The strongest identity comes from a recognisable Ark experience combined with open
+integration boundaries, not from requiring every user to depend on a single frontend.
 
 ## Decision checkpoints
 
