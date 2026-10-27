@@ -44,7 +44,6 @@ source and runs the testnet artefact. The rows follow the sections below: by lay
 | `ledger-ark`       | Signing on a Ledger device behind the signer interface                                                           | A second signer interface                                                     | Public     | Yes           |
 | `ark-app`          | Signup, the grant view, staking and voting each payment, and what the app later adds                             | A key store outside the signer interface                                      | Public     | Yes           |
 | `ark-membership`   | Admission by vouch or identity, the vouch graph and uniqueness store, the registrar key in a KMS, funding requests, suspend | A custodian, a delegator, a vote, or a holder of anything that names a person | Private    | Yes           |
-| `ark-explorer`     | Human-readable verification and network visibility                                                               | The only way to inspect chain activity                                        | Public     | Later         |
 | `ark-indexer`      | Replayable historical and searchable derived data                                                                | Consensus state or an irreplaceable ledger                                    | Public     | Later         |
 
 ## Build order
@@ -73,8 +72,8 @@ metadata contracts underneath them.
 4. **Widen the app.** Transfers, simulation, market operations, and the contributor interactions in the app's later
    scope; external-wallet signers behind the signer interface; and multisignature signing, so a committee signs its
    acts from the app and a shared account signs the same way, with the relay that carries partial signatures.
-5. **Add the information layer.** Replayable indexing and the full explorer on it, once the meanings of messages,
-   events, assets, and account activity are stable enough to share.
+5. **Add the information layer.** Replayable indexing and the app's explorer pages on it, once the meanings of
+   messages, events, assets, and account activity are stable enough to share.
 6. **Make third-party development routine.** Extend the signer interface into the wallet kit's dapp protocol, and
    provide the documented interfaces and compatibility guidance needed to build without private knowledge.
 7. **Expand execution environments deliberately.** A general contract product or an EVM-facing one is added when
@@ -95,7 +94,7 @@ Four more things the tooling consumes live here, since each is the chain's half 
 
 - **The Disbursement module.** The [module](../../x/disbursement/README.md) is the distribution and compensation
   ledger: custody of each tranche, member issuance, and the escrow paid out by the plan's rules, through typed protobuf
-  messages, gRPC/REST queries, AutoCLI, and a permanent journal. SDK, app, and explorer integrations share those
+  messages, gRPC/REST queries, AutoCLI, and a permanent journal. SDK and app integrations share those
   schemas and decode typed events. Contributor interfaces need the original agreement, current payee, paid and
   remaining principal, the record's room under the ownership cap, and cancellation history; stablecoin compensation
   uses the same API. The e2e tier opens member tranches through governance, registers members, and sees their tenths
@@ -106,10 +105,10 @@ Four more things the tooling consumes live here, since each is the chain's half 
   ([genesis §12](../governance/GENESIS.md#12-cosmwasm)), and general contract tooling is a separate product decision.
 - **The decoding fixtures.** Real transactions through the application's own encoder and real blocks, in
   [tests/fixtures](../../tests/fixtures/README.md): the contract every decoder, in TypeScript or Go, is tested against,
-  so that the app, the SDK, and the explorer give each transaction [one meaning](#one-meaning-per-transaction).
+  so that the app and the SDK give each transaction [one meaning](#one-meaning-per-transaction).
 - **The local environment.** The [Docker localnet](../../contrib/localnet/README.md): one or four validators with
   their sidecars on the testnet artefact, from generated development keys, with its own registry entry, reset on every
-  start. It is a fixture for wallet, indexer, explorer, contract, and application developers and for testing protocol
+  start. It is a fixture for wallet, indexer, contract, and application developers and for testing protocol
   upgrades, never a simulation with materially different protocol behaviour.
 - **The monitoring templates.** [contrib/observability](../../contrib/observability/README.md): the scrape and routing
   templates, the rules for every alert [process](../operations/PROCESS_MONITORING.md) and
@@ -229,9 +228,19 @@ Its later scope covers simulation and comprehensible signing review, fee and tax
 with explicit pricing and slippage, a contributor's few interactions with the Disbursement module such as changing its
 destination or rotating its controller, account recovery, external hardware wallets behind the signer interface, and
 multisignature: a committee member reviews and signs the committee's acts from the app, with the same decoded review
-as any other transaction, and a shared account a member holds signs the same way. The app defines the quality bar for
-message decoding and user safety, while the signer interface and SDK make it possible for other wallets to reach the
-same level of integration. It is not a key store outside the signer interface, and not a second source of chain state.
+as any other transaction, and a shared account a member holds signs the same way.
+
+Its explorer pages, on the indexer and readable without an account, are where anyone inspects the chain: each
+transaction decoded, its messages, events, balance changes, fees, taxes, and result, with Ark's market, oracle, and
+treasury events understood beside the standard Cosmos messages; the distribution, each grant's original clock, accrued
+unpaid entitlement, next due payment and payee, and the plan's numbers at the height they were read, public bonded
+stake, the cap a grant was checked against, each step's headcount and fake rate, and the handover lines; and the
+network, block production, validator status, governance, oracle activity, upgrades, and health, without pretending
+that every off-chain observation is consensus state.
+
+The app defines the quality bar for message decoding and user safety, while the signer interface and SDK make it
+possible for other wallets to reach the same level of integration. It is not a key store outside the signer interface,
+not a second source of chain state, and not the only way to inspect chain activity.
 
 ## Backend
 
@@ -282,22 +291,6 @@ what they pass to vouch themselves. It is not a custodian, a delegator, a vote, 
 or a holder of anything that names a person.
 
 ## Information layer
-
-### `ark-explorer`
-
-The explorer decodes what transactions mean, not merely raw protobuf JSON. It understands Ark's market, oracle, and
-treasury events in addition to standard Cosmos messages, so a user can follow the relationship among a transaction, its
-messages, emitted events, balance changes, fees, taxes, and final result.
-
-The distribution is its first job. It decodes the Disbursement module's typed events, messages, and permanent journal,
-shows each grant's original clock, accrued unpaid entitlement, next due payment and payee, and presents the plan's
-numbers with the height they were read at: public bonded stake, the cap a grant was checked against, each step's
-headcount and fake rate, and the handover lines. The app's distribution screen meets the first tranche, since every
-member has the app and the node's public queries serve anyone else; the explorer follows the indexer.
-
-It is also an operational tool: block production, validator status, governance, oracle activity, upgrades, and network
-health, visible without pretending that every off-chain observation is consensus state. It is not the only way to
-inspect chain activity.
 
 ### `ark-indexer`
 
@@ -355,7 +348,7 @@ adjustment and denomination preference are not protocol requirements; they are d
 ### One meaning per transaction
 
 Protobuf schemas, type URLs, events, and error semantics are a public integration contract even when they are not
-marketed as one, so tooling is considered when these surfaces change. The SDK, app, indexer, and explorer give each
+marketed as one, so tooling is considered when these surfaces change. The SDK, app, and indexer give each
 transaction one meaning: what they share is the proto schemas and typed events, with the
 [decoding fixtures](../../tests/fixtures/README.md) kept in `ark` that every decoder, in TypeScript or Go, must read the
 same way. Stable decoders and compatibility tests are worth more than multiple clients each guessing how to interpret
@@ -372,7 +365,7 @@ The app speaks the languages of the starting assets: for each of the ten currenc
 issuing area. English, French, Spanish, Chinese, Japanese, Korean, Malay, and Tamil follow from AUD, CAD, CNY, GBP, JPY,
 KRW, MXN, SGD, and USD; which of the euro area's official languages count is open, as is whether the first tranche
 ships every language or the ones its members need. Every surface a member reads is in scope: the app, the signer's
-consent and transaction review, the explorer, and the display names the registry carries; the Ledger app's display
+consent and transaction review, and the display names the registry carries; the Ledger app's display
 stays English. A translation renders the same decoded fields as every other language, never a different reading of
 the transaction, so the one-meaning rule holds across languages; strings live outside code from the first release, so
 a language is a resource rather than a build; and amounts, dates, and currencies format by the member's locale.
@@ -387,7 +380,7 @@ point of failure.
 
 ### Versioning and upgrades
 
-Chain, SDK, app, indexer, and explorer releases will not always move in lockstep. Compatibility ranges and feature
+Chain, SDK, app, and indexer releases will not always move in lockstep. Compatibility ranges and feature
 detection are explicit, tooling degrades safely on an unknown module version or message type, and upgrades are testable
 against captured or replayed chain data before activation.
 
@@ -410,7 +403,7 @@ The direction is working when:
 - a committee signs its acts from the app without a CLI, and nothing it signs is public before broadcast;
 - every grant can be checked against the plan's rules from public interfaces;
 - nothing the backend holds or the chain shows names a person;
-- the same transaction is decoded consistently by the app, explorer, and SDK;
+- the same transaction is decoded consistently by the app and the SDK;
 - a user can understand the assets, fees, taxes, quotes, permissions, and likely outcome before signing;
 - historical views can be rebuilt from chain data and expose their synchronization height;
 - a developer can reproduce core workflows locally using the same conventions as a public network;
@@ -428,7 +421,7 @@ This direction does not:
 - adopt EVM compatibility to inherit MetaMask, Solidity, or EVM explorer support; it is reconsidered when Ark has a
   concrete need to host EVM applications or reach EVM-native developers, and is not the default answer to a tooling
   problem;
-- make the app, indexer, or explorer authoritative for chain state;
+- make the app or indexer authoritative for chain state;
 - give any backend component custody of member coins or a way to freeze them;
 - put personal data on chain or in any public reference;
 - justify duplicating Ark's economic calculations in client libraries;
