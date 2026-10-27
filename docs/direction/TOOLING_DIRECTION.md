@@ -152,15 +152,13 @@ The SDK exposes protocol concepts accurately. Convenience abstractions are valua
 slippage, tax, oracle freshness, or transaction finality would make the tooling easier to misuse. It is not an
 independent implementation of economic or market policy.
 
-Two contracts are published here beside the code. The
-[signup protocol](https://github.com/ararat-network/ark-sdk/blob/main/docs/SIGNUP_PROTOCOL.md), address, proof of possession,
-vouch, and identity attestation to the backend, is specified with its test vectors so that a member signing with an
-external wallet can complete it: proof of possession is an ADR-036 off-chain signature over a challenge the backend
-issues, which common Cosmos wallets already produce, and a vouch is the voucher's signature over a document naming the
-admission; neither signs a transaction or adds a legacy sign mode to transaction signing. The membership service's
-app-facing API sits beside it, since the app's code and the browser show a request's shape in any case and nothing
-sensitive is in the shape. The first tranche needs the queries, transactions, ADR-036 signature, and decoding the app
-needs.
+One contract is published here beside the code. The
+[signup protocol](https://github.com/ararat-network/ark-sdk/blob/main/docs/SIGNUP_PROTOCOL.md), address, proof of
+possession, vouch, and identity attestation to the backend, is specified with its test vectors so that a member signing
+with an external wallet can complete it: proof of possession is an ADR-036 off-chain signature over a challenge the
+backend issues, which common Cosmos wallets already produce, and a vouch is the voucher's signature over a document
+naming the admission; neither signs a transaction or adds a legacy sign mode to transaction signing. The first tranche
+needs the queries, transactions, ADR-036 signature, and decoding the app needs.
 
 ## Client
 
@@ -248,8 +246,9 @@ ranks with them. Where members delegate is their own choice, steered only by the
 pay normal transaction gas; payments arrive without one. Disbursement custody reserves award principal and provides no
 fee allowance; members pay their own gas from the first payment, the tenth the block sends once the two-week hold ends.
 
-The backend repository is private, since published monitoring rules are a guide to evading them; its app-facing API is
-the exception, published in `ark-sdk` beside the signup protocol.
+The backend repository is private, since published monitoring rules are a guide to evading them. Its app-facing API is
+defined beside its code; the app's builders read the repository and commit the generated client, so no public build
+needs a credential for a private repository.
 
 ### `ark-membership`
 
