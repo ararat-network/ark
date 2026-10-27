@@ -34,6 +34,9 @@ wiring.
   consensus**. They are one prudent choice against a 2.5%-per-block controller and NOAH's per-block oracle rate. The
   NOAH margin is paid as tip, because the NOAH leg is charged whole. A market maker may want more; a client
   resubmitting on failure may want less.
+- Beside a NOAH gas leg the tax legs are declared exact. The ante takes the base fee from a stable leg's slack
+  before it lets NOAH pay, so a padded tax leg would pay the base fee itself and leave the whole NOAH leg as tip.
+  A tax that rises before inclusion then refuses the transaction; run the command again.
 - The denomination ranking in `pickFeeDenom` — the denominations in `tax_base`, then NOAH, then the reference,
   then the rest of the sheet — is a convenience for a CLI user who has not said which denomination to pay in. An
   integration that holds one denomination has no use for it.

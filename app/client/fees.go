@@ -25,7 +25,23 @@ var DefaultFeeHeadroom = math.LegacyMustNewDecFromStr("1.1")
 // follows the oracle rate every block. The leg is charged whole, so the margin is paid as tip.
 var DefaultNoahFeeMargin = math.LegacyMustNewDecFromStr("1.05")
 
-// withHeadroom sizes the declaration for every leg of a priced fee.
+// declare sizes the declaration: with a stable gas leg, gas and tax each
+// lifted, the lift free; with a NOAH gas leg, the tax exact beside the lifted
+// leg, since the ante takes the base fee from a stable leg's slack before it
+// lets NOAH pay and would then charge the whole NOAH leg as tip.
+func declare(gasFee, tax sdk.Coins) sdk.Coins {
+	if noahCarriesGas(gasFee) {
+		return withHeadroom(gasFee).Add(tax...)
+	}
+	return withHeadroom(gasFee.Add(tax...))
+}
+
+// noahCarriesGas is a gas leg of NOAH alone.
+func noahCarriesGas(gasFee sdk.Coins) bool {
+	return len(gasFee) == 1 && gasFee[0].Denom == chain.NoahBaseDenom
+}
+
+// withHeadroom lifts every leg of a priced fee.
 func withHeadroom(fee sdk.Coins) sdk.Coins {
 	lifted := sdk.NewCoins()
 	for _, coin := range fee {
@@ -77,7 +93,11 @@ func (b FeeBreakdown) String() string {
 	line := "fee " + b.Fee.String()
 	if len(parts) > 0 {
 		line += ": " + strings.Join(parts, " + ")
-		for _, coin := range b.Gas.Add(b.Tax...) {
+		lifted := b.Gas
+		if !noahCarriesGas(b.Gas) {
+			lifted = lifted.Add(b.Tax...)
+		}
+		for _, coin := range lifted {
 			if coin.Denom != chain.NoahBaseDenom {
 				line += fmt.Sprintf(", stable legs declared with %s%% headroom", percentOver(DefaultFeeHeadroom))
 				break
@@ -85,6 +105,9 @@ func (b FeeBreakdown) String() string {
 		}
 		if b.Gas.AmountOf(chain.NoahBaseDenom).IsPositive() {
 			line += fmt.Sprintf(", NOAH declared with a %s%% margin charged as tip", percentOver(DefaultNoahFeeMargin))
+		}
+		if noahCarriesGas(b.Gas) && !b.Tax.IsZero() {
+			line += ", tax declared exact"
 		}
 	}
 	if !b.Tip.IsZero() {
@@ -149,8 +172,8 @@ func quoteFee(clientCtx sdkclient.Context, msgs []sdk.Msg, payer sdk.AccAddress,
 	return quote, nil
 }
 
-// price combines tax, caller- or sheet-priced gas, each leg's margin, and the NOAH tip. Fee
-// includes Tip, which is not padded. Zero gas declares only the tip.
+// price combines tax, caller- or sheet-priced gas, the lift each shape allows, and the NOAH tip.
+// Fee includes Tip, which is not padded. Zero gas declares only the tip.
 func (q feeQuote) price(gas uint64, gasFee, tip sdk.Coins) (FeeBreakdown, error) {
 	if gas == 0 {
 		return FeeBreakdown{Tip: tip, Fee: tip}, nil
@@ -168,7 +191,7 @@ func (q feeQuote) price(gas uint64, gasFee, tip sdk.Coins) (FeeBreakdown, error)
 		Gas: gasFee,
 		Tax: q.tax,
 		Tip: tip,
-		Fee: withHeadroom(gasFee.Add(q.tax...)).Add(tip...),
+		Fee: declare(gasFee, q.tax).Add(tip...),
 	}, nil
 }
 

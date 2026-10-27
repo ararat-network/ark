@@ -419,8 +419,10 @@ const (
 	noahPad   = "1.05"
 )
 
-// quoteFee prices msgs with the fee paid in feeDenom. Stable legs are padded
-// for free, NOAH is padded as a tip; the tax legs ride beside the gas leg.
+// quoteFee prices msgs with the fee paid in feeDenom. With a stable gas leg
+// every leg is padded, for free; with a NOAH gas leg NOAH is padded as a tip
+// and the tax legs ride beside it exact, since a stable leg's slack pays the
+// base fee before NOAH does and would leave the whole NOAH leg as tip.
 func (h *harness) quoteFee(msgs []sdk.Msg, feeDenom string, gas uint64) feeQuote {
 	h.t.Helper()
 
@@ -439,17 +441,17 @@ func (h *harness) quoteFee(msgs []sdk.Msg, feeDenom string, gas uint64) feeQuote
 	require.True(h.t, found, "no gas price for %s", feeDenom)
 
 	required := sdk.NewCoin(feeDenom, price.GasPrice.MulInt64(int64(gas)).Ceil().TruncateInt())
-	pad := math.LegacyMustNewDecFromStr(stablePad)
-	if feeDenom == chain.NoahBaseDenom {
-		pad = math.LegacyMustNewDecFromStr(noahPad)
-	}
+	noahPays := feeDenom == chain.NoahBaseDenom
 	declared := sdk.NewCoins()
 	for _, leg := range tax.Add(required) {
-		p := math.LegacyMustNewDecFromStr(stablePad)
-		if leg.Denom == chain.NoahBaseDenom {
-			p = pad
+		pad := math.LegacyOneDec()
+		switch {
+		case leg.Denom == chain.NoahBaseDenom:
+			pad = math.LegacyMustNewDecFromStr(noahPad)
+		case !noahPays:
+			pad = math.LegacyMustNewDecFromStr(stablePad)
 		}
-		declared = declared.Add(sdk.NewCoin(leg.Denom, math.LegacyNewDecFromInt(leg.Amount).Mul(p).Ceil().TruncateInt()))
+		declared = declared.Add(sdk.NewCoin(leg.Denom, math.LegacyNewDecFromInt(leg.Amount).Mul(pad).Ceil().TruncateInt()))
 	}
 	return feeQuote{Tax: tax, GasPrice: price, GasPriceJSON: h.app.AppCodec().MustMarshalJSON(&price), Required: required, Declared: declared, GasLimit: gas, FeeDenom: feeDenom, PadStable: stablePad, PadNoah: noahPad}
 }
