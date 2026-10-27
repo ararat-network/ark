@@ -224,13 +224,13 @@ targets are the margin (§2), not the distribution.
 - The identity verifier: which one, chosen on a pilot once counsel has answered on face matching, when the platform is
   built. Nothing in step 1 waits on it, since step 1 runs on vouches alone; step 2 does, since the check is live before
   conversion opens ([tooling direction](../direction/TOOLING_DIRECTION.md#after-the-first-tranche)).
-- Who runs the backend and holds the committee and registrar keys
+- The grants committee's members and the backend's operator, the same few people, named at go-live: the appointment is
+  the first proposal after launch, and the registrar key is a KMS key the platform signs with
   ([tooling direction](../direction/TOOLING_DIRECTION.md#backend)).
 - The Ark app, which holds the wallet and the member features
   ([tooling direction](../direction/TOOLING_DIRECTION.md#ark-app)).
   It is needed for the first member tranche and is not built.
 - An audit of the Disbursement module before launch, since it holds the pools from block 1.
-- Vetting criteria for the founding set.
 - Counsel on how a member grant is characterised; for step 1, on whether the vouch graph and the app's sign-in
   identifiers beside addresses are personal data; before step 2, on whether matching a face against every enrolment is
   permissible where members live, which decides whether the identity check can be a basis there, and on what the

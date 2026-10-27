@@ -23,7 +23,7 @@ links to explains the mechanism. It is not a claim of completeness: §3 lists wh
 | Price providers | the internet | nothing; every one is an untrusted input |
 | Contracts | on chain, uploaded by anyone | nothing; untrusted code bounded by the policy router and its query surface |
 | Committee accounts | off chain, usually multisigs | one bounded, expiring mandate per module, appointed by governance |
-| Registrar key | the registrar signer, a service of its own | registering members within the open tranche; appointed and rotated by the grants committee without a vote |
+| Registrar key | a KMS key on the member platform's server, which the platform alone signs with | registering members within the open tranche; appointed and rotated by the grants committee without a vote |
 | Member platform | off chain, behind the Ark app | admission records, the vouch graph, and the uniqueness store: the verifier's attestations and dedup tokens beside members' addresses |
 | Identity vault | off chain, a service of its own in the member backend, once insurance coverage or AML needs it | personal data and the person ↔ address links; every other service sees an opaque person ID |
 | Governance | on chain | every unbounded power, including appointing committees |
@@ -273,7 +273,9 @@ advances the term, so transactions prepared under the old key expire. The linked
 **Limits.**
 
 - The registrar hold protects only if someone compares the chain's registrations with the platform's admission records
-  inside it ([grants](../governance/COMMITTEE_RUNBOOK.md#8-grants)).
+  inside it ([grants](../governance/COMMITTEE_RUNBOOK.md#8-grants)). The registrar key is a KMS key the platform signs
+  with, so a breach of the platform signs within the tranche until the committee replaces the registrar, and the KMS
+  audit log, shipped where the platform cannot alter it, is the record that comparison reads.
 - Member admission runs off chain, on an identity check or a vouch: a third-party verifier checks the person and returns
   a uniqueness attestation and a dedup token, which the member platform keeps beside the admission record, or a verified
   member signs for the person and is cancelled with them if they are found a fake
