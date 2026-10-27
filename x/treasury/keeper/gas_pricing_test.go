@@ -10,8 +10,44 @@ import (
 
 	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
+	"github.com/ararat-network/ark/x/treasury/keeper"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
+
+// TestSheetPriceBoundsTheRequirement pins the sheet's rounding: the carried
+// price rounds up, so a client's ceil(gas_price × gas_limit), the figure the
+// fee contract names, never falls below the ante's requirement, which
+// multiplies the base price by the gas before the factor and rounds the
+// product once, half to even, and never exceeds it by more than one unit.
+func (s *KeeperTestSuite) TestSheetPriceBoundsTheRequirement() {
+	// base × factor is 0.0000100000000000005: half to even drops the 19th
+	// place and leaves 100,000 gas at 1 where the ante requires 2.
+	base := math.LegacyMustNewDecFromStr("0.000020000000000001")
+	s.Require().NoError(s.keeper.BaseGasPrice.Set(s.ctx, base))
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
+		Denom:         chain.USDBaseDenom,
+		Factor:        math.LegacyMustNewDecFromStr("0.5"),
+		DerivedHeight: 5,
+	}))
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+
+	row, err := keeper.NewQueryServerImpl(s.keeper).GasPrice(s.ctx, &types.QueryGasPriceRequest{Denom: chain.USDBaseDenom})
+	s.Require().NoError(err)
+	s.Require().Equal(math.LegacyMustNewDecFromStr("0.000010000000000001"), row.GasPrice.GasPrice)
+
+	for _, gas := range []uint64{1, 7, 100_000, 123_457, 1 << 20, 999_999_937} {
+		required, _, err := s.keeper.GetRequiredGasFee(s.ctx, params, base, gas, chain.USDBaseDenom)
+		s.Require().NoError(err)
+		client := row.GasPrice.GasPrice.MulInt64(int64(gas)).Ceil().TruncateInt()
+		s.Require().True(client.GTE(required.Amount), "gas %d: client %s below the ante's %s", gas, client, required.Amount)
+		s.Require().True(client.Sub(required.Amount).LTE(math.OneInt()), "gas %d: client %s more than one above %s", gas, client, required.Amount)
+		if gas == 100_000 {
+			s.Require().Equal(math.NewInt(2), required.Amount)
+			s.Require().Equal(math.NewInt(2), client)
+		}
+	}
+}
 
 // withMaxGas stamps the consensus block-gas budget the controller reads.
 func (s *KeeperTestSuite) withMaxGas(maxGas int64) {

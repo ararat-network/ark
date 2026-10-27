@@ -234,7 +234,11 @@ func (k Keeper) gasFactor(ctx context.Context, reference, denom string) (math.Le
 }
 
 // gasPrice prices one denomination for the fee queries: the base price
-// carried through the denomination's cross, derivation height attached. An
+// carried through the denomination's cross, derivation height attached. The
+// product rounds up: the sheet sizes a requirement, and a client's
+// ceil(gas_price × gas) must reach GetRequiredGasFee's ceil(price × gas ×
+// factor), which multiplies by the gas before rounding once; a carried price
+// rounded half to even could leave that client one base unit short. An
 // unrepresentable product propagates — the price is unpayable, and the
 // sheet omits what the gate would refuse.
 func (k Keeper) gasPrice(ctx context.Context, reference, denom string) (types.GasPrice, error) {
@@ -246,7 +250,7 @@ func (k Keeper) gasPrice(ctx context.Context, reference, denom string) (types.Ga
 	if err != nil {
 		return types.GasPrice{}, fmt.Errorf("getting base gas price: %w", err)
 	}
-	price, err := decimal.Mul(base, factor)
+	price, err := decimal.MulRoundUp(base, factor)
 	if err != nil {
 		return types.GasPrice{}, err
 	}
