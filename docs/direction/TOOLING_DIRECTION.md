@@ -49,40 +49,35 @@ source and runs the testnet artefact. The rows follow the sections below: by lay
 
 ## Build order
 
-This is a dependency order, not a schedule. Steps 1 to 3 put the app with member registration in front of the first
+This is a dependency order, not a schedule. Steps 1 and 2 put the app with member registration in front of the first
 member tranche, and nothing after them is needed for it. Later layers should not compensate for unresolved protocol or
 metadata contracts underneath them.
 
 ### First member tranche
 
-1. **Seed the local environment.** In [`ark`](#ark): set the grants mandate, open a member tranche, and appoint a
-   registrar, as the e2e tier already does, so both tracks below register against a real chain. It waits on the app,
-   since the e2e harness serves the tests until then. Protocol schemas, signing modes, decoding, and public endpoints
-   are treated as one surface from here on.
-2. **Build two tracks in parallel.** The backend: [`ark-membership`](#ark-membership), its registrar signer first, the
+1. **Build two tracks in parallel.** The backend: [`ark-membership`](#ark-membership), its registrar signer first, the
    one part that writes to the chain, then admissions and the vouch graph, the uniqueness store following with the
    identity check. The client: `ark-sdk` with the queries, transactions, ADR-036 signature, and decoding the app needs,
    then [`ark-signer`](#ark-signer) with the device keystore and the adapter for [`ledger-ark`](#ledger-ark), then the
    signup flow in [`ark-app`](#ark-app). The tracks meet when the app's signup registers a member through the membership
-   service on the local environment, from a device key and from a Ledger.
-3. **Finish what a member needs before the first payment.** The grant view, staking, and voting in the app, since the
+   service, from a device key and from a Ledger.
+2. **Finish what a member needs before the first payment.** The grant view, staking, and voting in the app, since the
    first tenth pays two weeks after registration; the thin distribution view on node queries, the first release of
-   [`ark-explorer`](#ark-explorer); the Disbursement module's audit, which sits before the first tranche, not before
-   the build; and a testnet rehearsal of the whole flow with the daily comparison running.
+   [`ark-explorer`](#ark-explorer); and a testnet rehearsal of the whole flow with the daily comparison running.
 
 ### After the first tranche
 
-4. **Add the identity check before the plan's step 2.** Before conversion opens: counsel on face matching, the verifier
+3. **Add the identity check before the plan's step 2.** Before conversion opens: counsel on face matching, the verifier
    pilot, the membership service's verifier adapter and uniqueness store, and the return of verified-only vouching,
    which step-1 members pass to keep vouching ([admission](../governance/DISBURSEMENT_PLAN.md#admission)).
-5. **Widen the app.** Transfers, simulation, market operations, and the contributor interactions in the app's later
+4. **Widen the app.** Transfers, simulation, market operations, and the contributor interactions in the app's later
    scope; external-wallet signers behind the signer interface; and multisignature signing, so a committee signs its
    acts from the app and a shared account signs the same way, with the relay that carries partial signatures.
-6. **Add the information layer.** Replayable indexing and the full explorer on it, once the meanings of messages,
+5. **Add the information layer.** Replayable indexing and the full explorer on it, once the meanings of messages,
    events, assets, and account activity are stable enough to share.
-7. **Make third-party development routine.** Extend the signer interface into the wallet kit's dapp protocol, and
+6. **Make third-party development routine.** Extend the signer interface into the wallet kit's dapp protocol, and
    provide the documented interfaces, fixtures, and compatibility guidance needed to build without private knowledge.
-8. **Expand execution environments deliberately.** CosmWasm is on; a general contract product or an EVM-facing one is
+7. **Expand execution environments deliberately.** CosmWasm is on; a general contract product or an EVM-facing one is
    added when application demand and operational costs justify it.
 
 ## Chain and shared contracts
@@ -114,10 +109,8 @@ Three more things the tooling consumes live here, since each is the chain's half
   so that the app, the SDK, and the explorer give each transaction [one meaning](#one-meaning-per-transaction).
 - **The local environment.** A LocalArk-style environment that starts a known network, funds deterministic development
   accounts, submits transactions, exercises Ark's modules, and resets or reproduces state, using the same registry and
-  SDK conventions as public environments. For the first tranche it sets the grants mandate, opens a member tranche, and
-  appoints a registrar, as the e2e tier already does, so the backend and the client register against a real chain. It
-  is a fixture for wallet, indexer, explorer, contract, and application developers and for testing protocol upgrades,
-  never a simulation with materially different protocol behaviour.
+  SDK conventions as public environments. It is a fixture for wallet, indexer, explorer, contract, and application
+  developers and for testing protocol upgrades, never a simulation with materially different protocol behaviour.
 
 The chain is not a product-specific UI backend.
 
@@ -199,7 +192,10 @@ It is not the authority for balances, quotes, or transaction success, and not an
 The Ledger app signs Ark transactions on a Ledger device, with the transaction shown on the device's display. It is
 what the signer interface's Ledger adapter talks to, so a member who already carries a device registers and signs with
 it in place of the device keystore. The first tranche needs it for the signup flow and for staking and voting the grant
-from a Ledger. It is not a second signer interface.
+from a Ledger. Until Ledger lists it in Ledger Live, members install it by sideloading a release
+([install guide](https://github.com/ararat-network/ledger-ark/blob/main/docs/SIDELOAD.md)): the Nano X cannot, and each
+release fits one firmware version, so the listing follows the first tranche rather than gating it. It is not a second
+signer interface.
 
 ### `ark-app`
 
