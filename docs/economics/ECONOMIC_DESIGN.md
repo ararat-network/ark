@@ -499,9 +499,10 @@ builds and every sign mode renders, amino included. A wallet that omits the tax 
 
 The fee is a ceiling and the tip is NOAH. Each stablecoin leg is charged at most what it owes: its exact tax, plus
 the base fee if it is the first leg, in the order the payer encoded the fee, whose amount above its tax covers the base
-fee. The rest never leaves the payer, so a wallet pads a stable leg for rate drift at no cost. The NOAH leg is charged
-whole: base fee if no stable leg paid it, remainder tip, and only the tip ranks for priority. NOAH is the one
-denomination the tax is never owed in, which is what lets the chain tell a tip from a padded tax.
+fee. The rest never leaves the payer, so a wallet pads the stable leg that carries the base fee for rate drift at no
+cost, and declares the tax exact beside a NOAH gas leg, whose slack would otherwise pay the base fee first. The NOAH
+leg is charged whole: base fee if no stable leg paid it, remainder tip, and only the tip ranks for priority. NOAH is
+the one denomination the tax is never owed in, which is what lets the chain tell a tip from a padded tax.
 
 The tax is charged after the messages, on success only. The ante deducts the gas fee and tip and carries the
 priced tax through the context; `TransferTaxDecorator` charges it to `transfer_tax_collector` after the messages and
