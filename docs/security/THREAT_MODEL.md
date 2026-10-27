@@ -274,12 +274,14 @@ advances the term, so transactions prepared under the old key expire. The linked
 
 - The registrar hold protects only if someone compares the chain's registrations with the platform's admission records
   inside it ([grants](../governance/COMMITTEE_RUNBOOK.md#8-grants)).
-- Member admission runs off chain: a third-party identity verifier checks the person and returns a uniqueness
-  attestation and a dedup token, which the member platform keeps beside the admission record; nothing it keeps names a
-  person. The chain never sees the verifier. The uniqueness store, which the verifier can map back to people, ranks with
-  the committee and registrar keys, and so does the identity vault once it holds personal data and the person ↔ address
-  link ([member backend](../direction/TOOLING_DIRECTION.md#backend)). Public
-  references, registration batches and claim references included, carry no personal data.
+- Member admission runs off chain, on an identity check or a vouch: a third-party verifier checks the person and returns
+  a uniqueness attestation and a dedup token, which the member platform keeps beside the admission record, or a verified
+  member signs for the person and is cancelled with them if they are found a fake
+  ([admission](../governance/DISBURSEMENT_PLAN.md#admission)); nothing it keeps names a person. The chain never sees the
+  verifier. The uniqueness store, which the verifier can map back to people, ranks with the committee and registrar
+  keys, and so does the identity vault once it holds personal data and the person ↔ address link
+  ([member backend](../direction/TOOLING_DIRECTION.md#backend)). Public references, registration batches and claim
+  references included, carry no personal data.
 - A Reserve holding not re-attested within its entry's window earns nothing, which catches a custodian that
   fails while the committee stops attesting; a key that keeps re-attesting falsely is answered only by the evidence
   its references cite.

@@ -44,7 +44,7 @@ source and runs the testnet artefact. The rows follow the sections below: by lay
 | `ledger-ark`       | Signing on a Ledger device behind the signer interface                                                           | A second signer interface                                                     | Public     | Yes           |
 | `ark-app`          | Signup, the grant view, staking and voting each payment, and what the app later adds                             | A key store outside the signer interface                                      | Public     | Yes           |
 | `ark-registrar`    | The registrar key and the batches it signs                                                                       | A holder of personal data or any other key                                    | Private    | Yes           |
-| `ark-platform`     | Admission by identity and vouch, the uniqueness store, the vouch graph, funding requests, suspend                | A custodian, a delegator, a vote, or a holder of anything that names a person | Private    | Yes           |
+| `ark-platform`     | Admission by identity or vouch, the uniqueness store, the vouch graph, funding requests, suspend                 | A custodian, a delegator, a vote, or a holder of anything that names a person | Private    | Yes           |
 | `ark-identity`     | Personal data, the verifier's references, and person ↔ address links                                             | The source of any chain-visible reference                                     | Private    | Later         |
 | `ark-claims-cases` | The case records claim references name, and the coverage rule                                                    | A reason to put personal data in a reference                                  | Private    | Later         |
 | `ark-compliance`   | Screening, monitoring, alerts, and cases                                                                         | A way to move or freeze coins                                                 | Private    | Later         |
@@ -59,10 +59,13 @@ metadata contracts underneath them.
 
 ### First member tranche
 
-0. **Settle what blocks code.** The identity verifier, chosen for a uniqueness attestation, a stable dedup token, and a
-   verification retrievable by reference; counsel on what those oblige the platform to protect; who vouches for the
-   first members, who have no member to vouch for them; and who runs the backend and holds the committee and registrar
-   keys. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md#6-open-items) holds each as an open item.
+0. **Settle what blocks code.** Who runs the backend and holds the committee and registrar keys, which the registrar's
+   deployment and the committee's appointment wait on; and counsel on how a member grant is characterised, which the
+   member terms wait on, and on whether the vouch graph and the app's sign-in identifiers beside addresses are personal
+   data, which the platform's store waits on. The identity verifier and the face-matching question are not here: the
+   plan's step 1 runs on vouches alone, and both sit before its step 2
+   ([admission](../governance/DISBURSEMENT_PLAN.md#admission), [after the first tranche](#after-the-first-tranche)). The
+   [disbursement plan](../governance/DISBURSEMENT_PLAN.md#6-open-items) holds each as an open item.
 1. **Fix the contracts.** The signup protocol in [`ark-sdk`](#ark-sdk); the registrar's API, defined in
    [`ark-registrar`](#ark-registrar) for the platform to import; a minimal network registry in
    [`ark-registry`](#ark-registry) for the local environment and testnet; and the local environment in [`ark`](#ark),
@@ -70,11 +73,11 @@ metadata contracts underneath them.
    both tracks below register against a real chain. Protocol schemas, signing modes, decoding, and public endpoints
    are treated as one surface from here on.
 2. **Build two tracks in parallel.** The backend: `ark-registrar` first, the smallest part and the only one that writes
-   to the chain, then [`ark-platform`](#ark-platform) with its uniqueness store. The client: `ark-sdk` with the
-   queries, transactions, ADR-036 signature, and decoding the app needs, then [`ark-signer`](#ark-signer) with the
-   device keystore and the adapter for [`ledger-ark`](#ledger-ark), then the signup flow in [`ark-app`](#ark-app). The
-   tracks meet when the app's signup registers a member through the platform on the local environment, from a device
-   key and from a Ledger.
+   to the chain, then [`ark-platform`](#ark-platform) with its vouch graph, the uniqueness store following with the
+   identity check. The client: `ark-sdk` with the queries, transactions, ADR-036 signature, and decoding the app needs,
+   then [`ark-signer`](#ark-signer) with the device keystore and the adapter for [`ledger-ark`](#ledger-ark), then the
+   signup flow in [`ark-app`](#ark-app). The tracks meet when the app's signup registers a member through the platform
+   on the local environment, from a device key and from a Ledger.
 3. **Finish what a member needs before the first payment.** The grant view, staking, and voting in the app, since the
    first tenth pays two weeks after registration; the thin distribution view on node queries, the first release of
    [`ark-explorer`](#ark-explorer); the Disbursement module's audit, which sits before the first tranche, not before
@@ -82,8 +85,11 @@ metadata contracts underneath them.
 
 ### After the first tranche
 
-4. **Add identity where a use needs it.** [`ark-identity`](#ark-identity), [`ark-claims-cases`](#ark-claims-cases),
-   and [`ark-compliance`](#ark-compliance) with [`ark-indexer`](#ark-indexer) under it, when insurance coverage of
+4. **Add identity where a use needs it.** First the identity check, before the plan's step 2 opens conversion: counsel
+   on face matching, the verifier pilot, the platform's adapter and uniqueness store, and the return of verified-only
+   vouching, which step-1 members pass to keep vouching ([admission](../governance/DISBURSEMENT_PLAN.md#admission)).
+   Then [`ark-identity`](#ark-identity), [`ark-claims-cases`](#ark-claims-cases), and
+   [`ark-compliance`](#ark-compliance) with [`ark-indexer`](#ark-indexer) under it, when insurance coverage of
    registered members or AML is adopted. If counsel requires monitoring from the first tranche, the indexer and
    compliance move into step 3 and become its longest part.
 5. **Widen the app.** Transfers, simulation, market operations, and the contributor interactions in the app's later
@@ -222,8 +228,9 @@ everything a member does, and grows past both. Its first user is fixed by the di
 grant the module pays out over a year, has never seen a key, and must be able to stake and vote it. Custody sits behind
 the signer interface; the features own everything else a member does:
 
-- signup with the member process in front of it, the identity check and the vouch, submitting the address with a proof
-  of possession;
+- signup with the member process in front of it, the vouch or the identity check, with the signals the vouch path leans
+  on, one Apple or Google account, device attestation, and a phone number, submitting the address with a proof of
+  possession;
 - the grant as the member sees it, what has been paid and what waits, the schedule and the next payment, and the
   member's status read from the Disbursement module;
 - the delegation of each payment that arrived, and the validator picker that shows how close each validator is to a
@@ -277,27 +284,32 @@ that writes to the chain, so it is built first. It is not a holder of personal d
 
 ### `ark-platform`
 
-The member platform runs the member process: admission by a verified identity and a vouch together, and the admission
-records and the vouch graph it reads for sybils; a daily comparison of the chain's registrations against its admission
-records, inside the two-week hold before anything pays; grant-tranche funding requests to governance; and the
-committee's suspend, which stops a sybil's pay and moves nothing, for governance to cancel, and reaches a voucher whose
-vouchees are cancelled.
+The member platform runs the member process the [plan](../governance/DISBURSEMENT_PLAN.md#admission) sets: admission by
+a vouch, and by a verified identity once the check is live before the plan's step 2; the vouch graph with each member's
+standing, limits, and liability, which it reads for sybils and keeps private; a daily comparison of the chain's
+registrations against its admission records, inside the two-week hold before anything pays; grant-tranche funding
+requests to governance; and the committee's suspend, which stops a sybil's pay and moves nothing, for governance to
+cancel. A flag suspends the vouchee and the voucher, a finding cancels both, and cancelling a member suspends their
+unverified vouchees until they verify or are vouched for again.
 
 Registration needs uniqueness, one grant per person, not identity: the identity verifier, a third party that checks
 liveness and a document, returns a uniqueness attestation and the earlier enrolments whose face matches this one. The
-platform derives the dedup token from that: a match above its threshold takes the earlier enrolment's token, so the
-same person always resolves to one token however many times they verify. It keeps the attestation, the token, and the
-verifier's reference beside the admission record; nothing it keeps names a person. It is not a custodian, a delegator,
-a vote, or a holder of anything that names a person.
+platform derives the dedup token from that: a match above its threshold takes the earlier enrolment's token, so the same
+person always resolves to one token however many times they verify. It keeps the attestation, the token, and the
+verifier's reference beside the admission record; nothing it keeps names a person. A vouched-only member has no
+attestation and no token: their uniqueness rests on the voucher's liability, and, once a verifier exists, the check is
+what they pass to vouch themselves. It is not a custodian, a delegator, a vote, or a holder of anything that names a
+person.
 
 ### `ark-identity`
 
 The identity vault arrives with insurance coverage or AML. It holds person records, the verified attributes the other
 services need, the verifier's references, and the person ↔ address links, which it takes over from the platform. It is
 then the only service that holds personal data: every other service sees an opaque person ID, and the vault logs every
-resolution of one. Existing members are linked by retrieving their verification from the verifier by reference, with
-their consent, rather than verifying again. Documents stay with the verifier unless counsel requires otherwise. It is
-not the source of any chain-visible reference, and never readable without a logged request.
+resolution of one. Existing verified members are linked by retrieving their verification from the verifier by reference,
+with their consent, rather than verifying again; a vouched-only member verifies when a use needs the link. Documents
+stay with the verifier unless counsel requires otherwise. It is not the source of any chain-visible reference, and never
+readable without a logged request.
 
 ### `ark-claims-cases`
 
@@ -363,12 +375,12 @@ reassuring generic label.
 ### Identity data
 
 Until the identity vault arrives nothing the backend holds names a person: the uniqueness store links a dedup token,
-which only the verifier can map to a person, to an address, and whether that is personal data in law is counsel's
-question. The vault makes the backend a holder of personal data, with the duties counsel sets for protecting, retaining,
-and reporting it. Nothing chain-visible carries either: registration batches, claim references, and grant records name
-admission and case records, never people. A breach of the vault would tie known people to public addresses permanently,
-which is why it is the only service holding the link and why no other service resolves a person ID without a logged
-request.
+which only the verifier can map to a person, to an address, the vouch graph links addresses to each other, and whether
+either is personal data in law is counsel's question. The vault makes the backend a holder of personal data, with the
+duties counsel sets for protecting, retaining, and reporting it. Nothing chain-visible carries either: registration
+batches, claim references, and grant records name admission and case records, never people. A breach of the vault would
+tie known people to public addresses permanently, which is why it is the only service holding the link and why no other
+service resolves a person ID without a logged request.
 
 ### Fees, taxes, quotes, and simulation
 
