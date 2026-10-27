@@ -107,10 +107,10 @@ Three more things the tooling consumes live here, since each is the chain's half
 - **The decoding fixtures.** Real transactions through the application's own encoder and real blocks, in
   [tests/fixtures](../../tests/fixtures/README.md): the contract every decoder, in TypeScript or Go, is tested against,
   so that the app, the SDK, and the explorer give each transaction [one meaning](#one-meaning-per-transaction).
-- **The local environment.** A LocalArk-style environment that starts a known network, funds deterministic development
-  accounts, submits transactions, exercises Ark's modules, and resets or reproduces state, using the same registry and
-  SDK conventions as public environments. It is a fixture for wallet, indexer, explorer, contract, and application
-  developers and for testing protocol upgrades, never a simulation with materially different protocol behaviour.
+- **The local environment.** The [Docker localnet](../../contrib/localnet/README.md): one or four validators with
+  their sidecars on the testnet artefact, from generated development keys, with its own registry entry, reset on every
+  start. It is a fixture for wallet, indexer, explorer, contract, and application developers and for testing protocol
+  upgrades, never a simulation with materially different protocol behaviour.
 
 The chain is not a product-specific UI backend.
 
