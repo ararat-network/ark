@@ -1,0 +1,173 @@
+# Alert rules for the node, the sidecar, and the Disbursement alerts the membership service's series answer.
+# Each rule cites its alert ID in ark_alert and carries the severity its guide gives it; every window and
+# threshold is the placeholder PROCESS_MONITORING.md §3.4 and PROTOCOL_MONITORING.md §2.8 set from the first
+# weeks of data. The protocol alerts A1 to C4 and D2 wait for the indexer's series (PROTOCOL_MONITORING.md §2.7).
+# TestAlertRulesReadPinnedSeries checks every series and ID here against the fixtures and the guides.
+groups:
+  - name: ark-node
+    rules:
+      - alert: ArkValidatorAbstaining
+        expr: ark_oracle_vote_targets{status!="priced"} > 0 or increase(ark_oracle_vote_dropped_targets_total[10m]) > 0
+        for: 5m
+        labels: {severity: page, ark_alert: N1}
+        annotations:
+          summary: "{{ $labels.node }}: the vote extension is missing active targets"
+      - alert: ArkPriceFeedUnreachable
+        expr: increase(ark_abci_requests_total{method="extend_vote",status!="Success"}[5m]) > 0
+        for: 10m
+        labels: {severity: page, ark_alert: N2}
+        annotations:
+          summary: "{{ $labels.node }}: ExtendVote failing with {{ $labels.status }}"
+      - alert: ArkPriceFeedSilent
+        # The bound is [pricefeed] price_ttl; 60s stands in for it.
+        expr: time() - ark_pricefeed_sidecar_last_success_seconds > 60
+        for: 5m
+        labels: {severity: page, ark_alert: N2}
+        annotations:
+          summary: "{{ $labels.node }}: no valid answer from {{ $labels.address }} inside the price TTL"
+      - alert: ArkSnapshotAgeing
+        # Old snapshot from a sidecar that still answers: 30s of age against a 60s TTL.
+        expr: time() - ark_pricefeed_snapshot_timestamp_seconds > 30 and time() - ark_pricefeed_sidecar_last_success_seconds < 15
+        for: 5m
+        labels: {severity: warn, ark_alert: N3}
+        annotations:
+          summary: "{{ $labels.node }}: {{ $labels.address }} answers with an ageing snapshot"
+      - alert: ArkFleetParticipationLow
+        # The floor is the oracle module's FunctioningBlockThreshold; 0.67 stands in for it.
+        expr: ark_oracle_participating_power_share < 0.67 or increase(ark_oracle_blocks_total{functioning="false"}[15m]) > 0
+        for: 5m
+        labels: {severity: page, ark_alert: N4}
+        annotations:
+          summary: "{{ $labels.node }}: participating power below the functioning floor"
+      - alert: ArkPeerReportsRejected
+        expr: increase(ark_abci_requests_total{method="verify_vote_extension",status!="Success"}[15m]) > 10 or increase(ark_abci_requests_total{method="process_proposal",status="ExtendedCommitValidationError"}[15m]) > 10
+        for: 15m
+        labels: {severity: warn, ark_alert: N5}
+        annotations:
+          summary: "{{ $labels.node }}: rejecting peers' reports with {{ $labels.status }}"
+      - alert: ArkReservedLaneOccupied
+        expr: ark_mempool_transactions{lane=~"governance|committee"} > 0
+        for: 30m
+        labels: {severity: warn, ark_alert: N6}
+        annotations:
+          summary: "{{ $labels.node }}: the {{ $labels.lane }} lane has held transactions for half an hour"
+      - alert: ArkBlockHooksSlow
+        # Against a five-second block; the quantile is of Ark's own PreBlock work.
+        expr: histogram_quantile(0.99, sum by (le, node) (rate(ark_abci_method_duration_milliseconds_bucket{method="pre_blocker"}[10m]))) > 2000
+        for: 15m
+        labels: {severity: warn, ark_alert: N7}
+        annotations:
+          summary: "{{ $labels.node }}: PreBlock's p99 is approaching block time"
+      - alert: ArkHandlerPanicked
+        expr: increase(ark_abci_requests_total{status="Panic"}[5m]) > 0
+        labels: {severity: warn, ark_alert: N7}
+        annotations:
+          summary: "{{ $labels.node }}: a recovered panic in {{ $labels.method }}"
+
+  - name: ark-sidecar
+    rules:
+      - alert: ArkProviderContributingNothing
+        expr: increase(ark_pricefeed_skipped_samples_total[10m]) > 0 and on (node, provider) (time() - max by (node, provider) (ark_pricefeed_provider_last_success_seconds)) < 60
+        for: 15m
+        labels: {severity: warn, ark_alert: S1}
+        annotations:
+          summary: "{{ $labels.node }}: {{ $labels.provider }} answers but every {{ $labels.pair }} sample is {{ $labels.reason }}"
+      - alert: ArkProviderDown
+        # The bound is the provider's max_price_age; 120s stands in for it.
+        expr: time() - ark_pricefeed_provider_last_success_seconds > 120
+        for: 5m
+        labels: {severity: warn, ark_alert: S2}
+        annotations:
+          summary: "{{ $labels.node }}: {{ $labels.provider }} has not resolved {{ $labels.ticker }} for two minutes"
+      - alert: ArkFeedUnpriced
+        expr: increase(ark_pricefeed_missing_prices_total[5m]) > 0
+        for: 5m
+        labels: {severity: page, ark_alert: S3}
+        annotations:
+          summary: "{{ $labels.node }}: the sidecar cannot price {{ $labels.denom }}"
+      - alert: ArkBootstrapPriceInUse
+        expr: increase(ark_pricefeed_bootstrap_price_uses_total[5m]) > 0
+        labels: {severity: warn, ark_alert: S4}
+        annotations:
+          summary: "{{ $labels.node }}: {{ $labels.pair }} resolved from a bootstrap price"
+      - alert: ArkThinMedian
+        # Only meaningful for a pair configured with several providers.
+        expr: ark_pricefeed_pair_sample_count == 1
+        for: 10m
+        labels: {severity: warn, ark_alert: S5}
+        annotations:
+          summary: "{{ $labels.node }}: {{ $labels.pair }} is a median of one"
+      - alert: ArkSidecarAggregationStalled
+        expr: rate(ark_pricefeed_ticks_total[2m]) == 0
+        for: 5m
+        labels: {severity: page, ark_alert: S6}
+        annotations:
+          summary: "{{ $labels.node }}: the sidecar's snapshot has stopped moving"
+      - alert: ArkFeedRegistryStale
+        # Several [client] intervals; 300s stands in for them.
+        expr: time() - ark_pricefeed_chainstate_last_success_seconds > 300
+        for: 5m
+        labels: {severity: warn, ark_alert: S7}
+        annotations:
+          summary: "{{ $labels.node }}: no feed-registry refresh from {{ $labels.address }} for five minutes"
+
+  # Nothing about these is Ark's; they pair with the rules above on every stack.
+  - name: ark-process
+    rules:
+      - alert: EndpointDown
+        expr: up == 0
+        for: 5m
+        labels: {severity: page}
+        annotations:
+          summary: "{{ $labels.node }}: {{ $labels.job }} endpoint down"
+      - alert: ChainStalled
+        expr: increase(cometbft_consensus_height[2m]) == 0
+        for: 2m
+        labels: {severity: page}
+        annotations:
+          summary: "{{ $labels.node }}: no new block for four minutes"
+      - alert: ValidatorNotSigning
+        expr: cometbft_consensus_latest_block_height - ignoring(validator_address) cometbft_consensus_validator_last_signed_height > 10
+        for: 2m
+        labels: {severity: page}
+        annotations:
+          summary: "{{ $labels.node }}: last signed height is ten blocks behind"
+      - alert: ValidatorLostSentry
+        expr: cometbft_p2p_peers{role="validator"} < 2
+        for: 10m
+        labels: {severity: warn}
+        annotations:
+          summary: "{{ $labels.node }}: fewer than two peers on a validator"
+      - alert: FewPeers
+        expr: cometbft_p2p_peers{role!="validator"} < 3
+        for: 10m
+        labels: {severity: warn}
+        annotations:
+          summary: "{{ $labels.node }}: fewer than three peers"
+      - alert: NeverPeered
+        expr: up{job="cometbft"} == 1 unless on (instance) cometbft_p2p_peers
+        for: 10m
+        labels: {severity: warn}
+        annotations:
+          summary: "{{ $labels.node }}: up but has never had a peer"
+
+  # The membership service's series (PROTOCOL_MONITORING.md §7); the other protocol alerts wait for the indexer.
+  - name: ark-disbursement
+    rules:
+      - alert: ArkRegistrationsUnreconciled
+        expr: ark_membership_registrations_unreconciled > 0
+        for: 15m
+        labels: {severity: page, ark_alert: D1}
+        annotations:
+          summary: "{{ $value }} registrations under registrar term {{ $labels.registrar_term }} match no admission"
+      - alert: ArkMemberTrancheLow
+        expr: ark_membership_member_tranche_remaining_ratio < 0.1
+        for: 1h
+        labels: {severity: notify, ark_alert: D3}
+        annotations:
+          summary: "the open member tranche is under a tenth of its last opening"
+      - alert: ArkComparisonStalled
+        expr: time() - ark_membership_comparison_last_success_seconds > 172800
+        labels: {severity: page, ark_alert: D4}
+        annotations:
+          summary: "the registration comparison has not completed for two days"

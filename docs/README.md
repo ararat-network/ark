@@ -32,6 +32,7 @@ maintain that boundary.
 
 - [Process monitoring](operations/PROCESS_MONITORING.md): node and sidecar scrape/export configuration, process metrics, and alerts.
 - [Protocol monitoring](operations/PROTOCOL_MONITORING.md): chain-state alerts for the exposure multiplier, Reserve recognition, Oracle rates and jails, the conversion pool, committees, and Disbursement.
+- [Monitoring templates](../contrib/observability/README.md): the Prometheus, Alertmanager, and Grafana files that implement both guides' alerts, and the localnet profile that runs them.
 
 ## Govern and respond
 

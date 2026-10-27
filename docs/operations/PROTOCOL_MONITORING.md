@@ -221,14 +221,18 @@ In Phase A the same page shows panel 1 flat at one.
 - **Retention.** At least 30 refresh periods of update history, for the "N consecutive" conditions and for A5's
   attribution.
 
-The collector must preserve these semantics regardless of its implementation. Delivery status lives in
-[future changes](../direction/FUTURE_CHANGES.md#protocol-monitoring-tooling).
+The collector is the indexer the [tooling direction](../direction/TOOLING_DIRECTION.md#ark-indexer) reserves: it
+exports the event series for Prometheus and hosts the poller, and must preserve these semantics. Until it exists no
+protocol series exist, so [rules/ark.yml](../../contrib/observability/rules/ark.yml) carries only the Disbursement
+alerts the membership service's series answer (§7);
+[future changes](../direction/FUTURE_CHANGES.md#protocol-monitoring-tooling) tracks the rest.
 
 ### 2.8 Calibration and operational ownership
 
 1. **Thresholds.** `N` for A1 and A3, and the coverage floor for A6, are placeholders. Set them from Phase A
    data, in the same pass that chooses the weights.
-2. **Where the dashboard lives**, and who receives the A1, A2 and A4 pages. An ops decision, not a protocol one.
+2. **Who receives the A1, A2 and A4 pages.** An ops decision, not a protocol one; the dashboard itself joins
+   [contrib/observability](../../contrib/observability/README.md) once its series exist.
 3. **A5's attribution** — separating "multiplier rose" from "recognised capital fell" — needs both series
    retained. If that proves awkward, downgrade A5 to a plain bound-reached-zero notification; the committee
    still learns what it needs to.
@@ -402,6 +406,13 @@ under a share of the whole (suggest a tenth).
 added. `EventGrantEntryRecorded` carries every grant's creation, payment, suspension, and cancellation with its `actor`,
 and `EventPaymentDeferred` every refused payment.
 
+The membership service exports the series the Disbursement rules read, since D1 is a join against its admission
+records and D3 is the number it watches to raise the next funding request: `ark_membership_registrations_unreconciled`,
+a gauge by `registrar_term` of registrations on chain for more than a day with no matching admission record;
+`ark_membership_member_tranche_remaining_ratio`, the open member tranche over the last opening's `amount`; and
+`ark_membership_comparison_last_success_seconds`, the Unix time the comparison last completed. The names are the
+contract: `TestAlertRulesReadPinnedSeries` reads them from this paragraph.
+
 #### D1 — Registrations unreconciled · page the grants committee
 
 **Condition:** a grant created by the registrar that the membership service's admission records do not match within a
@@ -430,11 +441,22 @@ keeps deferring.
 
 **Response:** [committee runbook §8](../governance/COMMITTEE_RUNBOOK.md#8-grants), a member tranche.
 
+#### D4 — Comparison stalled · page the grants committee
+
+**Condition:** `time() - ark_membership_comparison_last_success_seconds` past two days.
+
+**Why:** D1 is silent when the comparison does not run, and silence must not read as reconciled (§2.3). Two missed
+days leave most of the hold to suspend in.
+
+**Response:** [committee runbook §8](../governance/COMMITTEE_RUNBOOK.md#8-grants): compare by hand against
+`grants --registrar-term` until the service's comparison runs again.
+
 ## 8. Source inventory
 
-Every query and typed event the alerts above read, with the fields they read. It is the input contract for whatever
-collects them: a poller for the queries, an indexer for the events, which Prometheus then scrapes. The metric names
-those emit belong to that collector; this table pins only the chain's side. `TestProtocolSourceInventoryResolves`
+Every query and typed event the alerts above read, with the fields they read. It is the input contract for the
+indexer that collects them, a poller for the queries and the event stream for the rest, which Prometheus then scrapes.
+The metric names it emits belong to it; this table pins only the chain's side, and §7 the membership service's.
+`TestProtocolSourceInventoryResolves`
 resolves every source and field against the registered protobuf descriptors, so renaming or removing anything listed
 fails the build here rather than blanking a dashboard elsewhere. Field paths descend with `.`; `[]` marks a repeated
 field.
