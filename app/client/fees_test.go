@@ -146,20 +146,30 @@ func TestPricing(t *testing.T) {
 		return quote.price(gas, gasFee, nil)
 	}
 
-	t.Run("a priced gas fee takes the chain's tax, lifted", func(t *testing.T) {
+	t.Run("a NOAH gas fee takes the chain's tax exact", func(t *testing.T) {
 		chain := &fakeChain{tax: oneTax}
 		got, err := price(t, connect(t, chain), nil, false, 100, noahGasFee, msg)
 
 		require.NoError(t, err)
 		require.Equal(t, "25anoah", got.Gas.String())
 		require.Equal(t, "1axdr", got.Tax.String())
-		// The tax leg takes the headroom, NOAH gas its margin: 25 lifts to 27.
-		require.Equal(t, "27anoah,2axdr", got.Fee.String())
+		// NOAH gas takes its margin, 25 to 27; the tax leg carries no slack,
+		// which would pay the base fee itself and leave all of NOAH as tip.
+		require.Equal(t, "27anoah,1axdr", got.Fee.String())
 		// The chain priced the very message being sent, and was asked for
 		// nothing it could not use.
 		require.Equal(t, [][]string{{"/cosmos.bank.v1beta1.MsgSend"}}, chain.taxed)
 		require.Zero(t, chain.sheets)
 		require.Empty(t, chain.balances)
+	})
+
+	t.Run("a stable gas fee takes the chain's tax lifted with it", func(t *testing.T) {
+		got, err := price(t, connect(t, &fakeChain{tax: oneTax}), nil, false, 100, sdk.NewCoins(sdk.NewInt64Coin("axdr", 20)), msg)
+
+		require.NoError(t, err)
+		// One leg of gas and tax, 21, lifted by the headroom to 24; the slack
+		// stays with the payer.
+		require.Equal(t, "24axdr", got.Fee.String())
 	})
 
 	t.Run("an untaxed message adds nothing", func(t *testing.T) {
@@ -223,8 +233,8 @@ func TestPricing(t *testing.T) {
 
 		require.NoError(t, err)
 		// One short of the lifted gas and tax plus the transfer in axdr, so
-		// gas rides NOAH and the tax still rides axdr, lifted.
-		require.Equal(t, "5250anoah,2axdr", got.Fee.String())
+		// gas rides NOAH, lifted by its margin, and the tax rides axdr exact.
+		require.Equal(t, "5250anoah,1axdr", got.Fee.String())
 	})
 
 	t.Run("without a payer the reference row prices gas beside the tax", func(t *testing.T) {
