@@ -31,10 +31,12 @@ the tax check sees as well as the slack the base fee is taken from.
 
 **NOAH is charged whole; the remainder is the tip.** `anoah` is the one denomination that does not behave as a
 ceiling. Whatever you declare in NOAH leaves the account: the base fee if no stable leg covered it, and the entire
-rest as a tip. Padding anything else is free; padding NOAH is a tip. A small one is still worth paying when NOAH
-carries the base fee: its requirement is priced through NOAH's gas factor, which follows the oracle rate every block,
-so an exact NOAH fee can arrive short. `arkd` pads a NOAH gas fee by 5%. NOAH is also never taxed, which is what lets
-a tip and a padded tax be told apart at all.
+rest as a tip. Padding a stable leg that carries the base fee is free; padding NOAH is a tip. A small one is still
+worth paying when NOAH carries the base fee: its requirement is priced through NOAH's gas factor, which follows the
+oracle rate every block, so an exact NOAH fee can arrive short. `arkd` pads a NOAH gas fee by 5%. A stable leg's
+slack pays the base fee before NOAH does, so when NOAH carries the base fee, declare the tax legs exact: a padded
+tax leg beside a NOAH leg pays the base fee itself and leaves the whole NOAH leg as tip. NOAH is also never taxed,
+which is what lets a tip and a padded tax be told apart at all.
 
 ## 2. What the chain publishes
 
@@ -78,7 +80,9 @@ payable fee meters the actual transfer instead.
    amount changes the tax.
 3. **`GasPrices`**, and pick a denomination the payer can spend. `required = ceil(gas_price × gas_limit)`. A
    denomination in `tax_base` is one the payer is already spending, and the natural first choice.
-4. **Declare** `tax + required`, with every leg padded: the stable legs for free, NOAH at the cost of a tip.
+4. **Declare** `tax + required`. With a stable leg carrying the base fee, pad every leg: the stable legs for free.
+   With NOAH carrying it, pad NOAH at the cost of a tip and declare the tax legs exact; a tax that rises before
+   inclusion then refuses the transaction, and you re-quote.
 
 Illustrative, sending `ausd` and paying in `ausd` (base units, `1e18 = 1 USD`):
 
@@ -111,7 +115,8 @@ its tax and nothing more.
 > refusing zero legs, repeated denominations, and invalid denoms, but not unsortedness.
 
 **Then NOAH.** If no stable leg covered the base fee and the NOAH leg is at least the NOAH requirement, NOAH pays
-it. Either way the rest of the NOAH leg is the tip.
+it. Either way the rest of the NOAH leg is the tip. This is why a NOAH gas leg goes beside exact tax legs: slack on
+any of them pays the base fee first.
 
 **If nothing covered it, the transaction is refused**, and the error quotes the requirement in reference units.
 A NOAH leg the price table cannot price is also refused — a tip nothing can rank buys nothing.
