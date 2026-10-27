@@ -76,9 +76,9 @@ metadata contracts underneath them.
 5. **Add the information layer.** Replayable indexing and the full explorer on it, once the meanings of messages,
    events, assets, and account activity are stable enough to share.
 6. **Make third-party development routine.** Extend the signer interface into the wallet kit's dapp protocol, and
-   provide the documented interfaces, fixtures, and compatibility guidance needed to build without private knowledge.
-7. **Expand execution environments deliberately.** CosmWasm is on; a general contract product or an EVM-facing one is
-   added when application demand and operational costs justify it.
+   provide the documented interfaces and compatibility guidance needed to build without private knowledge.
+7. **Expand execution environments deliberately.** A general contract product or an EVM-facing one is added when
+   application demand and operational costs justify it.
 
 ## Chain and shared contracts
 
