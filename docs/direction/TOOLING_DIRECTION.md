@@ -63,8 +63,7 @@ metadata contracts underneath them.
    service, from a device key and from a Ledger.
 2. **Finish what a member needs before the first payment.** The grant view, staking, and voting in the app, since the
    first tenth pays two weeks after registration; the thin distribution view on node queries, the first release of
-   [`ark-explorer`](#ark-explorer); the Disbursement module's audit, which sits before the first tranche, not before
-   the build; and a testnet rehearsal of the whole flow with the daily comparison running.
+   [`ark-explorer`](#ark-explorer); and a testnet rehearsal of the whole flow with the daily comparison running.
 
 ### After the first tranche
 

@@ -230,7 +230,6 @@ targets are the margin (§2), not the distribution.
 - The Ark app, which holds the wallet and the member features
   ([tooling direction](../direction/TOOLING_DIRECTION.md#ark-app)).
   It is needed for the first member tranche and is not built.
-- An audit of the Disbursement module before launch, since it holds the pools from block 1.
 - Counsel on how a member grant is characterised; for step 1, on whether the vouch graph and the app's sign-in
   identifiers beside addresses are personal data; before step 2, on whether matching a face against every enrolment is
   permissible where members live, which decides whether the identity check can be a basis there, and on what the
