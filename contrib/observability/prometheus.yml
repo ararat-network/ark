@@ -1,0 +1,45 @@
+# Scrape template for nodes and their sidecars (PROCESS_MONITORING.md §2.2). Replace the targets and keep the
+# node label: it ties a node's three endpoints together and names the node in every alert. The arkd job drops
+# the dependency series §8 lists. Run Prometheus with --storage.tsdb.retention.time=30d, the history §3.4
+# calibrates from.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - rules/ark.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager.internal:9093"]
+
+scrape_configs:
+  - job_name: arkd
+    static_configs:
+      - targets: ["validator-1.internal:9464"]
+        labels: {node: validator-1, role: validator}
+      - targets: ["sentry-1.internal:9464"]
+        labels: {node: sentry-1, role: sentry}
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'wasmvm_pinned_contract_(hits|size)'
+        action: drop
+      - source_labels: [__name__]
+        regex: '(working_hash_time|internal_finalize_time|finalize_non_oe_internal_time|get_finalize_state_time|streaming_listener_time|oe_time|oe_abort_if_needed_time)_milliseconds_(bucket|sum|count)'
+        action: drop
+  - job_name: cometbft
+    static_configs:
+      - targets: ["validator-1.internal:26660"]
+        labels: {node: validator-1, role: validator}
+      - targets: ["sentry-1.internal:26660"]
+        labels: {node: sentry-1, role: sentry}
+  - job_name: pricefeed
+    static_configs:
+      - targets: ["validator-1.internal:9091"]
+        labels: {node: validator-1}
+  # The membership service's series for D1, D3, and D4 (PROTOCOL_MONITORING.md §7). Only the stack that runs the
+  # service scrapes it; drop the job elsewhere.
+  - job_name: membership
+    static_configs:
+      - targets: ["membership.internal:9100"]

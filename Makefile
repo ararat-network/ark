@@ -283,6 +283,14 @@ localnet-statesync:
 	$(localnetCompose) --profile statesync up -d sync0
 	@contrib/scripts/localnet-statesync.sh 120 2 http://localhost:26697
 
+# promtool and amtool over the templates and the rules, through the images the
+# observability profile runs.
+prometheusImage=prom/prometheus:v2.53.0
+alertmanagerImage=prom/alertmanager:v0.27.0
+observability-check:
+	$(DOCKER) run --rm -v $(CURDIR)/contrib/observability:/obs:ro --entrypoint promtool $(prometheusImage) check config /obs/prometheus.yml /obs/prometheus.localnet.yml
+	$(DOCKER) run --rm -v $(CURDIR)/contrib/observability:/obs:ro --entrypoint amtool $(alertmanagerImage) check-config /obs/alertmanager.yml
+
 # Coordinated upgrade on one host node under cosmovisor; see the script's
 # header for the knobs.
 upgrade-rehearsal:
@@ -292,4 +300,4 @@ upgrade-rehearsal:
 	test-fuzz test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
 	lint lint-fix format vulncheck \
 	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-check-pricefeed proto-update-deps \
-	localnet-check localnet-build-env localnet-init localnet-up localnet-start localnet-stop localnet-liveness localnet-statesync upgrade-rehearsal
+	localnet-check localnet-build-env localnet-init localnet-up localnet-start localnet-stop localnet-liveness localnet-statesync observability-check upgrade-rehearsal

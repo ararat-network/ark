@@ -1,0 +1,53 @@
+# The scrape file the localnet's observability profile runs: every node and sidecar by service name on the
+# compose network, with the same rules. Under VALIDATORS=1 the node1..3 targets are down, which EndpointDown
+# reports; nothing else differs from prometheus.yml.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - rules/ark.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  - job_name: arkd
+    static_configs:
+      - targets: ["node0:9464"]
+        labels: {node: node0, role: validator}
+      - targets: ["node1:9464"]
+        labels: {node: node1, role: validator}
+      - targets: ["node2:9464"]
+        labels: {node: node2, role: validator}
+      - targets: ["node3:9464"]
+        labels: {node: node3, role: validator}
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'wasmvm_pinned_contract_(hits|size)'
+        action: drop
+      - source_labels: [__name__]
+        regex: '(working_hash_time|internal_finalize_time|finalize_non_oe_internal_time|get_finalize_state_time|streaming_listener_time|oe_time|oe_abort_if_needed_time)_milliseconds_(bucket|sum|count)'
+        action: drop
+  - job_name: cometbft
+    static_configs:
+      - targets: ["node0:26660"]
+        labels: {node: node0, role: validator}
+      - targets: ["node1:26660"]
+        labels: {node: node1, role: validator}
+      - targets: ["node2:26660"]
+        labels: {node: node2, role: validator}
+      - targets: ["node3:26660"]
+        labels: {node: node3, role: validator}
+  - job_name: pricefeed
+    static_configs:
+      - targets: ["pricefeed0:9091"]
+        labels: {node: node0}
+      - targets: ["pricefeed1:9091"]
+        labels: {node: node1}
+      - targets: ["pricefeed2:9091"]
+        labels: {node: node2}
+      - targets: ["pricefeed3:9091"]
+        labels: {node: node3}

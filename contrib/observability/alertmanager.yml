@@ -1,0 +1,13 @@
+# Routing template (PROCESS_MONITORING.md §2.4): page to whoever is on call, everything else to a channel.
+# The receivers are placeholders; the integrations are yours and stay out of the repository.
+route:
+  receiver: channel
+  group_by: [alertname, node]
+  routes:
+    - matchers: [severity="page"]
+      receiver: on-call
+receivers:
+  - name: on-call
+    # pagerduty_configs, opsgenie_configs, or a webhook_configs entry for the pager
+  - name: channel
+    # slack_configs or a webhook_configs entry for the chat channel
