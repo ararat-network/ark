@@ -7,6 +7,7 @@ failed assertions.
 | --- | --- | --- |
 | [localnet-liveness.sh](localnet-liveness.sh) | `<iterations> <sleep-seconds> <num-blocks> <rpc-url> <api-url>`; `make localnet-liveness` | Read-only polling; height exceeds the requested bound and at least one oracle rate exists. |
 | [localnet-statesync.sh](localnet-statesync.sh) | `<iterations> <sleep-seconds> <rpc-url>`; `make localnet-statesync` starts its node first | Read-only polling; a snapshot was restored and the node committed beyond it. |
+| [localnet-observability.sh](localnet-observability.sh) | `<iterations> <sleep-seconds> <prometheus-url>`; `make localnet-observability` starts the profile first | Read-only polling; Prometheus has loaded the rules and scraped node0. |
 | [upgrade-probe.sh](upgrade-probe.sh) | `<iterations> <sleep-seconds> <upgrade-height> <plan-name> <rpc-url> <api-url>` | Read-only polling; the plan is applied and blocks progress beyond it. Passing the scheduled height without applying fails. |
 | [upgrade-rehearsal.sh](upgrade-rehearsal.sh) | `make upgrade-rehearsal` | Builds/selects old and new binaries, starts a temporary cosmovisor node, submits an upgrade, observes halt/switch, and runs the upgrade probe. |
 | [check-wasmvm-libs.sh](check-wasmvm-libs.sh) | Run by the [image Dockerfile](../images/arkd-env/Dockerfile); `WASMVM_LIBDIR` overrides `/lib` | Read-only; go.mod's wasmvm version matches the image Dockerfile ARGs and both static archives match its digests. |

@@ -42,6 +42,9 @@ while [ "$i" -lt "$VALIDATORS" ]; do
     -e '/^\[prometheus\]/,/^\[/ s|^address = .*|address = "0.0.0.0:9464"|' \
     "$app"
 
+  # CometBFT's own registry on 26660, the observability profile's cometbft job.
+  sed -i '/^\[instrumentation\]/,/^\[/ s|^prometheus = .*|prometheus = true|' "$home/config/config.toml"
+
   # Sidecar runtime config, polling this node for the feed registry.
   cfg="$DATA/node$i/pricefeed/pricefeed.toml"
   pricefeed init --config "$cfg"

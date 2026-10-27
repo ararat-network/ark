@@ -269,7 +269,7 @@ localnet-start: localnet-check
 # Every profile is named so their services come down too: a service in a
 # profile that is not enabled is not an orphan, and down would skip it.
 localnet-stop:
-	$(localnetCompose) --profile multi --profile statesync down --remove-orphans
+	$(localnetCompose) --profile multi --profile statesync --profile observability down --remove-orphans
 
 # Wait for node0 to pass five blocks and hold an oracle exchange rate.
 localnet-liveness:
@@ -282,6 +282,13 @@ localnet-statesync:
 	@$(if $(filter 4,$(VALIDATORS)),:,$(error localnet-statesync needs VALIDATORS=4, got $(VALIDATORS)))
 	$(localnetCompose) --profile statesync up -d sync0
 	@contrib/scripts/localnet-statesync.sh 120 2 http://localhost:26697
+
+# Prometheus, Alertmanager, and Grafana on the localnet's network, then hold
+# Prometheus to the rules loaded and node0 scraped. Prometheus answers on 9095,
+# Alertmanager on 9096, Grafana on 3000.
+localnet-observability:
+	$(localnetCompose) --profile observability up -d prometheus alertmanager grafana
+	@contrib/scripts/localnet-observability.sh 30 2 http://localhost:9095
 
 # promtool and amtool over the templates and the rules, through the images the
 # observability profile runs.
@@ -300,4 +307,5 @@ upgrade-rehearsal:
 	test-fuzz test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
 	lint lint-fix format vulncheck \
 	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-check-pricefeed proto-update-deps \
-	localnet-check localnet-build-env localnet-init localnet-up localnet-start localnet-stop localnet-liveness localnet-statesync observability-check upgrade-rehearsal
+	localnet-check localnet-build-env localnet-init localnet-up localnet-start localnet-stop localnet-liveness localnet-statesync \
+	localnet-observability observability-check upgrade-rehearsal
