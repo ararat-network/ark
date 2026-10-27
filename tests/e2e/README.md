@@ -32,6 +32,11 @@ accounts on the launch economics, not seats; the gov suite spends from the commu
 | `TEST_PRICEFEED` | `true` | One price-feed sidecar per validator. Off, the chain holds no exchange rate and the oracle suite skips. |
 | `TEST_PRICEFEED_LIVE` | `false` | Sidecars reach their default venues over the internet instead of reporting pinned prices. |
 
+In CI every run but a manual one starts the `UpgradeOnSetup` suites on the newest stable release, a published release
+that is not a prerelease, and moves to the build under test through the newest `app/upgrade/v*` plan, or a binary swap
+without one. A bare tag has no image and no network runs a prerelease, so neither is a starting point; before the first
+stable release the suites run on the build alone. A manual run starts on its `old_version` input.
+
 The sidecars report pinned prices: every provider points at an address that never resolves, and every route leg has a
 bootstrap price from `chainsuite.PinnedPrices` beside the default USD/NOAH leg. Rates appear within blocks and the
 oracle suite checks them against those numbers. Nightly runs set `TEST_PRICEFEED_LIVE`, so the sidecars reach their
