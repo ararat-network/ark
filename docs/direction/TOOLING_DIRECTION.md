@@ -41,9 +41,8 @@ until the wallet kit. The rows follow the sections below: by layer, and by build
 | `ark`              | The chain: state, validation, policy, and protocol queries; the protos, decoding fixtures, local environment, and monitoring templates | A product-specific UI backend                                                 | Public     | Yes           |
 | `ark-registry`     | Shared network configuration and asset metadata                                                                  | A second source of chain state                                                | Public     | Yes           |
 | `ark-sdk`          | Encoding, querying, transaction workflows, decoding, and formatting; the signup protocol                         | An implementation of economic or market policy                                | Public     | Yes           |
-| `ark-app` (signer) | Key custody on the device, signing consent, transaction review, multisig; later the dapp-to-wallet protocol      | An authority for balances, quotes, or transaction success                     | Public     | Yes           |
 | `ledger-ark`       | Signing on a Ledger device behind the signer interface                                                           | A second signer interface                                                     | Public     | Yes           |
-| `ark-app`          | Signup, the grant view, staking and voting each payment, and what the app later adds                             | A key store outside the signer interface                                      | Public     | Yes           |
+| `ark-app`          | Key custody and signing, signup, the grant view, staking and voting each payment, and what the app later adds | A key store outside the signer interface                                      | Public     | Yes           |
 | `ark-membership`   | Admission by vouch or identity, the vouch graph and uniqueness store, the registrar key in a KMS, funding requests, suspend | A custodian, a delegator, a vote, or a holder of anything that names a person | Private    | Yes           |
 | `ark-indexer`      | Replayable historical and searchable derived data                                                                | Consensus state or an irreplaceable ledger                                    | Public     | Later         |
 
@@ -160,44 +159,6 @@ needs the queries, transactions, ADR-036 signature, and decoding the app needs.
 
 ## Client
 
-### The signer
-
-The signer interface is the audited, slow-moving part of the app, and it owns nothing about membership: key generation
-on the device with backup and recovery, signing consent, transaction review built from decoded messages, fee selection,
-broadcast, and reading the chain from any node. Every feature asks it for a signature and never sees a key. The device
-keystore answers by default; a Ledger device, through the adapter for `ledger-ark`, or a wallet a crypto-native member
-already carries stands in behind the same interface. The first tranche needs the device keystore and the Ledger adapter;
-external-wallet adapters follow.
-
-It is a package of `ark-app` with its own owners and tests, implementing the `Signer` interface the SDK defines: a
-core every client shares, consent, review, fees, broadcast, the sign-arbitrary call, and the Ledger adapter, and a
-keystore per platform, the phone's hardware-wrapped key behind biometrics first. It leaves the app's repository when
-something outside it needs it, an extension, a third-party wallet, or the wallet kit, or when an audit wants a frozen
-tag.
-
-A multisignature account signs through the same interface. The signer builds the transaction for a K-of-N account,
-each member signs it with their own adapter, keystore or Ledger, and partial signatures pass between members until the
-threshold is met and one of them assembles and broadcasts. Three constraints are fixed elsewhere. A committee is a
-legacy amino threshold multisig of at most ten hardware-backed keys, registered on chain before its appointment
-([genesis](../governance/GENESIS.md#committee-appointments)), and the SDK refuses direct signing for a multisig, so its
-members sign in amino JSON or textual mode: the deliberate compatibility decision the
-[signing rule](#one-meaning-per-transaction) asks for. Collection stays private, because a committee's target must not
-be public before broadcast ([committee runbook](../governance/COMMITTEE_RUNBOOK.md#submitting-a-transaction)), so
-partial signatures move through a relay that holds unsigned bytes and signatures and never a key; which repository
-holds the relay is open. A multisig's gas is simulated against its recorded key shape, never a single-key dry run. The
-same flow serves any shared account a member holds, not only a committee.
-
-It is the first form of the wallet kit. When third-party dapps arrive, the same interface extends into a dapp-to-wallet
-protocol, so dapps integrate with a stable Ark wallet interface rather than couple themselves to one browser extension
-or transport mechanism: account discovery, connection state, network switching, transaction requests, event
-subscriptions, and consistent errors. The interface stays transport-neutral enough to support first-party web and
-extension wallets, hardware wallets, mobile handoff, and selected compatible Cosmos wallets over time, and application
-code never needs to understand private-key storage or the internal mechanics of each wallet. Permissions are explicit:
-connecting an account, reading public addresses, requesting a signature, changing networks, and accessing any sensitive
-metadata are different capabilities, never one indefinite blanket session.
-
-It is not the authority for balances, quotes, or transaction success, and not an Ark-specific policy engine.
-
 ### `ledger-ark`
 
 The Ledger app signs Ark transactions on a Ledger device, with the transaction shown on the device's display. It is
@@ -249,6 +210,44 @@ that every off-chain observation is consensus state.
 The app defines the quality bar for message decoding and user safety, while the signer interface and SDK make it
 possible for other wallets to reach the same level of integration. It is not a key store outside the signer interface,
 not a second source of chain state, and not the only way to inspect chain activity.
+
+#### The signer
+
+The signer interface is the audited, slow-moving part of the app, and it owns nothing about membership: key generation
+on the device with backup and recovery, signing consent, transaction review built from decoded messages, fee selection,
+broadcast, and reading the chain from any node. Every feature asks it for a signature and never sees a key. The device
+keystore answers by default; a Ledger device, through the adapter for `ledger-ark`, or a wallet a crypto-native member
+already carries stands in behind the same interface. The first tranche needs the device keystore and the Ledger adapter;
+external-wallet adapters follow.
+
+It is a package of `ark-app` with its own owners and tests, implementing the `Signer` interface the SDK defines: a
+core every client shares, consent, review, fees, broadcast, the sign-arbitrary call, and the Ledger adapter, and a
+keystore per platform, the phone's hardware-wrapped key behind biometrics first. It leaves the app's repository when
+something outside it needs it, an extension, a third-party wallet, or the wallet kit, or when an audit wants a frozen
+tag.
+
+A multisignature account signs through the same interface. The signer builds the transaction for a K-of-N account,
+each member signs it with their own adapter, keystore or Ledger, and partial signatures pass between members until the
+threshold is met and one of them assembles and broadcasts. Three constraints are fixed elsewhere. A committee is a
+legacy amino threshold multisig of at most ten hardware-backed keys, registered on chain before its appointment
+([genesis](../governance/GENESIS.md#committee-appointments)), and the SDK refuses direct signing for a multisig, so its
+members sign in amino JSON or textual mode: the deliberate compatibility decision the
+[signing rule](#one-meaning-per-transaction) asks for. Collection stays private, because a committee's target must not
+be public before broadcast ([committee runbook](../governance/COMMITTEE_RUNBOOK.md#submitting-a-transaction)), so
+partial signatures move through a relay that holds unsigned bytes and signatures and never a key; which repository
+holds the relay is open. A multisig's gas is simulated against its recorded key shape, never a single-key dry run. The
+same flow serves any shared account a member holds, not only a committee.
+
+It is the first form of the wallet kit. When third-party dapps arrive, the same interface extends into a dapp-to-wallet
+protocol, so dapps integrate with a stable Ark wallet interface rather than couple themselves to one browser extension
+or transport mechanism: account discovery, connection state, network switching, transaction requests, event
+subscriptions, and consistent errors. The interface stays transport-neutral enough to support first-party web and
+extension wallets, hardware wallets, mobile handoff, and selected compatible Cosmos wallets over time, and application
+code never needs to understand private-key storage or the internal mechanics of each wallet. Permissions are explicit:
+connecting an account, reading public addresses, requesting a signature, changing networks, and accessing any sensitive
+metadata are different capabilities, never one indefinite blanket session.
+
+It is not the authority for balances, quotes, or transaction success, and not an Ark-specific policy engine.
 
 ## Backend
 
