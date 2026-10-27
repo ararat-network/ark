@@ -192,7 +192,10 @@ It is not the authority for balances, quotes, or transaction success, and not an
 The Ledger app signs Ark transactions on a Ledger device, with the transaction shown on the device's display. It is
 what the signer interface's Ledger adapter talks to, so a member who already carries a device registers and signs with
 it in place of the device keystore. The first tranche needs it for the signup flow and for staking and voting the grant
-from a Ledger. It is not a second signer interface.
+from a Ledger. Until Ledger lists it in Ledger Live, members install it by sideloading a release
+([install guide](https://github.com/ararat-network/ledger-ark/blob/main/docs/SIDELOAD.md)): the Nano X cannot, and each
+release fits one firmware version, so the listing follows the first tranche rather than gating it. It is not a second
+signer interface.
 
 ### `ark-app`
 
