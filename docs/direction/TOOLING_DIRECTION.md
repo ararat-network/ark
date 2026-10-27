@@ -31,16 +31,17 @@ tranche needs from it.
 ## The stack
 
 Each component is its own repository under `ararat-network`, so each has its own access list, release cadence, and CI.
-Two live inside another repository: the TypeScript decoder ships in `ark-sdk`, since the contract it shares with Go
-consumers is the schemas and fixtures in `ark`, and the local environment stays in `ark`, since it builds `arkd` from
-source and runs the testnet artefact. The rows follow the sections below: by layer, and by build order within a layer.
+Three live inside another repository: the TypeScript decoder ships in `ark-sdk`, since the contract it shares with Go
+consumers is the schemas and fixtures in `ark`; the local environment stays in `ark`, since it builds `arkd` from
+source and runs the testnet artefact; and the signer is a package of `ark-app`, since the app is all that calls it
+until the wallet kit. The rows follow the sections below: by layer, and by build order within a layer.
 
 | Repository         | Serves                                                                                                           | Must not become                                                               | Visibility | First tranche |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------- | ------------- |
 | `ark`              | The chain: state, validation, policy, and protocol queries; the protos, decoding fixtures, local environment, and monitoring templates | A product-specific UI backend                                                 | Public     | Yes           |
 | `ark-registry`     | Shared network configuration and asset metadata                                                                  | A second source of chain state                                                | Public     | Yes           |
 | `ark-sdk`          | Encoding, querying, transaction workflows, decoding, and formatting; the signup protocol                         | An implementation of economic or market policy                                | Public     | Yes           |
-| `ark-signer`       | Key custody on the device, signing consent, transaction review, multisig; later the dapp-to-wallet protocol      | An authority for balances, quotes, or transaction success                     | Public     | Yes           |
+| `ark-app` (signer) | Key custody on the device, signing consent, transaction review, multisig; later the dapp-to-wallet protocol      | An authority for balances, quotes, or transaction success                     | Public     | Yes           |
 | `ledger-ark`       | Signing on a Ledger device behind the signer interface                                                           | A second signer interface                                                     | Public     | Yes           |
 | `ark-app`          | Signup, the grant view, staking and voting each payment, and what the app later adds                             | A key store outside the signer interface                                      | Public     | Yes           |
 | `ark-membership`   | Admission by vouch or identity, the vouch graph and uniqueness store, the registrar key in a KMS, funding requests, suspend | A custodian, a delegator, a vote, or a holder of anything that names a person | Private    | Yes           |
@@ -57,7 +58,7 @@ metadata contracts underneath them.
 1. **Build two tracks in parallel.** The backend: [`ark-membership`](#ark-membership), its registrar signer first, the
    one part that writes to the chain, then admissions and the vouch graph, the uniqueness store following with the
    identity check. The client: `ark-sdk` with the queries, transactions, ADR-036 signature, and decoding the app needs,
-   then [`ark-signer`](#ark-signer) with the device keystore and the adapter for [`ledger-ark`](#ledger-ark), then the
+   then [the signer](#the-signer) with the device keystore and the adapter for [`ledger-ark`](#ledger-ark), then the
    signup flow in [`ark-app`](#ark-app). The tracks meet when the app's signup registers a member through the membership
    service, from a device key and from a Ledger.
 2. **Finish what a member needs before the first payment.** The grant view, staking, and voting in the app, since the
@@ -159,7 +160,7 @@ needs the queries, transactions, ADR-036 signature, and decoding the app needs.
 
 ## Client
 
-### `ark-signer`
+### The signer
 
 The signer interface is the audited, slow-moving part of the app, and it owns nothing about membership: key generation
 on the device with backup and recovery, signing consent, transaction review built from decoded messages, fee selection,
@@ -167,6 +168,12 @@ broadcast, and reading the chain from any node. Every feature asks it for a sign
 keystore answers by default; a Ledger device, through the adapter for `ledger-ark`, or a wallet a crypto-native member
 already carries stands in behind the same interface. The first tranche needs the device keystore and the Ledger adapter;
 external-wallet adapters follow.
+
+It is a package of `ark-app` with its own owners and tests, implementing the `Signer` interface the SDK defines: a
+core every client shares, consent, review, fees, broadcast, the sign-arbitrary call, and the Ledger adapter, and a
+keystore per platform, the phone's hardware-wrapped key behind biometrics first. It leaves the app's repository when
+something outside it needs it, an extension, a third-party wallet, or the wallet kit, or when an audit wants a frozen
+tag.
 
 A multisignature account signs through the same interface. The signer builds the transaction for a K-of-N account,
 each member signs it with their own adapter, keystore or Ledger, and partial signatures pass between members until the
@@ -203,10 +210,11 @@ signer interface.
 
 ### `ark-app`
 
-A first-party app gives Ark control over the workflows that define the chain. It is one app: it holds the wallet and
-everything a member does, and grows past both. Its first user is fixed by the disbursement plan: a member who holds a
-grant the module pays out over a year, has never seen a key, and must be able to stake and vote it. Custody sits behind
-the signer interface; the features own everything else a member does:
+A first-party app gives Ark control over the workflows that define the chain. It is one app, mobile first, with a web
+client to follow that signs through the member's phone or a Ledger rather than a key in the browser: it holds the
+wallet and everything a member does, and grows past both. Its first user is fixed by the disbursement plan: a member
+who holds a grant the module pays out over a year, has never seen a key, and must be able to stake and vote it.
+Custody sits behind the signer interface; the features own everything else a member does:
 
 - signup with the member process in front of it, the vouch or the identity check, with the signals the vouch path leans
   on, one Apple or Google account, device attestation, and a phone number, submitting the address with a proof of
