@@ -140,7 +140,7 @@ jobs:
           cmp "$RUNNER_TEMP/release/provenance.sigstore.json" \
             "$RUNNER_TEMP/downloaded-release/provenance.sigstore.json"
           gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft | grep -qx true
-          sed '1c\All attached release assets passed checksum and signed provenance verification. Awaiting maintainer publication.' \
+          sed '1c\All attached release assets passed checksum and signed provenance verification.' \
             "$RUNNER_TEMP/release-notes.md" > "$RUNNER_TEMP/verified-release-notes.md"
           gh release edit "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/verified-release-notes.md"
           printf 'Verified draft `%s` at `%s`. Review and publish through GitHub Releases.\n' \
