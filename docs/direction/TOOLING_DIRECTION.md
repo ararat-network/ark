@@ -31,10 +31,12 @@ tranche needs from it.
 ## The stack
 
 Each component is its own repository under `ararat-network`, so each has its own access list, release cadence, and CI.
-Three live inside another repository: the TypeScript decoder ships in `ark-sdk`, since the contract it shares with Go
+Four live inside another repository: the TypeScript decoder ships in `ark-sdk`, since the contract it shares with Go
 consumers is the schemas and fixtures in `ark`; the local environment stays in `ark`, since it builds `arkd` from
-source and runs the testnet artefact; and the signer is a package of `ark-app`, since the app is all that calls it
-until the wallet kit. The rows follow the sections below: by layer, and by build order within a layer.
+source and runs the testnet artefact; the signer is a package of `ark-app`, since the app is all that calls it until
+the wallet kit; and the backend's services share `ark-backend`, since one operator runs them behind one access list
+and what isolates each is where it runs, not where its code lives. The rows follow the sections below: by layer, and
+by build order within a layer.
 
 | Repository         | Serves                                                                                                           | Must not become                                                               | Visibility | First tranche |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------- | ------------- |
@@ -43,7 +45,7 @@ until the wallet kit. The rows follow the sections below: by layer, and by build
 | `ark-sdk`          | Encoding, querying, transaction workflows, decoding, and formatting; the signup protocol                         | An implementation of economic or market policy                                | Public     | Yes           |
 | `ledger-ark`       | Signing on a Ledger device behind the signer interface                                                           | A second signer interface                                                     | Public     | Yes           |
 | `ark-app`          | Key custody and signing, signup, the grant view, staking and voting each payment, and what the app later adds | A key store outside the signer interface                                      | Public     | Yes           |
-| `ark-membership`   | Admission by vouch or identity, the vouch graph and uniqueness store, the registrar key in a KMS, funding requests, suspend | A custodian, a delegator, a vote, or a holder of anything that names a person | Private    | Yes           |
+| `ark-backend`      | The membership service: admission by vouch or identity, the vouch graph and uniqueness store, the registrar key in a KMS, funding requests, suspend; later the multisig relay | A custodian, a delegator, a vote, or a holder of anything that names a person | Private    | Yes           |
 | `ark-indexer`      | Replayable historical and searchable derived data                                                                | Consensus state or an irreplaceable ledger                                    | Public     | Later         |
 
 ## Build order
@@ -54,12 +56,12 @@ metadata contracts underneath them.
 
 ### First member tranche
 
-1. **Build two tracks in parallel.** The backend: [`ark-membership`](#ark-membership), its registrar signer first, the
-   one part that writes to the chain, then admissions and the vouch graph, the uniqueness store following with the
-   identity check. The client: `ark-sdk` with the queries, transactions, ADR-036 signature, and decoding the app needs,
-   then [the signer](#the-signer) with the device keystore and the adapter for [`ledger-ark`](#ledger-ark), then the
-   signup flow in [`ark-app`](#ark-app). The tracks meet when the app's signup registers a member through the membership
-   service, from a device key and from a Ledger.
+1. **Build two tracks in parallel.** The backend: [the membership service](#the-membership-service), its registrar
+   signer first, the one part that writes to the chain, then admissions and the vouch graph, the uniqueness store
+   following with the identity check. The client: `ark-sdk` with the queries, transactions, ADR-036 signature, and
+   decoding the app needs, then [the signer](#the-signer) with the device keystore and the adapter for
+   [`ledger-ark`](#ledger-ark), then the signup flow in [`ark-app`](#ark-app). The tracks meet when the app's signup
+   registers a member through the membership service, from a device key and from a Ledger.
 2. **Finish what a member needs before the first payment.** The grant view, staking, and voting in the app, since the
    first tenth pays two weeks after registration; the app's distribution screen, readable before signup; and a testnet
    rehearsal of the whole flow with the daily comparison running.
@@ -234,9 +236,9 @@ legacy amino threshold multisig of at most ten hardware-backed keys, registered 
 members sign in amino JSON or textual mode: the deliberate compatibility decision the
 [signing rule](#one-meaning-per-transaction) asks for. Collection stays private, because a committee's target must not
 be public before broadcast ([committee runbook](../governance/COMMITTEE_RUNBOOK.md#submitting-a-transaction)), so
-partial signatures move through a relay that holds unsigned bytes and signatures and never a key; which repository
-holds the relay is open. A multisig's gas is simulated against its recorded key shape, never a single-key dry run. The
-same flow serves any shared account a member holds, not only a committee.
+partial signatures move through a relay that holds unsigned bytes and signatures and never a key, a service of
+[`ark-backend`](#ark-backend). A multisig's gas is simulated against its recorded key shape, never a single-key dry
+run. The same flow serves any shared account a member holds, not only a committee.
 
 It is the first form of the wallet kit. When third-party dapps arrive, the same interface extends into a dapp-to-wallet
 protocol, so dapps integrate with a stable Ark wallet interface rather than couple themselves to one browser extension
@@ -265,11 +267,19 @@ ranks with them. Where members delegate is their own choice, steered only by the
 pay normal transaction gas; payments arrive without one. Disbursement custody reserves award principal and provides no
 fee allowance; members pay their own gas from the first payment, the tenth the block sends once the two-week hold ends.
 
-The backend repository is private, since published monitoring rules are a guide to evading them. Its app-facing API is
-defined beside its code; the app's builders read the repository and commit the generated client, so no public build
-needs a credential for a private repository.
+### `ark-backend`
 
-### `ark-membership`
+The backend's services share one repository, each in a top-level directory with its own README, binary, and release
+line, as the price-feed sidecar has in `ark`: the membership service first, and the multisig relay when multisignature
+signing is built. One operator runs them behind one access list. Each runs under its own cloud role with its own data,
+so the registrar key's policy, which names the membership service's role, binds that service alone. A service moves to
+its own repository only when it needs a narrower read list than the rest of the backend.
+
+The repository is private, since published monitoring rules are a guide to evading them. Its app-facing APIs are
+defined beside their code; the app's builders read the repository and commit the client generated from them, so no
+public build needs a credential for a private repository.
+
+#### The membership service
 
 The membership service runs the member process the [plan](../governance/DISBURSEMENT_PLAN.md#admission) sets: admission
 by a vouch, and by a verified identity once the check is live before the plan's step 2; the vouch graph with each
