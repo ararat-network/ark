@@ -269,11 +269,11 @@ fee allowance; members pay their own gas from the first payment, the tenth the b
 
 ### `ark-backend`
 
-The backend's services share one repository, each in a top-level directory with its own README, binary, and release
-line, as the price-feed sidecar has in `ark`: the membership service first, and the multisig relay when multisignature
-signing is built. One operator runs them behind one access list. Each runs under its own cloud role with its own data,
-so the registrar key's policy, which names the membership service's role, binds that service alone. A service moves to
-its own repository only when it needs a narrower read list than the rest of the backend.
+The backend's services share one repository, each a top-level directory holding its own README and binaries, with a
+release line of its own as the price-feed sidecar has in `ark`: the membership service first, and the multisig relay
+when multisignature signing is built. One operator runs them behind one access list. Each runs under its own cloud
+role with its own data, so the registrar key's policy, which names the membership service's role, binds that service
+alone. A service moves to its own repository only when it needs a narrower read list than the rest of the backend.
 
 The repository is private, since published monitoring rules are a guide to evading them. Its app-facing APIs are
 defined beside their code; the app's builders read the repository and commit the client generated from them, so no
