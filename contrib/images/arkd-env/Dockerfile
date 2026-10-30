@@ -4,7 +4,7 @@
 
 # Base images are pinned by digest; the tag beside each digest names what
 # the digest was resolved from. Dependabot bumps the pair together.
-FROM golang:1.27-alpine@sha256:d530cf60723abf1ffae0cd16bb546b379ec0550d2f3815e5b16ed69dbc00fba4 AS builder-base
+FROM golang:1.27-alpine@sha256:d200d2dd76b03a99b52651fd1325aff7dcd35422c35c01bac56571b0507f3deb AS builder-base
 WORKDIR /work
 # Record actual static-library owners; installed build tools alone do not prove linkage.
 RUN apk add --no-cache build-base git file linux-headers eudev-dev python3
@@ -48,7 +48,7 @@ FROM builder-base AS release-builder
 RUN contrib/scripts/check-wasmvm-libs.sh \
  && python3 contrib/scripts/release-build.py --inside
 
-FROM alpine:3.24@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS runtime
+FROM alpine:3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS runtime
 RUN apk add --no-cache ca-certificates curl jq \
  && addgroup -g 1025 nonroot \
  && adduser -D -u 1025 -G nonroot nonroot
@@ -68,7 +68,7 @@ CMD ["start"]
 
 # Collect against the exact runtime and builder outputs, never a second apk resolution.
 # Recipe execution has no host mounts, build secrets, or root privileges.
-FROM alpine:3.24@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS source-tools
+FROM alpine:3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS source-tools
 RUN apk add --no-cache python3 git abuild xz zstd bzip2 curl spdx-licenses-text \
  && adduser -D collector && mkdir /output && chown collector /output
 COPY contrib/scripts/package-os-source.py /collector.py
