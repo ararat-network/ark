@@ -30,7 +30,7 @@ jobs:
           cache: true
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           languages: go
           # Pin external queries and align the query tag with the action's CLI version. Query code
@@ -42,10 +42,10 @@ jobs:
             github/codeql/go/ql/src/experimental/InconsistentCode/DeferInLoop.ql@codeql-cli/v2.26.4
           packs: +crypto-com/cosmos-sdk-codeql@0.0.8
 
-      - uses: github/codeql-action/autobuild@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+      - uses: github/codeql-action/autobuild@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           # Uploaded once scoped below; failure-only still reports a failed analysis.
           upload: failure-only
@@ -56,6 +56,6 @@ jobs:
           python3 -B .github/codeql/scope_results_test.py
           python3 .github/codeql/scope-results.py sarif-results/*.sarif
 
-      - uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+      - uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           sarif_file: sarif-results
