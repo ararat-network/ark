@@ -408,14 +408,11 @@ func (c *Chain) GetValidatorPower(ctx context.Context, hexAddr string) (int64, e
 	return power, nil
 }
 
-// RestartNode stops a node and brings it back on the same volumes. The
-// containers are removed in between: stopping a node stops its sidecars, and
-// starting it creates fresh sidecar containers under the same names. A start
-// that hits a port clash is retried on fresh ports.
-func RestartNode(ctx context.Context, node *cosmos.ChainNode) error {
-	if err := node.StopContainer(ctx); err != nil {
-		return err
-	}
+// startNode brings a stopped node back on the same volumes. The containers are
+// replaced: stopping a node stops its sidecars, and starting it creates fresh
+// sidecar containers under the same names. A start that hits a port clash is
+// retried on fresh ports.
+func startNode(ctx context.Context, node *cosmos.ChainNode) error {
 	var err error
 	for range startAttempts {
 		if err = recreateNode(ctx, node); !isPortClash(err) {
@@ -438,7 +435,9 @@ func recreateNode(ctx context.Context, node *cosmos.ChainNode) error {
 }
 
 // ModifyConfig changes config files on the given validators (all when none
-// are named) and restarts them.
+// are named) and restarts them. The files are written while the node is
+// stopped: interchaintest's file writer chowns the whole home volume, which
+// fails on a file the running node renames away mid-walk.
 func (c *Chain) ModifyConfig(ctx context.Context, testName interchaintest.TestName, changes map[string]testutil.Toml, validators ...int) error {
 	if len(validators) == 0 {
 		validators = make([]int, len(c.Validators))
@@ -450,6 +449,9 @@ func (c *Chain) ModifyConfig(ctx context.Context, testName interchaintest.TestNa
 	for _, i := range validators {
 		val := c.Validators[i]
 		eg.Go(func() error {
+			if err := val.StopContainer(ctx); err != nil {
+				return err
+			}
 			for file, toml := range changes {
 				if err := testutil.ModifyTomlConfigFile(
 					ctx, GetLogger(ctx), val.DockerClient, testName.Name(), val.VolumeName, file, toml,
@@ -457,7 +459,7 @@ func (c *Chain) ModifyConfig(ctx context.Context, testName interchaintest.TestNa
 					return err
 				}
 			}
-			return RestartNode(ctx, val)
+			return startNode(ctx, val)
 		})
 	}
 	if err := eg.Wait(); err != nil {
