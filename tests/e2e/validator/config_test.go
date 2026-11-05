@@ -132,10 +132,12 @@ func (s *ConfigSuite) TestPeerLimit() {
 	peers := s.Chain.Nodes().PeerString(s.GetContext())
 	peerList := strings.Split(peers, ",")
 	unsafeRPC := testutil.Toml{"rpc": testutil.Toml{"unsafe": true}}
+	// Stopped for the writes, as in ModifyConfig.
+	s.Require().NoError(s.Chain.StopAllNodes(s.GetContext()))
 	for i, node := range s.Chain.Nodes() {
 		if i > 0 {
 			s.Require().NoError(node.SetPeers(s.GetContext(), peerList[0]))
-			// For dialPeer; the restart below applies it.
+			// For dialPeer; the start below applies it.
 			s.Require().NoError(testutil.ModifyTomlConfigFile(
 				s.GetContext(), chainsuite.GetLogger(s.GetContext()),
 				node.DockerClient, node.TestName, node.VolumeName, "config/config.toml", unsafeRPC,
@@ -143,7 +145,6 @@ func (s *ConfigSuite) TestPeerLimit() {
 		}
 	}
 	s.Require().NoError(s.Chain.Validators[0].SetPeers(s.GetContext(), ""))
-	s.Require().NoError(s.Chain.StopAllNodes(s.GetContext()))
 	s.Require().NoError(s.Chain.StartAllNodes(s.GetContext()))
 	s.Require().NoError(testutil.WaitForBlocks(s.GetContext(), 2, s.Chain))
 
