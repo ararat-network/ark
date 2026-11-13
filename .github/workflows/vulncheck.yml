@@ -28,7 +28,7 @@ jobs:
       # Pinned by commit, like the CodeQL references: an action is code that
       # runs in CI. Tool versions come from mise.toml, so this workflow names
       # none of them and cannot drift from a developer's shell.
-      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
 
       - run: make vulncheck
 
