@@ -96,6 +96,7 @@ Comparison revision: `aa5f96b6534f973458b7ccb2dbced281d384b825`.
 | [tests/e2e/chainsuite/suite.go](tests/e2e/chainsuite/suite.go) | [tests/interchain/chainsuite/suite.go](https://github.com/cosmos/gaia/blob/aa5f96b6534f973458b7ccb2dbced281d384b825/tests/interchain/chainsuite/suite.go) |
 | [tests/e2e/integrator/endpoints_test.go](tests/e2e/integrator/endpoints_test.go) | [tests/interchain/integrator/endpoints_test.go](https://github.com/cosmos/gaia/blob/aa5f96b6534f973458b7ccb2dbced281d384b825/tests/interchain/integrator/endpoints_test.go) |
 | [tests/e2e/validator/config_test.go](tests/e2e/validator/config_test.go) | [tests/interchain/validator/config_test.go](https://github.com/cosmos/gaia/blob/aa5f96b6534f973458b7ccb2dbced281d384b825/tests/interchain/validator/config_test.go) |
+| [tests/e2e/validator/peer_limit_test.go](tests/e2e/validator/peer_limit_test.go) | [tests/interchain/validator/config_test.go](https://github.com/cosmos/gaia/blob/aa5f96b6534f973458b7ccb2dbced281d384b825/tests/interchain/validator/config_test.go) |
 
 ### Connect
 
