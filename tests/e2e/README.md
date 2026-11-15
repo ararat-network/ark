@@ -31,6 +31,7 @@ accounts on the launch economics, not seats; the gov suite spends from the commu
 | `TEST_UPGRADE_NAME` | | Plan the new binary registers. Empty with an old version means a coordinated binary swap. |
 | `TEST_PRICEFEED` | `true` | One price-feed sidecar per validator. Off, the chain holds no exchange rate and the oracle suite skips. |
 | `TEST_PRICEFEED_LIVE` | `false` | Sidecars reach their default venues over the internet instead of reporting pinned prices. |
+| `CONTAINER_LOG_TAIL` | `50` | Lines of each container's log interchaintest prints when a test fails; CI keeps 2000. |
 
 In CI every run but a manual one starts the `UpgradeOnSetup` suites on the newest stable release, a published release
 that is not a prerelease, and moves to the build under test through the newest `app/upgrade/v*` plan, or a binary swap

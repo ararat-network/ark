@@ -123,6 +123,8 @@ jobs:
           TEST_UPGRADE_NAME: ${{ steps.old.outputs.plan }}
           # Pull requests run on pinned prices; nightly runs reach the live venues.
           TEST_PRICEFEED_LIVE: ${{ github.event_name == 'schedule' }}
+          # interchaintest prints this much of each container's log when a test fails.
+          CONTAINER_LOG_TAIL: "2000"
         run: make test-e2e E2E_PACKAGES=./${{ matrix.package }}/...
 
       - name: Container logs
