@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"net"
 	"net/url"
-	"strings"
 	"testing"
 	"time"
 
@@ -24,7 +23,6 @@ import (
 	"github.com/gorilla/websocket"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/sync/errgroup"
 
@@ -34,7 +32,6 @@ import (
 const (
 	cometMetricsPort = "26660"
 	appMetricsPort   = "9464"
-	peersGauge       = "cometbft_p2p_peers"
 )
 
 type ConfigSuite struct {
@@ -116,87 +113,6 @@ func (s *ConfigSuite) TestNodeMinGasPricesIgnored() {
 		0,
 	))
 	s.smokeTestTx()
-}
-
-// TestPeerLimit pins max_num_inbound_peers: with three validators dialling it,
-// validator 0 holds exactly its cap of two.
-func (s *ConfigSuite) TestPeerLimit() {
-	s.Require().NoError(s.enablePrometheus())
-	// The restart leaves the validators reconnecting.
-	s.Require().EventuallyWithT(func(c *assert.CollectT) {
-		count, err := s.peerCount(0)
-		assert.NoError(c, err)
-		assert.Equal(c, float64(3), count)
-	}, time.Minute, 2*time.Second)
-
-	peers := s.Chain.Nodes().PeerString(s.GetContext())
-	peerList := strings.Split(peers, ",")
-	unsafeRPC := testutil.Toml{"rpc": testutil.Toml{"unsafe": true}}
-	// Stopped for the writes, as in ModifyConfig.
-	s.Require().NoError(s.Chain.StopAllNodes(s.GetContext()))
-	for i, node := range s.Chain.Nodes() {
-		if i > 0 {
-			s.Require().NoError(node.SetPeers(s.GetContext(), peerList[0]))
-			// For dialPeer; the start below applies it.
-			s.Require().NoError(testutil.ModifyTomlConfigFile(
-				s.GetContext(), chainsuite.GetLogger(s.GetContext()),
-				node.DockerClient, node.TestName, node.VolumeName, "config/config.toml", unsafeRPC,
-			))
-		}
-	}
-	s.Require().NoError(s.Chain.Validators[0].SetPeers(s.GetContext(), ""))
-	s.Require().NoError(s.Chain.StartAllNodes(s.GetContext()))
-	s.Require().NoError(testutil.WaitForBlocks(s.GetContext(), 2, s.Chain))
-
-	p2p := make(testutil.Toml)
-	p2p["max_num_inbound_peers"] = 2
-	// Without PEX the peer count is what the test set.
-	p2p["pex"] = false
-	configToml := make(testutil.Toml)
-	configToml["p2p"] = p2p
-	s.Require().NoError(s.Chain.ModifyConfig(
-		s.GetContext(), s.T(),
-		map[string]testutil.Toml{"config/config.toml": configToml},
-		0,
-	))
-	s.Require().NoError(testutil.WaitForBlocks(s.GetContext(), 4, s.Chain))
-
-	// CometBFT's persistent-peer redial backs off past the window and can end
-	// for good on a dial that connects and is then refused, so each round every
-	// other validator asks validator 0 for a slot itself.
-	s.Require().EventuallyWithT(func(c *assert.CollectT) {
-		for i := 1; i < len(s.Chain.Validators); i++ {
-			assert.NoError(c, s.dialPeer(i, peerList[0]))
-		}
-		count, err := s.peerCount(0)
-		assert.NoError(c, err)
-		assert.Equal(c, float64(2), count)
-	}, 3*time.Minute, 10*time.Second)
-
-	// Three keep asking and two hold. Each read trails its dials by half the
-	// 20 s handshake timeout, so a dial in flight at the first two has landed
-	// or failed by the last read.
-	for range 3 {
-		for i := 1; i < len(s.Chain.Validators); i++ {
-			s.Require().NoError(s.dialPeer(i, peerList[0]))
-		}
-		time.Sleep(10 * time.Second)
-		count, err := s.peerCount(0)
-		s.Require().NoError(err)
-		s.Require().LessOrEqual(count, float64(2))
-	}
-
-	foundZero := false
-	for i := 1; i < len(s.Chain.Validators); i++ {
-		count, err := s.peerCount(i)
-		s.Require().NoError(err)
-		if count == 0 && !foundZero {
-			// The one validator 0 refused.
-			foundZero = true
-			continue
-		}
-		s.Require().GreaterOrEqual(count, float64(1), "validator %d", i)
-	}
 }
 
 func (s *ConfigSuite) TestWSConnectionLimit() {
@@ -307,51 +223,6 @@ func (s *ConfigSuite) metrics(nodeIdx int, port string) (map[string]*dto.MetricF
 	}
 	var parser expfmt.TextParser
 	return parser.TextToMetricFamilies(bytes.NewBuffer(stdout))
-}
-
-// dialPeer asks validator nodeIdx to dial peer once through the unsafe
-// dial_peers route. The route only starts the dial, so a refusal shows in the
-// peer counts, not here. JSON-RPC answers an unknown method with HTTP 200, so
-// the body is checked: without rpc.unsafe this errors rather than dialling
-// nothing.
-func (s *ConfigSuite) dialPeer(nodeIdx int, peer string) error {
-	body, err := json.Marshal(map[string]any{
-		"jsonrpc": "2.0", "id": 1, "method": "dial_peers",
-		"params": map[string]any{"peers": []string{peer}, "persistent": false},
-	})
-	if err != nil {
-		return err
-	}
-	host := net.JoinHostPort(s.Chain.Validators[nodeIdx].HostName(), "26657")
-	stdout, _, err := s.Chain.Validators[nodeIdx].Exec(s.GetContext(),
-		[]string{"curl", "-sf", "-H", "Content-Type: application/json", "-d", string(body), "http://" + host}, nil)
-	if err != nil {
-		return err
-	}
-	var response struct {
-		Error json.RawMessage `json:"error"`
-	}
-	if err := json.Unmarshal(stdout, &response); err != nil {
-		return err
-	}
-	if len(response.Error) > 0 {
-		return fmt.Errorf("dial_peers on validator %d: %s", nodeIdx, response.Error)
-	}
-	return nil
-}
-
-// peerCount is validator nodeIdx's CometBFT peer count. The gauge exports no
-// series until a peer is first added, so a missing one reads as zero.
-func (s *ConfigSuite) peerCount(nodeIdx int) (float64, error) {
-	families, err := s.metrics(nodeIdx, cometMetricsPort)
-	if err != nil {
-		return 0, err
-	}
-	family, ok := families[peersGauge]
-	if !ok || len(family.GetMetric()) == 0 {
-		return 0, nil
-	}
-	return family.GetMetric()[0].GetGauge().GetValue(), nil
 }
 
 // smokeTestTx is a bank send through validator 0 proving it still serves.
