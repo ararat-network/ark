@@ -42,7 +42,7 @@ by build order within a layer.
 | ------------------ | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------- | ------------- |
 | `ark`              | The chain: state, validation, policy, and protocol queries; the protos, decoding fixtures, local environment, and monitoring templates | A product-specific UI backend                                                 | Public     | Yes           |
 | `ark-registry`     | Shared network configuration and asset metadata                                                                  | A second source of chain state                                                | Public     | Yes           |
-| `ark-sdk`          | Encoding, querying, transaction workflows, decoding, and formatting; the ADR-036 producer                        | An implementation of economic or market policy                                | Public     | Yes           |
+| `ark-sdk`          | Encoding, querying, transaction workflows, decoding, and formatting                                              | An implementation of economic or market policy                                | Public     | Yes           |
 | `ledger-ark`       | Signing on a Ledger device behind the signer interface                                                           | A second signer interface                                                     | Public     | Yes           |
 | `ark-app`          | Key custody and signing, signup, the grant view, staking and voting each payment, and what the app later adds | A key store outside the signer interface                                      | Public     | Yes           |
 | `ark-backend`      | The membership service: admission by vouch or identity, the vouch graph and uniqueness store, the registrar key in a KMS, funding requests, suspend; later the multisig relay | A custodian, a delegator, a vote, or a holder of anything that names a person | Private    | Yes           |
@@ -58,10 +58,10 @@ metadata contracts underneath them.
 
 1. **Build two tracks in parallel.** The backend: [the membership service](#the-membership-service), its registrar
    signer first, the one part that writes to the chain, then admissions and the vouch graph, the uniqueness store
-   following with the identity check. The client: `ark-sdk` with the queries, transactions, ADR-036 signature, and
-   decoding the app needs, then [the signer](#the-signer) with the device keystore and the adapter for
-   [`ledger-ark`](#ledger-ark), then the signup flow in [`ark-app`](#ark-app). The tracks meet when the app's signup
-   registers a member through the membership service, from a device key and from a Ledger.
+   following with the identity check. The client: `ark-sdk` with the queries, transactions, and decoding the app
+   needs, then [the signer](#the-signer) with the signup documents and their ADR-036 signature, the device keystore,
+   and the adapter for [`ledger-ark`](#ledger-ark), then the signup flow in [`ark-app`](#ark-app). The tracks meet
+   when the app's signup registers a member through the membership service, from a device key and from a Ledger.
 2. **Finish what a member needs before the first payment.** The grant view, staking, and voting in the app, since the
    first tenth pays two weeks after registration; the app's distribution screen, readable before signup; and a testnet
    rehearsal of the whole flow with the daily comparison running.
@@ -151,7 +151,7 @@ The SDK exposes protocol concepts accurately. Convenience abstractions are valua
 slippage, tax, oracle freshness, or transaction finality would make the tooling easier to misuse. It is not an
 independent implementation of economic or market policy.
 
-The first tranche needs the queries, transactions, ADR-036 signature, and decoding the app needs.
+The first tranche needs the queries, transactions, and decoding the app needs.
 
 ## Client
 
@@ -192,7 +192,7 @@ verifier, which is private, agree on every byte and a reviewer can check either:
 off-chain signature over a challenge the backend issues, and a vouch is the voucher's signature over a document naming
 the admission; neither signs a transaction or adds a legacy sign mode to transaction signing. Signup is completed in the
 app and nowhere else, from a device key or a Ledger behind the app's signer; no external wallet and no web flow
-completes it. The protocol's test vectors are in `ark-sdk`, beside the ADR-036 producer they test.
+completes it. The protocol's code and its test vectors are in the app's signer too; `ark-sdk` holds none of it.
 
 The app pays gas from the tenth the block sends two weeks after registration, so the member never has to fund it, and
 speaks the member's language ([languages](#languages)). The first tranche needs signup, then the grant view, the
