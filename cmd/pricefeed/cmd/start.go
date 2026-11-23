@@ -17,15 +17,11 @@ import (
 )
 
 const (
-	defaultAddress        = "127.0.0.1:8080"
-	defaultAdminAddress   = "127.0.0.1:8081"
 	defaultMetrics        = false
 	defaultMetricsAddress = "127.0.0.1:9091"
 	defaultPprof          = false
 	defaultPprofAddress   = "127.0.0.1:6060"
 
-	flagAddress        = "address"
-	flagAdminAddress   = "admin-address"
 	flagMetrics        = "metrics"
 	flagMetricsAddress = "metrics-address"
 	flagPprof          = "pprof"

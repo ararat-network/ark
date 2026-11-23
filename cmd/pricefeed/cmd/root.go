@@ -28,9 +28,16 @@ const (
 	defaultLogLevel  = "info"
 	defaultLogFormat = logFormatPlain
 
-	flagConfig    = "config"
-	flagLogLevel  = "log-level"
-	flagLogFormat = "log-format"
+	// The sidecar's two listeners, which start serves and the client
+	// commands dial.
+	defaultAddress      = "127.0.0.1:8080"
+	defaultAdminAddress = "127.0.0.1:8081"
+
+	flagConfig       = "config"
+	flagLogLevel     = "log-level"
+	flagLogFormat    = "log-format"
+	flagAddress      = "address"
+	flagAdminAddress = "admin-address"
 
 	logFormatPlain = "plain"
 	logFormatJSON  = "json"
