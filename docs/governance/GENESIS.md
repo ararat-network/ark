@@ -15,7 +15,7 @@ Every table reads Setting, Value, Status, Why. Status is one of **Decided** (an 
 (the module or SDK default, kept deliberately), or **Assembly** (set when the final file is built, §14).
 
 Block counts assume the chain's six-second block: 600 blocks an hour, 14,400 a day, 100,800 a week, 5,256,000 a year
-(`pkg/chain/blocks.go`, and the 5 s commit timeout in `cmd/arkd/cmd/config.go`). Windows a governance vote must fit,
+(`pkg/chain/blocks.go`, and the 5 s commit timeout in `cmd/arkd/cmd/app_config.go`). Windows a governance vote must fit,
 the Claims cancellation period, the settlement activation delay, and committee terms, are seconds of block time, as the
 vote is, so block pace cannot shorten them. Dollar figures assume NOAH's opening price of one XDR, 1.371 USD at the
 bootstrap cross, which the artefact's NOAH factor encodes (§4).

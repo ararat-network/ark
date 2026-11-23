@@ -15,7 +15,7 @@ registers genesis, query, transaction, server, and export commands and construct
 | `query vote-extensions` — [cmd/vote_extensions.go](cmd/vote_extensions.go) | The oracle votes retained in a committed block. |
 | `testnet start/init-files` — [cmd/testnet.go](cmd/testnet.go), [cmd/testnet_files.go](cmd/testnet_files.go), [cmd/testnet_in_process.go](cmd/testnet_in_process.go) | Testnet file generation, from code defaults or from a curated artefact with `--genesis`, each home with a client.toml naming its chain, keyring, key, and node, and the in-process testnet. Its flags carry names no app.toml key has: the root pre-run copies app.toml onto flags of the same name, and a flag's default into a fresh home's app.toml. |
 | [cmd/root.go](cmd/root.go), [cmd/commands.go](cmd/commands.go) | Root command, client context, AutoCLI tree, transaction-command dressing, command registration including the SDK's `module-hash-by-height`, and app construction. |
-| [cmd/config.go](cmd/config.go), [cmd/otel.go](cmd/otel.go), [cmd/telemetry.go](cmd/telemetry.go) | app.toml as a typed file with its template and validation, config.toml's defaults, the otel.yaml read, and the Prometheus endpoint. |
+| [cmd/app_config.go](cmd/app_config.go), [cmd/otel.go](cmd/otel.go), [cmd/telemetry.go](cmd/telemetry.go) | app.toml as a typed file with its template and validation, config.toml's defaults, the otel.yaml read, and the Prometheus endpoint. |
 | [cmd/genesis_file.go](cmd/genesis_file.go) | Genesis writes through an atomic replace, so a failed write leaves the file that was there. |
 
 The start command validates local configuration before constructing the app and owns running its pricefeed client.
