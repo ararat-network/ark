@@ -55,19 +55,19 @@ const (
 	flagSkipValidate = "skip-validate"
 )
 
-// configWriteFlags are confix's flags on the commands that write a file.
-type configWriteFlags struct {
+// configWriteOptions are confix's flags on the commands that write a file.
+type configWriteOptions struct {
 	stdout, verbose, skipValidate bool
 }
 
-func (f *configWriteFlags) bind(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&f.stdout, flagStdout, false, "print the updated config instead of writing it")
-	cmd.Flags().BoolVarP(&f.verbose, flagVerbose, "v", false, "log each change to stderr")
-	cmd.Flags().BoolVarP(&f.skipValidate, flagSkipValidate, "s", false, "write without validating the result")
+func (o *configWriteOptions) bind(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&o.stdout, flagStdout, false, "print the updated config instead of writing it")
+	cmd.Flags().BoolVarP(&o.verbose, flagVerbose, "v", false, "log each change to stderr")
+	cmd.Flags().BoolVarP(&o.skipValidate, flagSkipValidate, "s", false, "write without validating the result")
 }
 
 func newConfigMigrateCmd() *cobra.Command {
-	var flags configWriteFlags
+	var options configWriteOptions
 	cmd := &cobra.Command{
 		Use:   "migrate [app.toml]",
 		Short: "Bring app.toml up to the tables and keys this binary knows",
@@ -82,14 +82,14 @@ start applies. Defaults to the home directory's app.toml.`,
 			if err != nil {
 				return err
 			}
-			return runConfigMigrate(cmd.Context(), cmd.OutOrStdout(), cmd.ErrOrStderr(), path, flags)
+			return runConfigMigrate(cmd.Context(), cmd.OutOrStdout(), cmd.ErrOrStderr(), path, options)
 		},
 	}
-	flags.bind(cmd)
+	options.bind(cmd)
 	return cmd
 }
 
-func runConfigMigrate(ctx context.Context, out, errOut io.Writer, path string, flags configWriteFlags) error {
+func runConfigMigrate(ctx context.Context, out, errOut io.Writer, path string, options configWriteOptions) error {
 	doc, err := confix.LoadConfig(path)
 	if err != nil {
 		return err
@@ -99,11 +99,11 @@ func runConfigMigrate(ctx context.Context, out, errOut io.Writer, path string, f
 		return err
 	}
 	plan := appConfigPlan(doc, target)
-	if len(plan) == 0 && !flags.stdout {
+	if len(plan) == 0 && !options.stdout {
 		_, err := fmt.Fprintf(out, "%s is current: nothing to add or remove\n", path)
 		return err
 	}
-	return applyConfigPlan(ctx, out, errOut, doc, plan, path, validateAppTOML, flags)
+	return applyConfigPlan(ctx, out, errOut, doc, plan, path, validateAppTOML, options)
 }
 
 func newConfigDiffCmd() *cobra.Command {
@@ -149,7 +149,7 @@ func runConfigDiff(out io.Writer, path string) error {
 }
 
 func newConfigSetCmd() *cobra.Command {
-	var flags configWriteFlags
+	var options configWriteOptions
 	cmd := &cobra.Command{
 		Use:   "set [config] [key] [value]",
 		Short: "Set a config value",
@@ -159,14 +159,14 @@ validation start applies and config.toml CometBFT's own. A key the file lacks is
 not created here; migrate adds the keys this binary knows.`,
 		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runConfigSet(cmd.Context(), cmd.OutOrStdout(), cmd.ErrOrStderr(), configPath(cmd, args[0]), args[1], args[2], flags)
+			return runConfigSet(cmd.Context(), cmd.OutOrStdout(), cmd.ErrOrStderr(), configPath(cmd, args[0]), args[1], args[2], options)
 		},
 	}
-	flags.bind(cmd)
+	options.bind(cmd)
 	return cmd
 }
 
-func runConfigSet(ctx context.Context, out, errOut io.Writer, path, key, rawValue string, flags configWriteFlags) error {
+func runConfigSet(ctx context.Context, out, errOut io.Writer, path, key, rawValue string, options configWriteOptions) error {
 	keyPath := strings.Split(key, ".")
 	value, err := parser.ParseValue(rawValue)
 	if err != nil {
@@ -195,7 +195,7 @@ func runConfigSet(ctx context.Context, out, errOut io.Writer, path, key, rawValu
 			return nil
 		}),
 	}}
-	return applyConfigPlan(ctx, out, errOut, doc, plan, path, configValidator(path), flags)
+	return applyConfigPlan(ctx, out, errOut, doc, plan, path, configValidator(path), options)
 }
 
 func newConfigValidateCmd() *cobra.Command {
@@ -374,9 +374,9 @@ func applyConfigPlan(
 	plan transform.Plan,
 	path string,
 	validate func([]byte) error,
-	flags configWriteFlags,
+	options configWriteOptions,
 ) error {
-	if flags.verbose {
+	if options.verbose {
 		ctx = transform.WithLogWriter(ctx, errOut)
 	}
 	if err := plan.Apply(ctx, doc); err != nil {
@@ -386,12 +386,12 @@ func applyConfigPlan(
 	if err := tomledit.Format(&buf, doc); err != nil {
 		return fmt.Errorf("formatting %s: %w", path, err)
 	}
-	if !flags.skipValidate {
+	if !options.skipValidate {
 		if err := validate(buf.Bytes()); err != nil {
 			return fmt.Errorf("updated %s is invalid: %w", path, err)
 		}
 	}
-	if flags.stdout {
+	if options.stdout {
 		_, err := out.Write(buf.Bytes())
 		return err
 	}
