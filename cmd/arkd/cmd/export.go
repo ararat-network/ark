@@ -7,6 +7,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,11 +17,15 @@ import (
 
 	cmttypes "github.com/cometbft/cometbft/types"
 
+	"cosmossdk.io/log/v2"
+
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/version"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+
+	"github.com/ararat-network/ark/app"
 )
 
 // adjustExportCommand hides unsupported zero-height export, describes the validator allowlist
@@ -101,4 +106,29 @@ func continuationGenesis(base *genutiltypes.AppGenesis, exported servertypes.Exp
 		Params:     &params,
 	}
 	return base
+}
+
+// appExport creates a new arkapp (optionally at a given height) and exports state.
+func appExport(
+	logger log.Logger,
+	db dbm.DB,
+	height int64,
+	forZeroHeight bool,
+	jailAllowedAddrs []string,
+	appOpts servertypes.AppOptions,
+	modulesToExport []string,
+) (servertypes.ExportedApp, error) {
+	var arkApp *app.ArkApp
+	if height != -1 {
+		arkApp = app.NewArkApp(logger, db, false, appOpts)
+
+		if err := arkApp.LoadHeight(height); err != nil {
+			return servertypes.ExportedApp{}, errors.Join(err, arkApp.Close())
+		}
+	} else {
+		arkApp = app.NewArkApp(logger, db, true, appOpts)
+	}
+
+	exported, exportErr := arkApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
+	return exported, errors.Join(exportErr, arkApp.Close())
 }

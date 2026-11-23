@@ -6,8 +6,6 @@
 package cmd
 
 import (
-	"errors"
-
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/spf13/cobra"
 
@@ -157,29 +155,4 @@ func newApp(
 		appOpts,
 		baseappOptions...,
 	)
-}
-
-// appExport creates a new arkapp (optionally at a given height) and exports state.
-func appExport(
-	logger log.Logger,
-	db dbm.DB,
-	height int64,
-	forZeroHeight bool,
-	jailAllowedAddrs []string,
-	appOpts servertypes.AppOptions,
-	modulesToExport []string,
-) (servertypes.ExportedApp, error) {
-	var arkApp *app.ArkApp
-	if height != -1 {
-		arkApp = app.NewArkApp(logger, db, false, appOpts)
-
-		if err := arkApp.LoadHeight(height); err != nil {
-			return servertypes.ExportedApp{}, errors.Join(err, arkApp.Close())
-		}
-	} else {
-		arkApp = app.NewArkApp(logger, db, true, appOpts)
-	}
-
-	exported, exportErr := arkApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
-	return exported, errors.Join(exportErr, arkApp.Close())
 }
