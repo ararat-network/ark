@@ -12,7 +12,7 @@ require (
 	cosmossdk.io/log/v2 v2.1.0
 	cosmossdk.io/math v1.5.3
 	cosmossdk.io/tools/confix v0.1.2
-	github.com/CosmWasm/wasmd v0.70.4
+	github.com/CosmWasm/wasmd v0.70.5
 	github.com/CosmWasm/wasmvm/v3 v3.0.9
 	github.com/coder/websocket v1.8.15
 	github.com/cometbft/cometbft v0.39.4
