@@ -10,7 +10,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/server"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 
@@ -25,12 +25,18 @@ const (
 	flagAnyCount = "any-count"
 )
 
+type addValidatorSeatsOptions struct {
+	founder  string
+	anyCount bool
+}
+
 // newAddValidatorSeatsCmd returns genesis add-validator-seats: one seat per
 // genesis validator, the founder's at half the others' sum, and the founder's
 // grant and stream, granted in one write, run once before gentx collection.
 // The seats vest from the file's genesis_time, which assembly sets first. The
 // seat policy and the launch count bounds are fixed in pkg/chain.
 func newAddValidatorSeatsCmd(defaultNodeHome string, addressCodec address.Codec) *cobra.Command {
+	var options addValidatorSeatsOptions
 	cmd := &cobra.Command{
 		Use:   "add-validator-seats --founder <operator-address> [operator-address]...",
 		Short: "Grant every validator seat in genesis.json",
@@ -52,30 +58,19 @@ and the count bounds are fixed in pkg/chain.`,
 			chain.FounderGrantNoah/1_000_000, chain.FounderStreamNoah/1_000_000, chain.MinLaunchSeats, chain.MaxLaunchSeats, flagAnyCount),
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			founder, err := cmd.Flags().GetString(flagFounder)
-			if err != nil {
-				return err
-			}
-			anyCount, err := cmd.Flags().GetBool(flagAnyCount)
-			if err != nil {
-				return err
-			}
-			return runAddValidatorSeats(cmd, args, founder, anyCount, addressCodec)
+			cdc := client.GetClientContextFromCmd(cmd).Codec
+			return runAddValidatorSeats(cdc, addressCodec, homeGenesisFile(cmd), args, options)
 		},
 	}
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "The application home directory")
-	cmd.Flags().String(flagFounder, "", "The operator whose seat is the founder's, one of the operators named")
-	cmd.Flags().Bool(flagAnyCount, false, "Seat any count the community pool funds, for a testnet; a launch stays within the bounds")
+	cmd.Flags().StringVar(&options.founder, flagFounder, "", "The operator whose seat is the founder's, one of the operators named")
+	cmd.Flags().BoolVar(&options.anyCount, flagAnyCount, false, "Seat any count the community pool funds, for a testnet; a launch stays within the bounds")
 	_ = cmd.MarkFlagRequired(flagFounder)
 	return cmd
 }
 
-func runAddValidatorSeats(cmd *cobra.Command, operatorArgs []string, founderArg string, anyCount bool, addressCodec address.Codec) error {
-	clientCtx := client.GetClientContextFromCmd(cmd)
-	config := server.GetServerContextFromCmd(cmd).Config
-	config.SetRoot(clientCtx.HomeDir)
-
-	if !anyCount && (len(operatorArgs) < chain.MinLaunchSeats || len(operatorArgs) > chain.MaxLaunchSeats) {
+func runAddValidatorSeats(cdc codec.Codec, addressCodec address.Codec, genesisFile string, operatorArgs []string, options addValidatorSeatsOptions) error {
+	if !options.anyCount && (len(operatorArgs) < chain.MinLaunchSeats || len(operatorArgs) > chain.MaxLaunchSeats) {
 		return fmt.Errorf("%d seats named: launch assembly seats between %d and %d, and --%s lifts the bounds for a testnet", len(operatorArgs), chain.MinLaunchSeats, chain.MaxLaunchSeats, flagAnyCount)
 	}
 	operators := make([]sdk.AccAddress, 0, len(operatorArgs))
@@ -86,11 +81,11 @@ func runAddValidatorSeats(cmd *cobra.Command, operatorArgs []string, founderArg 
 		}
 		operators = append(operators, operator)
 	}
-	founder, err := addressCodec.StringToBytes(founderArg)
+	founder, err := addressCodec.StringToBytes(options.founder)
 	if err != nil {
-		return fmt.Errorf("parse founder address %q: %w", founderArg, err)
+		return fmt.Errorf("parse founder address %q: %w", options.founder, err)
 	}
-	appGenesis, err := genutiltypes.AppGenesisFromFile(config.GenesisFile())
+	appGenesis, err := genutiltypes.AppGenesisFromFile(genesisFile)
 	if err != nil {
 		return err
 	}
@@ -98,11 +93,11 @@ func runAddValidatorSeats(cmd *cobra.Command, operatorArgs []string, founderArg 
 	if err := json.Unmarshal(appGenesis.AppState, &appState); err != nil {
 		return fmt.Errorf("unmarshal app state: %w", err)
 	}
-	if err := genesis.AddValidatorSeats(clientCtx.Codec, appState, operators, founder, appGenesis.GenesisTime); err != nil {
+	if err := genesis.AddValidatorSeats(cdc, appState, operators, founder, appGenesis.GenesisTime); err != nil {
 		return err
 	}
 	if appGenesis.AppState, err = json.Marshal(appState); err != nil {
 		return fmt.Errorf("marshal app state: %w", err)
 	}
-	return exportGenesisFile(appGenesis, config.GenesisFile())
+	return exportGenesisFile(appGenesis, genesisFile)
 }

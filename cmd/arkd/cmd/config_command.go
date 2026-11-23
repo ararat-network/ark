@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"slices"
@@ -81,24 +82,28 @@ start applies. Defaults to the home directory's app.toml.`,
 			if err != nil {
 				return err
 			}
-			doc, err := confix.LoadConfig(path)
-			if err != nil {
-				return err
-			}
-			target, err := defaultAppTOML()
-			if err != nil {
-				return err
-			}
-			plan := appConfigPlan(doc, target)
-			if len(plan) == 0 && !flags.stdout {
-				_, err := fmt.Fprintf(cmd.OutOrStdout(), "%s is current: nothing to add or remove\n", path)
-				return err
-			}
-			return applyConfigPlan(cmd, doc, plan, path, validateAppTOML, flags)
+			return runConfigMigrate(cmd.Context(), cmd.OutOrStdout(), cmd.ErrOrStderr(), path, flags)
 		},
 	}
 	flags.bind(cmd)
 	return cmd
+}
+
+func runConfigMigrate(ctx context.Context, out, errOut io.Writer, path string, flags configWriteFlags) error {
+	doc, err := confix.LoadConfig(path)
+	if err != nil {
+		return err
+	}
+	target, err := defaultAppTOML()
+	if err != nil {
+		return err
+	}
+	plan := appConfigPlan(doc, target)
+	if len(plan) == 0 && !flags.stdout {
+		_, err := fmt.Fprintf(out, "%s is current: nothing to add or remove\n", path)
+		return err
+	}
+	return applyConfigPlan(ctx, out, errOut, doc, plan, path, validateAppTOML, flags)
 }
 
 func newConfigDiffCmd() *cobra.Command {
@@ -114,30 +119,33 @@ migrate keeps. Defaults to the home directory's app.toml.`,
 			if err != nil {
 				return err
 			}
-			doc, err := confix.LoadConfig(path)
-			if err != nil {
-				return err
-			}
-			target, err := defaultAppTOML()
-			if err != nil {
-				return err
-			}
-			plan := appConfigPlan(doc, target)
-			kept := changedValues(doc, target)
-			out := cmd.OutOrStdout()
-			if len(plan) == 0 && len(kept) == 0 {
-				_, err := fmt.Fprintf(out, "%s matches this binary's defaults\n", path)
-				return err
-			}
-			for _, step := range plan {
-				fmt.Fprintln(out, step.Desc)
-			}
-			for _, kv := range kept {
-				fmt.Fprintf(out, "keep %s = %s (default %s)\n", kv.key, kv.value, kv.def)
-			}
-			return nil
+			return runConfigDiff(cmd.OutOrStdout(), path)
 		},
 	}
+}
+
+func runConfigDiff(out io.Writer, path string) error {
+	doc, err := confix.LoadConfig(path)
+	if err != nil {
+		return err
+	}
+	target, err := defaultAppTOML()
+	if err != nil {
+		return err
+	}
+	plan := appConfigPlan(doc, target)
+	kept := changedValues(doc, target)
+	if len(plan) == 0 && len(kept) == 0 {
+		_, err := fmt.Fprintf(out, "%s matches this binary's defaults\n", path)
+		return err
+	}
+	for _, step := range plan {
+		fmt.Fprintln(out, step.Desc)
+	}
+	for _, kv := range kept {
+		fmt.Fprintf(out, "keep %s = %s (default %s)\n", kv.key, kv.value, kv.def)
+	}
+	return nil
 }
 
 func newConfigSetCmd() *cobra.Command {
@@ -151,40 +159,43 @@ validation start applies and config.toml CometBFT's own. A key the file lacks is
 not created here; migrate adds the keys this binary knows.`,
 		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			path := configPath(cmd, args[0])
-			key := strings.Split(args[1], ".")
-			value, err := parser.ParseValue(args[2])
-			if err != nil {
-				// Not TOML on its own, so a string: 0.01anoah, 2s, localhost:9464.
-				if value, err = parser.ParseValue(strconv.Quote(args[2])); err != nil {
-					return fmt.Errorf("value %q: %w", args[2], err)
-				}
-			}
-			doc, err := confix.LoadConfig(path)
-			if err != nil {
-				return err
-			}
-			plan := transform.Plan{{
-				Desc: fmt.Sprintf("set %s = %s", args[1], value),
-				T: transform.Func(func(_ context.Context, doc *tomledit.Document) error {
-					found := doc.Find(key...)
-					switch {
-					case len(found) == 0:
-						return fmt.Errorf("key %q not found", args[1])
-					case len(found) > 1:
-						return fmt.Errorf("key %q is ambiguous", args[1])
-					case !found[0].IsMapping():
-						return fmt.Errorf("%q is a table", args[1])
-					}
-					found[0].Value = value
-					return nil
-				}),
-			}}
-			return applyConfigPlan(cmd, doc, plan, path, configValidator(path), flags)
+			return runConfigSet(cmd.Context(), cmd.OutOrStdout(), cmd.ErrOrStderr(), configPath(cmd, args[0]), args[1], args[2], flags)
 		},
 	}
 	flags.bind(cmd)
 	return cmd
+}
+
+func runConfigSet(ctx context.Context, out, errOut io.Writer, path, key, rawValue string, flags configWriteFlags) error {
+	keyPath := strings.Split(key, ".")
+	value, err := parser.ParseValue(rawValue)
+	if err != nil {
+		// Not TOML on its own, so a string: 0.01anoah, 2s, localhost:9464.
+		if value, err = parser.ParseValue(strconv.Quote(rawValue)); err != nil {
+			return fmt.Errorf("value %q: %w", rawValue, err)
+		}
+	}
+	doc, err := confix.LoadConfig(path)
+	if err != nil {
+		return err
+	}
+	plan := transform.Plan{{
+		Desc: fmt.Sprintf("set %s = %s", key, value),
+		T: transform.Func(func(_ context.Context, doc *tomledit.Document) error {
+			found := doc.Find(keyPath...)
+			switch {
+			case len(found) == 0:
+				return fmt.Errorf("key %q not found", key)
+			case len(found) > 1:
+				return fmt.Errorf("key %q is ambiguous", key)
+			case !found[0].IsMapping():
+				return fmt.Errorf("%q is a table", key)
+			}
+			found[0].Value = value
+			return nil
+		}),
+	}}
+	return applyConfigPlan(ctx, out, errOut, doc, plan, path, configValidator(path), flags)
 }
 
 func newConfigValidateCmd() *cobra.Command {
@@ -201,18 +212,21 @@ home directory's app.toml.`,
 			if len(args) > 0 {
 				name = args[0]
 			}
-			path := configPath(cmd, name)
-			data, err := os.ReadFile(path)
-			if err != nil {
-				return err
-			}
-			if err := configValidator(path)(data); err != nil {
-				return fmt.Errorf("%s is invalid: %w", path, err)
-			}
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s is valid\n", path)
-			return err
+			return runConfigValidate(cmd.OutOrStdout(), configPath(cmd, name))
 		},
 	}
+}
+
+func runConfigValidate(out io.Writer, path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if err := configValidator(path)(data); err != nil {
+		return fmt.Errorf("%s is invalid: %w", path, err)
+	}
+	_, err = fmt.Fprintf(out, "%s is valid\n", path)
+	return err
 }
 
 // appTOMLPath is the app.toml a command works on: the argument when given,
@@ -354,16 +368,16 @@ func changedValues(doc, target *tomledit.Document) []keptValue {
 // writes 0600 over the SDK's 0644. --stdout prints instead and
 // --skip-validate writes unchecked.
 func applyConfigPlan(
-	cmd *cobra.Command,
+	ctx context.Context,
+	out, errOut io.Writer,
 	doc *tomledit.Document,
 	plan transform.Plan,
 	path string,
 	validate func([]byte) error,
 	flags configWriteFlags,
 ) error {
-	ctx := cmd.Context()
 	if flags.verbose {
-		ctx = transform.WithLogWriter(ctx, cmd.ErrOrStderr())
+		ctx = transform.WithLogWriter(ctx, errOut)
 	}
 	if err := plan.Apply(ctx, doc); err != nil {
 		return fmt.Errorf("updating %s: %w", path, err)
@@ -378,7 +392,7 @@ func applyConfigPlan(
 		}
 	}
 	if flags.stdout {
-		_, err := cmd.OutOrStdout().Write(buf.Bytes())
+		_, err := out.Write(buf.Bytes())
 		return err
 	}
 	mode := os.FileMode(0o644)

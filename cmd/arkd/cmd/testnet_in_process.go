@@ -36,14 +36,14 @@ var (
 	defaultGRPCAddress = fmt.Sprintf("0.0.0.0:%d", grpcPort)
 )
 
-// inProcessNetworkConfig is the in-process network for args, once the
+// inProcessNetworkConfig is the in-process network for options, once the
 // process can run one: the commit timeout leaves the first block inside
 // network.New's budget, and the SDK's app.toml template is back in place.
-func inProcessNetworkConfig(args startArgs) (network.Config, error) {
-	if args.timeoutCommit > maxInProcessCommitTimeout {
+func inProcessNetworkConfig(options testnetStartOptions) (network.Config, error) {
+	if options.commitTimeout > maxInProcessCommitTimeout {
 		return network.Config{}, fmt.Errorf(
 			"--%s %s is above %s: the in-process network fails unless its first block lands within five seconds of starting",
-			flagCommitTimeout, args.timeoutCommit, maxInProcessCommitTimeout,
+			flagCommitTimeout, options.commitTimeout, maxInProcessCommitTimeout,
 		)
 	}
 	// network.New writes each validator's app.toml from the SDK's own config
@@ -55,30 +55,31 @@ func inProcessNetworkConfig(args startArgs) (network.Config, error) {
 
 	// Default networkConfig.ChainID is random, and we should only override it if chainID provided
 	// is non-empty
-	if args.chainID != "" {
-		networkConfig.ChainID = args.chainID
+	if options.chainID != "" {
+		networkConfig.ChainID = options.chainID
 	}
-	networkConfig.SigningAlgo = args.algo
-	networkConfig.MinGasPrices = args.minGasPrices
-	networkConfig.NumValidators = args.numValidators
-	networkConfig.EnableLogging = args.enableLogging
-	networkConfig.RPCAddress = args.rpcAddress
-	networkConfig.APIAddress = args.apiAddress
-	networkConfig.GRPCAddress = args.grpcAddress
-	networkConfig.PrintMnemonic = args.printMnemonic
-	networkConfig.TimeoutCommit = args.timeoutCommit
+	networkConfig.SigningAlgo = options.algo
+	networkConfig.MinGasPrices = options.minGasPrices
+	networkConfig.NumValidators = options.numValidators
+	networkConfig.EnableLogging = options.enableLogging
+	networkConfig.RPCAddress = options.rpcAddress
+	networkConfig.APIAddress = options.apiAddress
+	networkConfig.GRPCAddress = options.grpcAddress
+	networkConfig.PrintMnemonic = options.printMnemonic
+	networkConfig.TimeoutCommit = options.commitTimeout
 	return networkConfig, nil
 }
 
-// startTestnet starts an in-process testnet
-func startTestnet(cmd *cobra.Command, args startArgs) error {
-	networkConfig, err := inProcessNetworkConfig(args)
+// runTestnetStart starts an in-process testnet. It keeps the command:
+// the network's logger is built from one.
+func runTestnetStart(cmd *cobra.Command, options testnetStartOptions) error {
+	networkConfig, err := inProcessNetworkConfig(options)
 	if err != nil {
 		return err
 	}
 	networkLogger := network.NewCLILogger(cmd)
 
-	baseDir := filepath.Join(args.outputDir, networkConfig.ChainID)
+	baseDir := filepath.Join(options.outputDir, networkConfig.ChainID)
 	if _, err := os.Stat(baseDir); !os.IsNotExist(err) {
 		return fmt.Errorf(
 			"testnets directory already exists for chain-id '%s': %s, please remove or select a new --chain-id",

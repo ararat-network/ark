@@ -7,14 +7,14 @@ package cmd
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
 	"time"
-
-	"github.com/spf13/cobra"
 
 	cmtcfg "github.com/cometbft/cometbft/config"
 	cmttime "github.com/cometbft/cometbft/types/time"
@@ -59,33 +59,35 @@ const (
 	metricsPort       = 9464
 )
 
-// initTestnetFiles initialises testnet files for a testnet to be run in a separate process
-func initTestnetFiles(
+// runTestnetInitFiles initialises testnet files for a testnet to be run in a separate process
+func runTestnetInitFiles(
+	ctx context.Context,
 	clientCtx client.Context,
-	cmd *cobra.Command,
 	nodeConfig *cmtcfg.Config,
 	mm module.BasicManager,
 	genBalIterator banktypes.GenesisBalancesIterator,
-	args initArgs,
+	options testnetInitOptions,
+	in io.Reader,
+	errOut io.Writer,
 ) error {
 	var base *genutiltypes.AppGenesis
-	if args.genesisFile != "" {
+	if options.genesisFile != "" {
 		var err error
-		if base, err = genutiltypes.AppGenesisFromFile(args.genesisFile); err != nil {
-			return fmt.Errorf("reading base genesis %s: %w", args.genesisFile, err)
+		if base, err = genutiltypes.AppGenesisFromFile(options.genesisFile); err != nil {
+			return fmt.Errorf("reading base genesis %s: %w", options.genesisFile, err)
 		}
-		if args.chainID == "" {
-			args.chainID = base.ChainID
+		if options.chainID == "" {
+			options.chainID = base.ChainID
 		}
 	}
-	if args.chainID == "" {
-		args.chainID = "chain-" + unsafe.Str(6)
+	if options.chainID == "" {
+		options.chainID = "chain-" + unsafe.Str(6)
 	}
-	nodeIDs := make([]string, args.numValidators)
-	valPubKeys := make([]cryptotypes.PubKey, args.numValidators)
+	nodeIDs := make([]string, options.numValidators)
+	valPubKeys := make([]cryptotypes.PubKey, options.numValidators)
 
 	appConfig := defaultAppConfig()
-	appConfig.MinGasPrices = args.minGasPrices
+	appConfig.MinGasPrices = options.minGasPrices
 	appConfig.API.Enable = true
 	// Cosmos SDK v0.54 still emits some metrics through its deprecated wrappers.
 	// Route those metrics into the node-owned OpenTelemetry provider.
@@ -99,7 +101,7 @@ func initTestnetFiles(
 		genFiles    []string
 	)
 	p2pPortStart := p2pPort
-	if args.singleMachine {
+	if options.singleMachine {
 		p2pPortStart = singleHostP2PPort
 		nodeConfig.P2P.AddrBookStrict = false
 		nodeConfig.P2P.PexReactor = false
@@ -111,23 +113,23 @@ func initTestnetFiles(
 	nodeConfig.Instrumentation.Prometheus = true
 	serverconfig.SetConfigTemplate(appConfigTemplate)
 
-	inBuf := bufio.NewReader(cmd.InOrStdin())
+	inBuf := bufio.NewReader(in)
 	// generate private keys, node IDs, and initial transactions
-	for i := range args.numValidators {
+	for i := range options.numValidators {
 		var portOffset int
-		if args.singleMachine {
+		if options.singleMachine {
 			portOffset = i
 			appConfig.API.Address = fmt.Sprintf("tcp://0.0.0.0:%d", apiPort+portOffset)
 			appConfig.GRPC.Address = fmt.Sprintf("0.0.0.0:%d", grpcPort+portOffset)
 		}
 
-		nodeDirName := fmt.Sprintf("%s%d", args.nodeDirPrefix, i)
-		nodeDir := filepath.Join(args.outputDir, nodeDirName, args.nodeDaemonHome)
-		gentxsDir := filepath.Join(args.outputDir, "gentxs")
+		nodeDirName := fmt.Sprintf("%s%d", options.nodeDirPrefix, i)
+		nodeDir := filepath.Join(options.outputDir, nodeDirName, options.nodeDaemonHome)
+		gentxsDir := filepath.Join(options.outputDir, "gentxs")
 
 		nodeConfig.SetRoot(nodeDir)
 		nodeConfig.Moniker = nodeDirName
-		nodeConfig.RPC.ListenAddress = fmt.Sprintf("tcp://%s:%d", args.listenIPAddress, rpcPort+portOffset)
+		nodeConfig.RPC.ListenAddress = fmt.Sprintf("tcp://%s:%d", options.listenIPAddress, rpcPort+portOffset)
 
 		if err := os.MkdirAll(filepath.Join(nodeDir, "config"), nodeDirPerm); err != nil {
 			return err
@@ -136,10 +138,10 @@ func initTestnetFiles(
 			err error
 			ip  string
 		)
-		if args.singleMachine {
+		if options.singleMachine {
 			ip = "127.0.0.1"
 		} else {
-			ip, err = getIP(i, args.startingIPAddress)
+			ip, err = getIP(i, options.startingIPAddress)
 			if err != nil {
 				return err
 			}
@@ -153,13 +155,13 @@ func initTestnetFiles(
 		memo := fmt.Sprintf("%s@%s:%d", nodeIDs[i], ip, p2pPortStart+portOffset)
 		genFiles = append(genFiles, nodeConfig.GenesisFile())
 
-		kb, err := keyring.New(sdk.KeyringServiceName(), args.keyringBackend, nodeDir, inBuf, clientCtx.Codec)
+		kb, err := keyring.New(sdk.KeyringServiceName(), options.keyringBackend, nodeDir, inBuf, clientCtx.Codec)
 		if err != nil {
 			return err
 		}
 
 		keyringAlgos, _ := kb.SupportedAlgorithms()
-		algo, err := keyring.NewSigningAlgoFromString(args.algo, keyringAlgos)
+		algo, err := keyring.NewSigningAlgoFromString(options.algo, keyringAlgos)
 		if err != nil {
 			return err
 		}
@@ -184,7 +186,7 @@ func initTestnetFiles(
 		// The SDK writes client.toml lazily and with its defaults, so every
 		// client command against the home would need the chain ID, keyring,
 		// key, and node as flags.
-		clientToml := fmt.Sprintf(clientConfigTemplate, args.chainID, args.keyringBackend, nodeDirName, rpcPort+portOffset)
+		clientToml := fmt.Sprintf(clientConfigTemplate, options.chainID, options.keyringBackend, nodeDirName, rpcPort+portOffset)
 		if err := writeFile("client.toml", filepath.Join(nodeDir, "config"), []byte(clientToml)); err != nil {
 			return err
 		}
@@ -192,7 +194,7 @@ func initTestnetFiles(
 		// From code defaults each validator holds test balances and bonds a
 		// token; from an artefact it is a seat, bonding its whole grant at
 		// the artefact's commission floor.
-		bond := sdk.NewCoin(args.bondTokenDenom, chain.NativeBaseAmount(100))
+		bond := sdk.NewCoin(options.bondTokenDenom, chain.NativeBaseAmount(100))
 		commission := stakingtypes.NewCommissionRates(math.LegacyOneDec(), math.LegacyOneDec(), math.LegacyOneDec())
 		if base != nil {
 			seats = append(seats, addr)
@@ -202,7 +204,7 @@ func initTestnetFiles(
 		} else {
 			coins := sdk.Coins{
 				sdk.NewCoin("testtoken", chain.NativeBaseAmount(1_000)),
-				sdk.NewCoin(args.bondTokenDenom, chain.NativeBaseAmount(500)),
+				sdk.NewCoin(options.bondTokenDenom, chain.NativeBaseAmount(500)),
 			}
 			genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins.Sort()})
 			genAccounts = append(genAccounts, authtypes.NewBaseAccount(addr, nil, 0, 0))
@@ -229,12 +231,12 @@ func initTestnetFiles(
 
 		txFactory := clienttx.Factory{}
 		txFactory = txFactory.
-			WithChainID(args.chainID).
+			WithChainID(options.chainID).
 			WithMemo(memo).
 			WithKeybase(kb).
 			WithTxConfig(clientCtx.TxConfig)
 
-		if err := clienttx.Sign(cmd.Context(), txFactory, nodeDirName, txBuilder, true); err != nil {
+		if err := clienttx.Sign(ctx, txFactory, nodeDirName, txBuilder, true); err != nil {
 			return err
 		}
 
@@ -264,14 +266,14 @@ func initTestnetFiles(
 
 	// One time for every file: the seats vest from it, and collection stamps it.
 	genTime := cmttime.Now()
-	if err := initGenFiles(clientCtx, mm, args.chainID, genTime, base, seats, genAccounts, genBalances, genFiles, args.numValidators); err != nil {
+	if err := initGenFiles(clientCtx, mm, options.chainID, genTime, base, seats, genAccounts, genBalances, genFiles, options.numValidators); err != nil {
 		return err
 	}
 
 	err := collectGenFiles(
-		clientCtx, nodeConfig, args.chainID, genTime, nodeIDs, valPubKeys, args.numValidators,
-		args.outputDir, args.nodeDirPrefix, args.nodeDaemonHome, genBalIterator,
-		p2pPortStart, args.singleMachine,
+		clientCtx, nodeConfig, options.chainID, genTime, nodeIDs, valPubKeys, options.numValidators,
+		options.outputDir, options.nodeDirPrefix, options.nodeDaemonHome, genBalIterator,
+		p2pPortStart, options.singleMachine,
 	)
 	if err != nil {
 		return err
@@ -282,8 +284,8 @@ func initTestnetFiles(
 		}
 	}
 
-	cmd.PrintErrf("Successfully initialised %d node directories\n", args.numValidators)
-	return nil
+	_, err = fmt.Fprintf(errOut, "Successfully initialised %d node directories\n", options.numValidators)
+	return err
 }
 
 func initGenFiles(
@@ -362,7 +364,7 @@ func collectGenFiles(
 
 	for i := range numValidators {
 		// GenAppStateFromConfig writes config.toml, so the per-node listeners
-		// are set here: set in initTestnetFiles, the last node's would win.
+		// are set here: set in runTestnetInitFiles, the last node's would win.
 		if singleMachine {
 			portOffset := i
 			nodeConfig.RPC.ListenAddress = fmt.Sprintf("tcp://0.0.0.0:%d", rpcPort+portOffset)

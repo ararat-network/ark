@@ -56,15 +56,40 @@ const (
 
 var defaultMinGasPrices = fmt.Sprintf("6000000%s", sdk.DefaultBondDenom)
 
-type initArgs struct {
-	algo              string
-	chainID           string
+// testnetOptions are the flags init-files and start share.
+type testnetOptions struct {
+	numValidators int
+	outputDir     string
+	chainID       string
+	minGasPrices  string
+	algo          string
+	commitTimeout time.Duration
+}
+
+func (o *testnetOptions) bind(cmd *cobra.Command, commitTimeout time.Duration) {
+	f := cmd.Flags()
+	f.IntVarP(&o.numValidators, flagNumValidators, "v", defaultNumValidators, "Number of validators to initialise the testnet with")
+	f.StringVarP(&o.outputDir, flagOutputDir, "o", defaultOutputDir, "Directory to store initialization data for the testnet")
+	f.StringVar(&o.chainID, flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
+	f.StringVar(&o.minGasPrices, flagMinGasPrices, defaultMinGasPrices, "Minimum gas prices each node accepts for transactions; all fees in a tx must meet this minimum (e.g. 0.01anoah,0.001ausd)")
+	f.StringVar(&o.algo, flags.FlagKeyType, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
+	f.DurationVar(&o.commitTimeout, flagCommitTimeout, commitTimeout, "Time to wait after a block commit before starting on the new height")
+}
+
+// validate refuses what no testnet can have; a negative count would panic
+// the slice allocation in init-files.
+func (o testnetOptions) validate() error {
+	if o.numValidators < 1 {
+		return fmt.Errorf("--%s must be at least 1, got %d", flagNumValidators, o.numValidators)
+	}
+	return nil
+}
+
+type testnetInitOptions struct {
+	testnetOptions
 	keyringBackend    string
-	minGasPrices      string
 	nodeDaemonHome    string
 	nodeDirPrefix     string
-	numValidators     int
-	outputDir         string
 	startingIPAddress string
 	listenIPAddress   string
 	singleMachine     bool
@@ -72,37 +97,13 @@ type initArgs struct {
 	genesisFile       string
 }
 
-type startArgs struct {
-	algo          string
+type testnetStartOptions struct {
+	testnetOptions
 	apiAddress    string
-	chainID       string
 	enableLogging bool
 	grpcAddress   string
-	minGasPrices  string
-	numValidators int
-	outputDir     string
 	printMnemonic bool
 	rpcAddress    string
-	timeoutCommit time.Duration
-}
-
-// validatorCount reads --validator-count and refuses what no testnet can
-// have; a negative count would panic the slice allocation below.
-func validatorCount(cmd *cobra.Command) (int, error) {
-	count, _ := cmd.Flags().GetInt(flagNumValidators)
-	if count < 1 {
-		return 0, fmt.Errorf("--%s must be at least 1, got %d", flagNumValidators, count)
-	}
-	return count, nil
-}
-
-func addTestnetFlagsToCmd(cmd *cobra.Command, commitTimeout time.Duration) {
-	cmd.Flags().IntP(flagNumValidators, "v", defaultNumValidators, "Number of validators to initialise the testnet with")
-	cmd.Flags().StringP(flagOutputDir, "o", defaultOutputDir, "Directory to store initialization data for the testnet")
-	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
-	cmd.Flags().String(flagMinGasPrices, defaultMinGasPrices, "Minimum gas prices each node accepts for transactions; all fees in a tx must meet this minimum (e.g. 0.01anoah,0.001ausd)")
-	cmd.Flags().String(flags.FlagKeyType, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
-	cmd.Flags().Duration(flagCommitTimeout, commitTimeout, "Time to wait after a block commit before starting on the new height")
 }
 
 // newTestnetCmd creates a root testnet command with subcommands to run an in-process testnet or initialise
@@ -124,6 +125,7 @@ func newTestnetCmd(mm module.BasicManager, genBalIterator banktypes.GenesisBalan
 
 // newTestnetInitFilesCmd returns a cmd to initialise all files for CometBFT testnet and application
 func newTestnetInitFilesCmd(mm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
+	var options testnetInitOptions
 	cmd := &cobra.Command{
 		Use:   "init-files",
 		Short: "Initialise config directories & files for a multi-validator testnet running locally via separate processes (e.g. Docker Compose or similar)",
@@ -139,55 +141,37 @@ Example:
 	%s testnet init-files --validator-count 4 --output-dir ./.testnets --starting-ip-address 192.168.10.2
 	`, version.AppName),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			numValidators, err := validatorCount(cmd)
-			if err != nil {
+			if err := options.validate(); err != nil {
 				return err
 			}
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
+			config := server.GetServerContextFromCmd(cmd).Config
+			config.Consensus.TimeoutCommit = options.commitTimeout
 
-			serverCtx := server.GetServerContextFromCmd(cmd)
-			config := serverCtx.Config
-
-			args := initArgs{numValidators: numValidators}
-			args.outputDir, _ = cmd.Flags().GetString(flagOutputDir)
-			args.keyringBackend, _ = cmd.Flags().GetString(flags.FlagKeyringBackend)
-			args.chainID, _ = cmd.Flags().GetString(flags.FlagChainID)
-			args.minGasPrices, _ = cmd.Flags().GetString(flagMinGasPrices)
-			args.nodeDirPrefix, _ = cmd.Flags().GetString(flagNodeDirPrefix)
-			args.nodeDaemonHome, _ = cmd.Flags().GetString(flagNodeDaemonHome)
-			args.startingIPAddress, _ = cmd.Flags().GetString(flagStartingIPAddress)
-			args.listenIPAddress, _ = cmd.Flags().GetString(flagListenIPAddress)
-			args.algo, _ = cmd.Flags().GetString(flags.FlagKeyType)
-			args.bondTokenDenom, _ = cmd.Flags().GetString(flagStakingDenom)
-			args.singleMachine, _ = cmd.Flags().GetBool(flagSingleHost)
-			args.genesisFile, _ = cmd.Flags().GetString(flagGenesis)
-			config.Consensus.TimeoutCommit, err = cmd.Flags().GetDuration(flagCommitTimeout)
-			if err != nil {
-				return err
-			}
-
-			return initTestnetFiles(clientCtx, cmd, config, mm, genBalIterator, args)
+			return runTestnetInitFiles(cmd.Context(), clientCtx, config, mm, genBalIterator, options, cmd.InOrStdin(), cmd.ErrOrStderr())
 		},
 	}
 
-	addTestnetFlagsToCmd(cmd, defaultCommitTimeout)
-	cmd.Flags().String(flagNodeDirPrefix, defaultNodeDirPrefix, "Prefix for the name of per-validator subdirectories (to be number-suffixed like node0, node1, ...)")
-	cmd.Flags().String(flagGenesis, "", "Curated genesis to start from: every validator becomes a seat granted from its community pool, which bounds the count, and its chain ID is the default")
-	cmd.Flags().String(flagNodeDaemonHome, serviceName, "Home directory of the node's daemon configuration")
-	cmd.Flags().String(flagStartingIPAddress, defaultStartingIPAddress, "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
-	cmd.Flags().String(flagListenIPAddress, defaultListenIPAddress, "TCP or UNIX socket IP address for the RPC server to listen on")
-	cmd.Flags().String(flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|test)")
-	cmd.Flags().Bool(flagSingleHost, defaultSingleHost, "Cluster runs on a single host machine with different ports")
-	cmd.Flags().String(flagStakingDenom, sdk.DefaultBondDenom, "Default staking token denomination")
+	options.bind(cmd, defaultCommitTimeout)
+	f := cmd.Flags()
+	f.StringVar(&options.nodeDirPrefix, flagNodeDirPrefix, defaultNodeDirPrefix, "Prefix for the name of per-validator subdirectories (to be number-suffixed like node0, node1, ...)")
+	f.StringVar(&options.genesisFile, flagGenesis, "", "Curated genesis to start from: every validator becomes a seat granted from its community pool, which bounds the count, and its chain ID is the default")
+	f.StringVar(&options.nodeDaemonHome, flagNodeDaemonHome, serviceName, "Home directory of the node's daemon configuration")
+	f.StringVar(&options.startingIPAddress, flagStartingIPAddress, defaultStartingIPAddress, "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
+	f.StringVar(&options.listenIPAddress, flagListenIPAddress, defaultListenIPAddress, "TCP or UNIX socket IP address for the RPC server to listen on")
+	f.StringVar(&options.keyringBackend, flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|test)")
+	f.BoolVar(&options.singleMachine, flagSingleHost, defaultSingleHost, "Cluster runs on a single host machine with different ports")
+	f.StringVar(&options.bondTokenDenom, flagStakingDenom, sdk.DefaultBondDenom, "Default staking token denomination")
 
 	return cmd
 }
 
 // newTestnetStartCmd returns a cmd to start multi validator in-process testnet
 func newTestnetStartCmd() *cobra.Command {
+	var options testnetStartOptions
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Launch an in-process multi-validator testnet",
@@ -199,31 +183,19 @@ Example:
 	%s testnet start --validator-count 4 --output-dir ./.testnets
 	`, version.AppName),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			numValidators, err := validatorCount(cmd)
-			if err != nil {
+			if err := options.validate(); err != nil {
 				return err
 			}
-			args := startArgs{numValidators: numValidators}
-			args.outputDir, _ = cmd.Flags().GetString(flagOutputDir)
-			args.chainID, _ = cmd.Flags().GetString(flags.FlagChainID)
-			args.minGasPrices, _ = cmd.Flags().GetString(flagMinGasPrices)
-			args.algo, _ = cmd.Flags().GetString(flags.FlagKeyType)
-			args.enableLogging, _ = cmd.Flags().GetBool(flagEnableLogging)
-			args.rpcAddress, _ = cmd.Flags().GetString(flagRPCAddress)
-			args.apiAddress, _ = cmd.Flags().GetString(flagAPIAddress)
-			args.grpcAddress, _ = cmd.Flags().GetString(flagGRPCAddress)
-			args.printMnemonic, _ = cmd.Flags().GetBool(flagPrintMnemonic)
-			args.timeoutCommit, _ = cmd.Flags().GetDuration(flagCommitTimeout)
-
-			return startTestnet(cmd, args)
+			return runTestnetStart(cmd, options)
 		},
 	}
 
-	addTestnetFlagsToCmd(cmd, defaultInProcessCommitTimeout)
-	cmd.Flags().Bool(flagEnableLogging, defaultEnableLogging, "Enable INFO logging of CometBFT validator nodes")
-	cmd.Flags().String(flagRPCAddress, defaultRPCAddress, "the RPC address to listen on")
-	cmd.Flags().String(flagAPIAddress, defaultAPIAddress, "the address to listen on for REST API")
-	cmd.Flags().String(flagGRPCAddress, defaultGRPCAddress, "the gRPC server address to listen on")
-	cmd.Flags().Bool(flagPrintMnemonic, defaultPrintMnemonic, "print mnemonic of first validator to stdout for manual testing")
+	options.bind(cmd, defaultInProcessCommitTimeout)
+	f := cmd.Flags()
+	f.BoolVar(&options.enableLogging, flagEnableLogging, defaultEnableLogging, "Enable INFO logging of CometBFT validator nodes")
+	f.StringVar(&options.rpcAddress, flagRPCAddress, defaultRPCAddress, "the RPC address to listen on")
+	f.StringVar(&options.apiAddress, flagAPIAddress, defaultAPIAddress, "the address to listen on for REST API")
+	f.StringVar(&options.grpcAddress, flagGRPCAddress, defaultGRPCAddress, "the gRPC server address to listen on")
+	f.BoolVar(&options.printMnemonic, flagPrintMnemonic, defaultPrintMnemonic, "print mnemonic of first validator to stdout for manual testing")
 	return cmd
 }

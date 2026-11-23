@@ -16,11 +16,11 @@ import (
 func TestInProcessNetworkConfig(t *testing.T) {
 	t.Cleanup(func() { serverconfig.SetConfigTemplate(appConfigTemplate) })
 
-	_, err := inProcessNetworkConfig(startArgs{numValidators: 1, timeoutCommit: 5 * time.Second})
+	_, err := inProcessNetworkConfig(testnetStartOptions{testnetOptions: testnetOptions{numValidators: 1, commitTimeout: 5 * time.Second}})
 	require.ErrorContains(t, err, "within five seconds")
 
 	serverconfig.SetConfigTemplate(appConfigTemplate)
-	cfg, err := inProcessNetworkConfig(startArgs{numValidators: 1, timeoutCommit: time.Second, chainID: "in-process"})
+	cfg, err := inProcessNetworkConfig(testnetStartOptions{testnetOptions: testnetOptions{numValidators: 1, commitTimeout: time.Second, chainID: "in-process"}})
 	require.NoError(t, err)
 	require.Equal(t, "in-process", cfg.ChainID)
 	require.Equal(t, time.Second, cfg.TimeoutCommit)
