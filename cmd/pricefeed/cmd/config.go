@@ -86,11 +86,7 @@ func reloadRuntimeConfig(ctx context.Context, address string, dialOptions ...grp
 	if err != nil {
 		return fmt.Errorf("dialling admin endpoint: %w", err)
 	}
-	defer func() {
-		if closeErr := conn.Close(); closeErr != nil {
-			err = errors.Join(err, fmt.Errorf("closing admin connection: %w", closeErr))
-		}
-	}()
+	defer closeConn(&err, "admin", conn)
 
 	if _, err := api.NewPriceFeedAdminClient(conn).ReloadConfig(ctx, &api.ReloadConfigRequest{}); err != nil {
 		return fmt.Errorf("reloading pricefeed config: %w", err)

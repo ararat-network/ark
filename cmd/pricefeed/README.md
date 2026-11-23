@@ -12,7 +12,7 @@ implementations own process options and output.
 | `prices` — [cmd/prices.go](cmd/prices.go) | Fetch and render the latest snapshot as a table or JSON. |
 | `check` — [cmd/check.go](cmd/check.go) | Compare sampled prices with the chain's active feed set through `pricefeed/validation`. |
 | `version` — [cmd/root.go](cmd/root.go) | Print the sidecar build version. |
-| [cmd/tls_flags.go](cmd/tls_flags.go), [cmd/telemetry.go](cmd/telemetry.go) | Transport flags and process telemetry. |
+| [cmd/tls_flags.go](cmd/tls_flags.go), [cmd/dial.go](cmd/dial.go), [cmd/telemetry.go](cmd/telemetry.go) | Transport flags, client connections, and process telemetry. |
 
 Runtime config defaults/loading live in [pricefeed/config](../../pricefeed/config/); the
 [sidecar service](../../pricefeed/sidecar/README.md) owns RPC listeners and delegates price work to runtime.
