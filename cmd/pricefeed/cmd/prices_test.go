@@ -13,9 +13,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	"cosmossdk.io/math"
-
-	"github.com/ararat-network/ark/pkg/encoding"
 	"github.com/ararat-network/ark/pkg/tlsconfig"
 	"github.com/ararat-network/ark/pricefeed/api"
 )
@@ -188,24 +185,6 @@ func TestNewPricesViewRejectsMalformedPrice(t *testing.T) {
 
 func TestPriceSnapshotAgeIsUnknownForZeroTimestamp(t *testing.T) {
 	require.Equal(t, "unknown", priceSnapshotAge(time.Now(), time.Time{}))
-}
-
-func pricesResponse(t *testing.T) *api.PricesResponse {
-	t.Helper()
-
-	ausd, err := encoding.EncodeCompactLegacyDec(math.LegacyNewDec(1))
-	require.NoError(t, err)
-	akrw, err := encoding.EncodeCompactLegacyDec(math.LegacyMustNewDecFromStr("1234.5"))
-	require.NoError(t, err)
-
-	return &api.PricesResponse{
-		Prices: map[string][]byte{
-			"ausd": ausd,
-			"akrw": akrw,
-		},
-		Timestamp: time.Date(2026, time.July, 10, 10, 11, 12, 0, time.UTC),
-		Version:   "v1.2.3",
-	}
 }
 
 type pricesPriceFeedServer struct {

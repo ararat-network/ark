@@ -11,13 +11,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"cosmossdk.io/depinject"
-	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -32,21 +28,6 @@ import (
 	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
-
-// clientCodec resolves the codec the root command decodes genesis with.
-func clientCodec(t *testing.T) codec.Codec {
-	t.Helper()
-
-	var clientCtx client.Context
-	require.NoError(t, depinject.Inject(
-		depinject.Configs(app.AppConfig,
-			depinject.Supply(log.NewNopLogger(), unwiredWasmKeeper{}),
-			depinject.Provide(ProvideClientContext),
-		),
-		&clientCtx,
-	))
-	return clientCtx.Codec
-}
 
 // TestAddValidatorSeatsCmd grants seven seats in one run on a copy of the
 // launch artefact and reads the result back: each vesting account on its
