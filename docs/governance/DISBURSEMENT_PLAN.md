@@ -133,7 +133,7 @@ All figures except the member amount are cumulative.
 ### Admission
 
 The membership service admits a person on one of two bases and the registrar registers the address the person proves
-they hold ([signup protocol](https://github.com/ararat-network/ark-sdk/blob/main/docs/SIGNUP_PROTOCOL.md)). An identity
+they hold ([signup protocol](https://github.com/ararat-network/ark-app/blob/main/signer/docs/SIGNUP_PROTOCOL.md)). An identity
 check: a third-party verifier checks liveness and a document and returns a uniqueness attestation with the earlier
 enrolments whose face matches, from which the service derives one dedup token per person; it is the only thing that
 finds a duplicate. Or a vouch: an existing member signs a document naming the admission, staking their own membership
