@@ -59,6 +59,21 @@ const (
 	metricsPort       = 9464
 )
 
+// nodeName is validator i's directory, moniker, and key name.
+func (o testnetInitOptions) nodeName(i int) string {
+	return fmt.Sprintf("%s%d", o.nodeDirPrefix, i)
+}
+
+// nodeDir is validator i's home.
+func (o testnetInitOptions) nodeDir(i int) string {
+	return filepath.Join(o.outputDir, o.nodeName(i), o.nodeDaemonHome)
+}
+
+// gentxsDir is where every validator's gentx is collected from.
+func (o testnetInitOptions) gentxsDir() string {
+	return filepath.Join(o.outputDir, "gentxs")
+}
+
 // runTestnetInitFiles initialises testnet files for a testnet to be run in a separate process
 func runTestnetInitFiles(
 	ctx context.Context,
@@ -123,9 +138,8 @@ func runTestnetInitFiles(
 			appConfig.GRPC.Address = fmt.Sprintf("0.0.0.0:%d", grpcPort+portOffset)
 		}
 
-		nodeDirName := fmt.Sprintf("%s%d", options.nodeDirPrefix, i)
-		nodeDir := filepath.Join(options.outputDir, nodeDirName, options.nodeDaemonHome)
-		gentxsDir := filepath.Join(options.outputDir, "gentxs")
+		nodeDirName := options.nodeName(i)
+		nodeDir := options.nodeDir(i)
 
 		nodeConfig.SetRoot(nodeDir)
 		nodeConfig.Moniker = nodeDirName
@@ -245,7 +259,7 @@ func runTestnetInitFiles(
 			return err
 		}
 
-		if err := writeFile(fmt.Sprintf("%v.json", nodeDirName), gentxsDir, txBz); err != nil {
+		if err := writeFile(fmt.Sprintf("%v.json", nodeDirName), options.gentxsDir(), txBz); err != nil {
 			return err
 		}
 
@@ -266,15 +280,11 @@ func runTestnetInitFiles(
 
 	// One time for every file: the seats vest from it, and collection stamps it.
 	genTime := cmttime.Now()
-	if err := initGenFiles(clientCtx, mm, options.chainID, genTime, base, seats, genAccounts, genBalances, genFiles, options.numValidators); err != nil {
+	if err := initGenFiles(clientCtx, mm, options.chainID, genTime, base, seats, genAccounts, genBalances, genFiles); err != nil {
 		return err
 	}
 
-	err := collectGenFiles(
-		clientCtx, nodeConfig, options.chainID, genTime, nodeIDs, valPubKeys, options.numValidators,
-		options.outputDir, options.nodeDirPrefix, options.nodeDaemonHome, genBalIterator,
-		p2pPortStart, options.singleMachine,
-	)
+	err := collectGenFiles(clientCtx, nodeConfig, options, genTime, nodeIDs, valPubKeys, genBalIterator, p2pPortStart)
 	if err != nil {
 		return err
 	}
@@ -292,15 +302,15 @@ func initGenFiles(
 	clientCtx client.Context, mm module.BasicManager, chainID string, genTime time.Time,
 	base *genutiltypes.AppGenesis, seats []sdk.AccAddress,
 	genAccounts []authtypes.GenesisAccount, genBalances []banktypes.Balance,
-	genFiles []string, numValidators int,
+	genFiles []string,
 ) error {
 	if base != nil {
 		appGenesis, err := seatedGenesis(clientCtx.Codec, base, chainID, genTime, seats)
 		if err != nil {
 			return err
 		}
-		for i := range numValidators {
-			if err := saveGenesis(appGenesis, genFiles[i]); err != nil {
+		for _, genFile := range genFiles {
+			if err := saveGenesis(appGenesis, genFile); err != nil {
 				return err
 			}
 		}
@@ -339,8 +349,8 @@ func initGenFiles(
 
 	appGenesis := genutiltypes.NewAppGenesisWithVersion(chainID, appGenStateJSON)
 	// generate empty genesis files for each validator and save
-	for i := range numValidators {
-		if err := saveGenesis(appGenesis, genFiles[i]); err != nil {
+	for _, genFile := range genFiles {
+		if err := saveGenesis(appGenesis, genFile); err != nil {
 			return err
 		}
 	}
@@ -350,22 +360,19 @@ func initGenFiles(
 func collectGenFiles(
 	clientCtx client.Context,
 	nodeConfig *cmtcfg.Config,
-	chainID string,
+	options testnetInitOptions,
 	genTime time.Time,
 	nodeIDs []string,
 	valPubKeys []cryptotypes.PubKey,
-	numValidators int,
-	outputDir, nodeDirPrefix, nodeDaemonHome string,
 	genBalIterator banktypes.GenesisBalancesIterator,
 	p2pPortStart int,
-	singleMachine bool,
 ) error {
 	var appState json.RawMessage
 
-	for i := range numValidators {
+	for i := range options.numValidators {
 		// GenAppStateFromConfig writes config.toml, so the per-node listeners
 		// are set here: set in runTestnetInitFiles, the last node's would win.
-		if singleMachine {
+		if options.singleMachine {
 			portOffset := i
 			nodeConfig.RPC.ListenAddress = fmt.Sprintf("tcp://0.0.0.0:%d", rpcPort+portOffset)
 			nodeConfig.P2P.ListenAddress = fmt.Sprintf("tcp://0.0.0.0:%d", p2pPortStart+portOffset)
@@ -373,15 +380,11 @@ func collectGenFiles(
 			nodeConfig.Instrumentation.PrometheusListenAddr = fmt.Sprintf(":%d", cometMetricsPort+portOffset)
 		}
 
-		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
-		nodeDir := filepath.Join(outputDir, nodeDirName, nodeDaemonHome)
-		gentxsDir := filepath.Join(outputDir, "gentxs")
-		nodeConfig.Moniker = nodeDirName
-
-		nodeConfig.SetRoot(nodeDir)
+		nodeConfig.Moniker = options.nodeName(i)
+		nodeConfig.SetRoot(options.nodeDir(i))
 
 		nodeID, valPubKey := nodeIDs[i], valPubKeys[i]
-		initCfg := genutiltypes.NewInitConfig(chainID, gentxsDir, nodeID, valPubKey)
+		initCfg := genutiltypes.NewInitConfig(options.chainID, options.gentxsDir(), nodeID, valPubKey)
 
 		appGenesis, err := genutiltypes.AppGenesisFromFile(nodeConfig.GenesisFile())
 		if err != nil {
@@ -410,7 +413,7 @@ func collectGenFiles(
 		genFile := nodeConfig.GenesisFile()
 
 		// overwrite each validator's genesis file to have a canonical genesis time
-		if err := exportGenesisFileWithTime(genFile, chainID, nil, appState, genTime); err != nil {
+		if err := exportGenesisFileWithTime(genFile, options.chainID, nil, appState, genTime); err != nil {
 			return err
 		}
 	}
