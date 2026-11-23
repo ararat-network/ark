@@ -16,7 +16,7 @@ existing messages.
 ## 1. Upgrade to Cosmos SDK v0.55
 
 - Status: deferred on Wasmd compatibility.
-- Current SDK: v0.54.4.
+- Current SDK: v0.54.5.
 - Trigger: an upstream Wasmd release that compiles against SDK v0.55 without a fork or replacement directives.
 
 The blocker is Wasmd's imports of the SDK's `x/params`, which v0.55 drops, in four files: Wasmd compiles against v0.54.4
