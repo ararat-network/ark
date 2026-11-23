@@ -1,6 +1,6 @@
 # Ark Client Fee Construction
 
-- Target SDK: cosmos-sdk v0.54.4
+- Target SDK: cosmos-sdk v0.54.5
 - Audience: wallet, exchange, and custody authors building Ark transactions outside `arkd`
 
 This note is what you need to know before reading `proto/ark/treasury/v1/query.proto`. Ark charges a transfer tax

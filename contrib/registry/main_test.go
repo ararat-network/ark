@@ -33,6 +33,8 @@ func readFile[T any](t *testing.T, path string) T {
 
 func TestNetworksAndAssets(t *testing.T) {
 	out := generateInto(t, "")
+	pins, err := readVersions(filepath.Join(repo, "go.mod"))
+	require.NoError(t, err)
 	tests := []struct {
 		name, chainID, networkType string
 		assets                     int
@@ -51,7 +53,7 @@ func TestNetworksAndAssets(t *testing.T) {
 			require.Equal(t, uint32(330), c.Slip44)
 			require.Equal(t, "cosmos", c.ChainType)
 			require.Equal(t, []feeToken{{Denom: chain.NoahBaseDenom, FixedMinGasPrice: 1e11}}, c.Fees.FeeTokens)
-			require.Equal(t, "v0.54.4", c.Codebase.SDK.Version)
+			require.Equal(t, pins.sdk, c.Codebase.SDK.Version)
 			require.Equal(t, tt.local, len(c.APIs.RPC) > 0, "only the localnet has endpoints without an endpoints file")
 
 			a := readFile[assetlistJSON](t, filepath.Join(out, tt.name, "assetlist.json"))
