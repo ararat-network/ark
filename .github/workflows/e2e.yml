@@ -110,6 +110,15 @@ jobs:
           echo "version=$old" >> "$GITHUB_OUTPUT"
           echo "plan=$plan" >> "$GITHUB_OUTPUT"
 
+      # interchaintest chowns volumes with busybox:stable, pulling it only when
+      # missing; Docker Hub rate-limits shared runner IPs, so take it from the mirror.
+      - name: busybox
+        env:
+          IMAGE: mirror.gcr.io/library/busybox:stable@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+        run: |
+          docker pull "$IMAGE"
+          docker tag "$IMAGE" busybox:stable
+
       - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version-file: tests/e2e/go.mod

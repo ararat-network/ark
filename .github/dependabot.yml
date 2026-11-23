@@ -27,6 +27,17 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - dependencies
+    # The core stack moves together in one planned migration; Dependabot bumps
+    # one module at a time, which never resolves, so only patches come through.
+    ignore:
+      - dependency-name: github.com/cometbft/cometbft
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      - dependency-name: github.com/cosmos/cosmos-sdk
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      - dependency-name: cosmossdk.io/api
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      - dependency-name: github.com/CosmWasm/wasmd
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
 
   # The localnet image pins its base images by digest, so this is what moves
   # them when a patch release lands.
