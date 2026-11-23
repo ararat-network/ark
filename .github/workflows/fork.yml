@@ -1,0 +1,54 @@
+# Forks a one-validator chain with in-place-testnet and checks the fork runs under its own
+# validator: nightly, and on changes to the code and the dependency versions the rewrite of
+# CometBFT's stores rests on. See contrib/scripts/README.md.
+name: Fork
+
+on:
+  pull_request:
+    paths:
+      - app/testnet.go
+      - cmd/arkd/cmd/in_place_testnet.go
+      - cmd/arkd/cmd/start.go
+      - contrib/scripts/fork-rehearsal.sh
+      - .github/workflows/fork.yml
+      - go.mod
+  schedule:
+    # 04:30 UTC daily, between the upgrade rehearsal and the e2e suites.
+    - cron: "30 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fork-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rehearsal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Rehearse
+        run: make fork-rehearsal
+
+      - name: Node logs
+        if: failure()
+        run: tail -n 100 build/fork-rehearsal/*.log || true
+
+  report:
+    needs: rehearsal
+    if: failure() && github.event_name == 'schedule'
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/nightly-failure.yml
+    with:
+      workflow: Fork
