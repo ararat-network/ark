@@ -10,6 +10,7 @@ failed assertions.
 | [localnet-observability.sh](localnet-observability.sh) | `<iterations> <sleep-seconds> <prometheus-url>`; `make localnet-observability` starts the profile first | Read-only polling; Prometheus has loaded the rules and scraped node0. |
 | [upgrade-probe.sh](upgrade-probe.sh) | `<iterations> <sleep-seconds> <upgrade-height> <plan-name> <rpc-url> <api-url>` | Read-only polling; the plan is applied and blocks progress beyond it. Passing the scheduled height without applying fails. |
 | [upgrade-rehearsal.sh](upgrade-rehearsal.sh) | `make upgrade-rehearsal` | Builds/selects old and new binaries, starts a temporary cosmovisor node, submits an upgrade, observes halt/switch, and runs the upgrade probe. |
+| [fork-rehearsal.sh](fork-rehearsal.sh) | `make fork-rehearsal` | Builds arkd, runs a one-validator chain from the testnet artefact, stops it, and forks copies of its home with `in-place-testnet`, once under a fresh validator key and once under the chain's own. Each fork reports the new chain ID, has that key as its only validator, and commits blocks across a restart under plain `start`. |
 | [check-wasmvm-libs.sh](check-wasmvm-libs.sh) | Run by the [image Dockerfile](../images/arkd-env/Dockerfile); `WASMVM_LIBDIR` overrides `/lib` | Read-only; go.mod's wasmvm version matches the image Dockerfile ARGs and both static archives match its digests. |
 | [release-build.py](release-build.py) | GoReleaser node build tool; `ARK_RELEASE_SOURCE` names the verified application source bundle | Builds the committed export in the requested Linux platform's container, verifies binary/runtime source identity, and writes GoReleaser's binary plus runtime source assets under `build/source/`. Does not publish. |
 | [package-source.py](package-source.py) | `make source-bundle`; `SOURCE_KIND` selects `arkd` or `pricefeed` | Exports the committed revision and its dependency sources as the release's corresponding-source bundle under `build/source/`. |
@@ -47,6 +48,17 @@ The script uses the default node ports and refuses to proceed if another node an
 before running it. Read the script before selecting a reused `WORK` directory: it manages its own scratch state and
 preserves outputs for inspection. It installs cosmovisor into its tooling location when needed.
 The final applied-plan query is authoritative for the rehearsal; a version string can be identical for two uncommitted builds.
+
+## Fork rehearsal
+
+| Environment | Meaning |
+| --- | --- |
+| `ARKD` | Binary to rehearse instead of building the working tree. |
+| `WORK` | Scratch homes, binary and logs; defaults to `build/fork-rehearsal`. Use a disposable path. |
+
+The script uses the default node ports and refuses to proceed if another node answers there. A clean stop leaves the
+signing state at the last block, so the realignment of a signing state past it stays with its unit test, and
+`--trigger-testnet-upgrade` needs a registered plan and is not rehearsed.
 
 [Node operations](../../docs/operations/NODE_OPERATIONS.md) owns production procedures; [tests](../../tests/README.md)
 maps the CI and in-memory verification layers.

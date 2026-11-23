@@ -303,9 +303,14 @@ observability-check:
 upgrade-rehearsal:
 	@contrib/scripts/upgrade-rehearsal.sh
 
+# A one-validator chain forked with in-place-testnet, under a fresh validator
+# key and under its own; see the script's header for the knobs.
+fork-rehearsal:
+	@contrib/scripts/fork-rehearsal.sh
+
 .PHONY: build build-pricefeed install clean release release-pricefeed source-bundle verify-source test test-race test-cover test-e2e test-e2e-vet \
 	test-fuzz test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
 	lint lint-fix format vulncheck \
 	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-check-pricefeed proto-update-deps \
 	localnet-check localnet-build-env localnet-init localnet-up localnet-start localnet-stop localnet-liveness localnet-statesync \
-	localnet-observability observability-check upgrade-rehearsal
+	localnet-observability observability-check upgrade-rehearsal fork-rehearsal
