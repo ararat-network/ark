@@ -219,19 +219,20 @@ not a second source of chain state, and not the only way to inspect chain activi
 #### The signer
 
 The signer interface is the audited, slow-moving part of the app, and it owns nothing about membership: key generation
-on the device with backup and recovery, signing consent, transaction review built from decoded messages, fee selection,
-broadcast, and reading the chain from any node. Every feature asks it for a signature and never sees a key. The device
+on the device with backup and recovery, signing consent, and transaction review built from decoded messages. It
+reaches no node: the feature that asks builds the transaction with the SDK, chooses its fee, and broadcasts what the
+signer returns. Every feature asks it for a signature and never sees a key. The device
 keystore answers by default; a Ledger device, through the adapter for `ledger-ark`, or a wallet a crypto-native member
 already carries stands in behind the same interface. The first tranche needs the device keystore and the Ledger adapter;
 external-wallet adapters follow.
 
 It is a package of `ark-app` with its own owners and tests, implementing the `Signer` interface the SDK defines: a
-core every client shares, consent, review, fees, broadcast, the sign-arbitrary call, and the Ledger adapter, and a
+core every client shares, consent, review, the sign-arbitrary call, and the Ledger adapter, and a
 keystore per platform, the phone's hardware-wrapped key behind biometrics first. It leaves the app's repository when
 something outside it needs it, an extension, a third-party wallet, or the wallet kit, or when an audit wants a frozen
 tag.
 
-A multisignature account signs through the same interface. The signer builds the transaction for a K-of-N account,
+A multisignature account signs through the same interface. The app builds the transaction for a K-of-N account,
 each member signs it with their own adapter, keystore or Ledger, and partial signatures pass between members until the
 threshold is met and one of them assembles and broadcasts. Three constraints are fixed elsewhere. A committee is a
 legacy amino threshold multisig of at most ten hardware-backed keys, registered on chain before its appointment
