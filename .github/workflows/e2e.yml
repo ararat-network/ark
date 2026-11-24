@@ -74,7 +74,7 @@ jobs:
             VERSION=${{ steps.stamps.outputs.version }}
             COMMIT=${{ steps.stamps.outputs.commit }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
 
       # The old image is the last stable release, pulled from ghcr and retagged
       # beside the local build so one repository name serves both versions.

@@ -47,7 +47,7 @@ jobs:
             PRICEFEED_VERSION=${{ steps.stamps.outputs.pricefeed_version }}
             COMMIT=${{ steps.stamps.outputs.commit }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
 
       - run: make observability-check
       - run: make localnet-init
