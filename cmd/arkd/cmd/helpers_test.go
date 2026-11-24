@@ -9,6 +9,16 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
+
+	"cosmossdk.io/depinject"
+	"cosmossdk.io/log/v2"
+
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/server"
+
+	"github.com/ararat-network/ark/app"
 )
 
 // renderAppTOML renders tmpl with the defaults arkd writes, so a test starts
@@ -55,4 +65,35 @@ func readFile(t *testing.T, path string) string {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 	return string(data)
+}
+
+const testChainID = "ark-commands-test"
+
+// newTestAppOptions builds app options populated with the keys
+// DefaultBaseappOptions reads. Its snapshot store is created under home, so
+// home has to be writable and per-test.
+func newTestAppOptions(t *testing.T, home string) *viper.Viper {
+	t.Helper()
+
+	v := viper.New()
+	v.Set(flags.FlagHome, home)
+	v.Set(flags.FlagChainID, testChainID)
+	v.Set(server.FlagPruning, "nothing")
+
+	return v
+}
+
+// clientCodec resolves the codec the root command decodes genesis with.
+func clientCodec(t *testing.T) codec.Codec {
+	t.Helper()
+
+	var clientCtx client.Context
+	require.NoError(t, depinject.Inject(
+		depinject.Configs(app.AppConfig,
+			depinject.Supply(log.NewNopLogger(), unwiredWasmKeeper{}),
+			depinject.Provide(ProvideClientContext),
+		),
+		&clientCtx,
+	))
+	return clientCtx.Codec
 }

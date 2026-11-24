@@ -57,15 +57,15 @@ block counts, and timeouts; inspect the target before starting a long run. Modul
 corpus only.
 
 The [Docker localnet](../contrib/localnet/README.md) and [rehearsal scripts](../contrib/scripts/README.md) exercise
-process/network behaviour: rates and block liveness, state sync, and upgrades.
+process/network behaviour: rates and block liveness, state sync, upgrades, and in-place forks.
 These are separate from in-memory Go tests and require their stated disposable environment.
 
 ## CI map
 
 [Go tests](../.github/workflows/test.yml), [lint](../.github/workflows/lint.yml),
 [simulations](../.github/workflows/sims.yml), [localnet](../.github/workflows/localnet.yml),
-[e2e](../.github/workflows/e2e.yml), [fuzzing](../.github/workflows/fuzz.yml), and
-[upgrades](../.github/workflows/upgrade.yml) define their current triggers and gates. The e2e suites run per pull request on the working tree; nightly they start on the latest release image and
+[e2e](../.github/workflows/e2e.yml), [fuzzing](../.github/workflows/fuzz.yml),
+[upgrades](../.github/workflows/upgrade.yml), and [forks](../.github/workflows/fork.yml) define their current triggers and gates. The e2e suites run per pull request on the working tree; nightly they start on the latest release image and
 upgrade to the working tree first, so a release-to-release migration is rehearsed against every suite. The nightly
 workflows file one issue per workflow on failure through [nightly-failure.yml](../.github/workflows/nightly-failure.yml).
 [CodeQL](../.github/workflows/codeql.yml) and [vulnerability scanning](../.github/workflows/vulncheck.yml) provide security

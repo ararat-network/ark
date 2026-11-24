@@ -3,11 +3,9 @@ package cmd
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"sort"
-	"strings"
 	"text/tabwriter"
 	"time"
 
@@ -15,7 +13,6 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/ararat-network/ark/pkg/encoding"
-	"github.com/ararat-network/ark/pkg/grpcconn"
 	"github.com/ararat-network/ark/pkg/tlsconfig"
 	"github.com/ararat-network/ark/pricefeed/api"
 )
@@ -104,24 +101,11 @@ func fetchPrices(
 	files tlsconfig.Client,
 	dialOptions ...grpc.DialOption,
 ) (resp *api.PricesResponse, err error) {
-	if strings.TrimSpace(address) == "" {
-		return nil, errors.New("sidecar address cannot be empty")
-	}
-
-	material, err := grpcconn.LoadClient(files, address)
+	conn, err := dial("sidecar", address, files, dialOptions...)
 	if err != nil {
-		return nil, fmt.Errorf("sidecar connection credentials: %w", err)
+		return nil, err
 	}
-
-	conn, err := grpc.NewClient(address, grpcconn.DialOptions(material.Config, dialOptions...)...)
-	if err != nil {
-		return nil, fmt.Errorf("dialling sidecar: %w", err)
-	}
-	defer func() {
-		if closeErr := conn.Close(); closeErr != nil {
-			err = errors.Join(err, fmt.Errorf("closing sidecar connection: %w", closeErr))
-		}
-	}()
+	defer closeConn(&err, "sidecar", conn)
 
 	resp, err = api.NewPriceFeedClient(conn).Prices(ctx, &api.PricesRequest{})
 	if err != nil {

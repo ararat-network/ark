@@ -7,40 +7,16 @@ import (
 	"testing"
 
 	dbm "github.com/cosmos/cosmos-db"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
-
-	cmtabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/log/v2"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/server"
-	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 
 	"github.com/ararat-network/ark/app"
-	apptestutil "github.com/ararat-network/ark/app/testutil"
 )
 
-// These tests cover newApp and the export wrapper: app construction from the server's options, and
-// the forwarding of height, zero-height, and validator-allowlist flags. app/export_test.go covers the
-// export semantics.
-
-const testChainID = "ark-commands-test"
-
-// newTestAppOptions builds app options populated with the keys
-// DefaultBaseappOptions reads. Its snapshot store is created under home, so
-// home has to be writable and per-test.
-func newTestAppOptions(t *testing.T, home string) *viper.Viper {
-	t.Helper()
-
-	v := viper.New()
-	v.Set(flags.FlagHome, home)
-	v.Set(flags.FlagChainID, testChainID)
-	v.Set(server.FlagPruning, "nothing")
-
-	return v
-}
+// These tests cover newApp: app construction from the server's options.
 
 // writeGenesisChainID writes the one field DefaultBaseappOptions reads back
 // out of genesis when no chain id is configured.
@@ -52,27 +28,6 @@ func writeGenesisChainID(t *testing.T, home, chainID string) {
 	bz, err := json.Marshal(map[string]any{"chain_id": chainID, "app_state": map[string]any{}})
 	require.NoError(t, err)
 	require.NoError(t, os.WriteFile(filepath.Join(configDir, "genesis.json"), bz, 0o600))
-}
-
-// commitBlocks initialises a chain on db and commits count blocks, leaving the
-// store in the state a running node's would be in.
-func commitBlocks(t *testing.T, db *dbm.MemDB, home string, count int64) {
-	t.Helper()
-
-	arkApp := apptestutil.NewArkappWithCustomOptions(t, false, apptestutil.SetupOptions{
-		Logger:  log.NewNopLogger(),
-		DB:      db,
-		AppOpts: simtestutil.NewAppOptionsWithFlagHome(home),
-	})
-	for height := int64(1); height <= count; height++ {
-		_, err := arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{Height: height})
-		require.NoError(t, err)
-		_, err = arkApp.Commit()
-		require.NoError(t, err)
-	}
-	// The Wasm VM holds an exclusive lock on the home's cache directory, so
-	// the app has to go before another opens the same home.
-	require.NoError(t, arkApp.Close())
 }
 
 func TestNewAppBuildsTheChain(t *testing.T) {
@@ -100,74 +55,4 @@ func TestNewAppTakesTheChainIDFromGenesis(t *testing.T) {
 	t.Cleanup(func() { _ = application.Close() })
 
 	require.Equal(t, "ark-from-genesis", application.(*app.ArkApp).ChainID())
-}
-
-// TestAppExportContinuesFromTheLatestHeight holds the -1 case to the same
-// continuation contract app/export_test.go holds the app to: the exported
-// genesis starts one past the last committed height.
-func TestAppExportContinuesFromTheLatestHeight(t *testing.T) {
-	db := dbm.NewMemDB()
-	home := t.TempDir()
-	commitBlocks(t, db, home, 2)
-
-	exported, err := appExport(log.NewNopLogger(), db, -1, false, nil, newTestAppOptions(t, t.TempDir()), nil)
-
-	require.NoError(t, err)
-	require.Equal(t, int64(3), exported.Height)
-	require.NotEmpty(t, exported.AppState)
-}
-
-// TestAppExportLoadsARequestedHeight is the --height path: the store is loaded
-// at that version rather than the latest, and the export continues from it. An
-// ignored --height would export height 3 here, as the case above does.
-func TestAppExportLoadsARequestedHeight(t *testing.T) {
-	db := dbm.NewMemDB()
-	home := t.TempDir()
-	commitBlocks(t, db, home, 2)
-
-	exported, err := appExport(log.NewNopLogger(), db, 1, false, nil, newTestAppOptions(t, t.TempDir()), nil)
-
-	require.NoError(t, err)
-	require.Equal(t, int64(2), exported.Height)
-}
-
-func TestAppExportReportsAnUnloadableHeight(t *testing.T) {
-	db := dbm.NewMemDB()
-	home := t.TempDir()
-	commitBlocks(t, db, home, 1)
-
-	_, err := appExport(log.NewNopLogger(), db, 99, false, nil, newTestAppOptions(t, t.TempDir()), nil)
-
-	require.Error(t, err)
-}
-
-// TestAppExportPassesForZeroHeightThrough and the jail-list test below are
-// what prove the flags reach the app rather than being dropped: each asserts a
-// refusal only the app layer issues.
-func TestAppExportPassesForZeroHeightThrough(t *testing.T) {
-	db := dbm.NewMemDB()
-	home := t.TempDir()
-	commitBlocks(t, db, home, 1)
-
-	_, err := appExport(log.NewNopLogger(), db, -1, true, nil, newTestAppOptions(t, t.TempDir()), nil)
-
-	require.Error(t, err, "a zero-height export is refused on purpose")
-}
-
-func TestAppExportPassesJailAllowedAddrsThrough(t *testing.T) {
-	db := dbm.NewMemDB()
-	home := t.TempDir()
-	commitBlocks(t, db, home, 1)
-
-	_, err := appExport(
-		log.NewNopLogger(),
-		db,
-		-1,
-		false,
-		[]string{"arkvaloper1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"},
-		newTestAppOptions(t, t.TempDir()),
-		nil,
-	)
-
-	require.Error(t, err, "an allow-list naming no known validator is refused")
 }

@@ -61,6 +61,10 @@ type inPlaceTestnetArgs struct {
 // start's checks and hooks, then an app creator that rewrites consensus and
 // application state before the node starts.
 func newInPlaceTestnetCmd(run *startRun, addressCodec address.Codec) *cobra.Command {
+	var (
+		upgrade          string
+		skipConfirmation bool
+	)
 	cmd := server.StartCmdWithOptions(run.createTestnetApp, app.DefaultNodeHome, server.StartCmdOptions{
 		PostSetup:           run.postSetup,
 		PostSetupStandalone: run.postSetup,
@@ -87,12 +91,11 @@ abstains from oracle votes.`
 		if err != nil {
 			return fmt.Errorf("parse operator address %q: %w", args[1], err)
 		}
-		if skip, _ := cmd.Flags().GetBool(flagSkipConfirmation); !skip {
+		if !skipConfirmation {
 			if err := confirmInPlaceTestnet(cmd); err != nil {
 				return err
 			}
 		}
-		upgrade, _ := cmd.Flags().GetString(flagTriggerTestnetUpgrade)
 		run.testnet = &inPlaceTestnetArgs{chainID: args[0], operator: operator, upgrade: upgrade}
 		// The app takes its chain ID from genesis when it is built, before
 		// the creator rewrites the rest.
@@ -102,8 +105,8 @@ abstains from oracle votes.`
 		return startRunE(cmd, args)
 	}
 	run.wrapPreRun(cmd)
-	cmd.Flags().String(flagTriggerTestnetUpgrade, "", "Upgrade handler to run in the first block, e.g. \"v2\"")
-	cmd.Flags().Bool(flagSkipConfirmation, false, "Skip the confirmation prompt")
+	cmd.Flags().StringVar(&upgrade, flagTriggerTestnetUpgrade, "", "Upgrade handler to run in the first block, e.g. \"v2\"")
+	cmd.Flags().BoolVar(&skipConfirmation, flagSkipConfirmation, false, "Skip the confirmation prompt")
 	return cmd
 }
 

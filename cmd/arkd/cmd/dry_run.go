@@ -20,9 +20,7 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/server"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -46,15 +44,10 @@ tokens in NOAH, and commission. Nothing is written; the file defaults to the
 home's genesis.json.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			genesisFile := ""
 			if len(args) == 1 {
-				genesisFile = args[0]
-			} else {
-				config := server.GetServerContextFromCmd(cmd).Config
-				config.SetRoot(client.GetClientContextFromCmd(cmd).HomeDir)
-				genesisFile = config.GenesisFile()
+				return runDryRun(cmd.OutOrStdout(), args[0])
 			}
-			return runDryRun(cmd.OutOrStdout(), genesisFile)
+			return runDryRun(cmd.OutOrStdout(), homeGenesisFile(cmd))
 		},
 	}
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "The application home directory")

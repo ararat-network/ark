@@ -149,7 +149,7 @@ handler must tolerate being executed more than once for one logical transaction:
 1. Take an SDK release carrying #25893 (§2.2).
 2. Add the `blockexec.Apply` call in `app/app.go` with the complete key list (§2.3), leaving `block-executor` at its
    `sequential` default. Confirm no behaviour change. `arkd` refuses any other `block-executor` value at config
-   validation (`cmd/arkd/cmd/config.go`); lift that refusal only in this step.
+   validation (`cmd/arkd/cmd/app_config.go`); lift that refusal only in this step.
 3. Land the §2.4 prerequisites at an upgrade.
 4. Audit msg-server paths against §2.5 — principally for panics on absent state.
 5. Replay a recorded block range under both executors, with pre-estimation on and off, and require identical app hashes

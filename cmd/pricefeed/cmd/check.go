@@ -6,14 +6,12 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
 	"cosmossdk.io/log/v2"
 
-	"github.com/ararat-network/ark/pkg/grpcconn"
 	"github.com/ararat-network/ark/pkg/tlsconfig"
 	"github.com/ararat-network/ark/pricefeed/api"
 	"github.com/ararat-network/ark/pricefeed/validation"
@@ -128,41 +126,17 @@ func runCheck(
 	options checkOptions,
 	dialOptions ...grpc.DialOption,
 ) (results validation.LivenessResults, err error) {
-	if strings.TrimSpace(options.address) == "" {
-		return nil, errors.New("sidecar address cannot be empty")
+	sidecarConn, err := dial("sidecar", options.address, options.tls, dialOptions...)
+	if err != nil {
+		return nil, err
 	}
-	if strings.TrimSpace(options.chainAddress) == "" {
-		return nil, errors.New("chain address cannot be empty")
-	}
+	defer closeConn(&err, "sidecar", sidecarConn)
 
-	sidecarMaterial, err := grpcconn.LoadClient(options.tls, options.address)
+	chainConn, err := dial("chain", options.chainAddress, options.chainTLS, dialOptions...)
 	if err != nil {
-		return nil, fmt.Errorf("sidecar connection credentials: %w", err)
+		return nil, err
 	}
-	chainMaterial, err := grpcconn.LoadClient(options.chainTLS, options.chainAddress)
-	if err != nil {
-		return nil, fmt.Errorf("chain connection credentials: %w", err)
-	}
-
-	sidecarConn, err := grpc.NewClient(options.address, grpcconn.DialOptions(sidecarMaterial.Config, dialOptions...)...)
-	if err != nil {
-		return nil, fmt.Errorf("creating sidecar connection: %w", err)
-	}
-	defer func() {
-		if closeErr := sidecarConn.Close(); closeErr != nil {
-			err = errors.Join(err, fmt.Errorf("closing sidecar connection: %w", closeErr))
-		}
-	}()
-
-	chainConn, err := grpc.NewClient(options.chainAddress, grpcconn.DialOptions(chainMaterial.Config, dialOptions...)...)
-	if err != nil {
-		return nil, fmt.Errorf("creating chain connection: %w", err)
-	}
-	defer func() {
-		if closeErr := chainConn.Close(); closeErr != nil {
-			err = errors.Join(err, fmt.Errorf("closing chain connection: %w", closeErr))
-		}
-	}()
+	defer closeConn(&err, "chain", chainConn)
 
 	validator, err := validation.NewValidator(
 		logger,
