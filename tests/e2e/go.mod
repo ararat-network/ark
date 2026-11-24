@@ -19,7 +19,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.53.6
 	github.com/cosmos/interchaintest/v10 v10.0.1
 	github.com/docker/docker v28.0.0+incompatible
-	github.com/gorilla/websocket v1.5.3
+	github.com/gorilla/websocket v1.5.4-0.20240701034025-d67f41855da4
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/moby/moby v27.5.1+incompatible
 	github.com/prometheus/client_model v0.6.2
